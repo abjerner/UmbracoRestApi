@@ -105,7 +105,7 @@ namespace Umbraco.RestApi.Controllers
             return MediaService.GetById(id);
         }
 
-         public override HttpResponseMessage Delete(int id)
+        public override HttpResponseMessage Delete(int id)
         {
             var media = MediaService.GetById(id);
             if (media == null)
