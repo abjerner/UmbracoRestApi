@@ -49,7 +49,7 @@ namespace Umbraco.RestApi
 
             public static Link Url => new Link("url", string.Format("{0}/url{{?url}}", BaseUrl));
 
-            public static Link Upload => null;
+            public static Link Tag => new Link("tag", string.Format("{0}/tag{{?tag,group}}", BaseUrl));
         }
 
         public static class Media

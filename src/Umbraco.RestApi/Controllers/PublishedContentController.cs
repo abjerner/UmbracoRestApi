@@ -192,6 +192,24 @@ namespace Umbraco.RestApi.Controllers
                 ? Request.CreateResponse(HttpStatusCode.NotFound)
                 : Request.CreateResponse(HttpStatusCode.OK, result);
         }
-    
+
+        [HttpGet]
+        [CustomRoute("tag/{tag}")]
+        public HttpResponseMessage GetByTag(string tag, string group = null, int page = 0, int size = 100)
+        {
+            var content = Umbraco.TagQuery.GetContentByTag(tag, group).ToArray();
+            var skip = (page * size);
+            var total = content.Length;
+            var pages = Decimal.Round((decimal)(total / size), 0);
+            
+            var items = AutoMapper.Mapper.Map<IEnumerable<PublishedContentRepresentation>>(content.Skip(skip).Take(size)).ToList();
+            var representation = new PublishedContentPagedListRepresentation(items, total, (int)pages, page, size, LinkTemplates.PublishedContent.Search, new
+            {
+                tag = tag, group = group, page= page, size = size
+            });
+
+            return Request.CreateResponse(HttpStatusCode.OK, representation); 
+        }
+
     }
 }

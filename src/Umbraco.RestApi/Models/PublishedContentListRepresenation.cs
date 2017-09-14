@@ -22,6 +22,7 @@ namespace Umbraco.RestApi.Models {
             Links.Add(LinkTemplates.PublishedContent.Query);
             Links.Add(LinkTemplates.PublishedContent.Search);
             Links.Add(LinkTemplates.PublishedContent.Url);
+            Links.Add(LinkTemplates.PublishedContent.Tag);
         }
     }
 }
