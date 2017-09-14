@@ -78,7 +78,7 @@ namespace Umbraco.RestApi
         {
             public static string BaseUrl => string.Format("~/{0}/{1}", RouteConstants.GetRestRootPath(ApiVersion), RouteConstants.MembersSegment);
 
-            public static Link Root => new Link("root", string.Format("{0}/{{?page,size,orderBy,direction,memberTypeAlias,filter}}", BaseUrl ));
+            public static Link Root => new Link("root", string.Format("{0}{{?page,size,orderBy,direction,memberTypeAlias,filter}}", BaseUrl ));
 
             public static Link Self => new Link("member", string.Format("{0}/{{id}}", BaseUrl));
 
