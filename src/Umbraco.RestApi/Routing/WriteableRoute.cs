@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Web.Http.Routing;
@@ -31,31 +30,22 @@ namespace Umbraco.RestApi.Routing
             return _innerRoute.GetVirtualPath(request, values);
         }
 
-        public string RouteTemplate
-        {
-            get { return _innerRoute.RouteTemplate; }
-        }
+        public string RouteTemplate => _innerRoute.RouteTemplate;
 
-        public IDictionary<string, object> Defaults
-        {
-            get { return _innerRoute.Defaults; }
-        }
+        public IDictionary<string, object> Defaults => _innerRoute.Defaults;
 
-        public IDictionary<string, object> Constraints
-        {
-            get { return _innerRoute.Constraints; }
-        }
+        public IDictionary<string, object> Constraints => _innerRoute.Constraints;
 
         public IDictionary<string, object> DataTokens
         {
-            get { return _innerRoute.DataTokens ?? _dataTokens; }
-            set { _dataTokens = value; }
+            get => _innerRoute.DataTokens ?? _dataTokens;
+            set => _dataTokens = value;
         }
 
         public HttpMessageHandler Handler
         {
-            get { return _innerRoute.Handler ?? _handler; }
-            set { _handler = value; }
+            get => _innerRoute.Handler ?? _handler;
+            set => _handler = value;
         }
     }
 }

@@ -1,31 +1,10 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
-using Umbraco.RestApi.Links;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Umbraco.RestApi.Models
 {
-    public class MemberRepresentation : UmbracoRepresentation
+    public class MemberRepresentation : ContentRepresentationBase
     {
-        public MemberRepresentation(ILinkTemplate linkTemplate, Action<UmbracoRepresentation> createHypermediaCallback)
-            : base(createHypermediaCallback)
-        {
-            _linkTemplate = linkTemplate;
-        }
-
-        public MemberRepresentation(Action<UmbracoRepresentation> createHypermediaCallback)
-            : base(createHypermediaCallback)
-        {
-        }
-
-        public MemberRepresentation()
-        {
-        }
-
-        public MemberRepresentation(ILinkTemplate linkTemplate)
-        {
-            _linkTemplate = linkTemplate;
-        }
-
+       
         [Required]
         [Display(Name = "userName")]
         public string UserName { get; set; }
@@ -34,24 +13,25 @@ namespace Umbraco.RestApi.Models
         [Display(Name = "email")]
         public string Email { get; set; }
 
-        private readonly ILinkTemplate _linkTemplate;
+        public override string Rel
+        {
+            get { return LinkTemplates.Members.Self.Rel; }
+            set { }
+        }
+
+        public override string Href
+        {
+            get { return LinkTemplates.Members.Self.CreateLink(new { id = Id }).Href; }
+            set { }
+        }
 
         protected override void CreateHypermedia()
         {
-            if (_linkTemplate == null) throw new NullReferenceException("LinkTemplate is null");
-
             base.CreateHypermedia();            
-
-            Href = _linkTemplate.Self.CreateLink(new { id = Id }).Href;
-            Rel = _linkTemplate.Self.Rel;
-
-            Links.Add(_linkTemplate.Root);
-            Links.Add(_linkTemplate.MetaData.CreateLink(new { id = Id }));
-
-            if (_linkTemplate.Upload != null)
-            {
-                Links.Add(_linkTemplate.Upload.CreateLink(new { id = Id }));
-            }
+            
+            Links.Add(LinkTemplates.Members.Root);
+            Links.Add(LinkTemplates.Members.MetaData.CreateLink(new { id = Id }));
+            Links.Add(LinkTemplates.Members.Upload.CreateLinkTemplate(Id));
         }
     }
 }

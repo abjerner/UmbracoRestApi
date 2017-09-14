@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using AutoMapper;
-using Examine;
 using Umbraco.Core;
 using Umbraco.Core.Models;
 using Umbraco.Core.Models.Mapping;
@@ -73,8 +72,20 @@ namespace Umbraco.RestApi.Models
                 .ForMember(representation => representation.HasChildren, expression => expression.MapFrom(content => content.Children.Any()))
                 .ForMember(representation => representation.Properties, expression => expression.ResolveUsing(content =>
                 {
-                    return content.Properties.ToDictionary(property => property.PropertyTypeAlias,
-                        property => property.Value);
+
+                   var result = content.Properties.ToDictionary(property => property.PropertyTypeAlias, property => 
+                    {
+
+                        //PP: Special rule - if a piece of content is pointing at a IPublished content - this is put here to make the current published API work - but it will
+                        //lead to possible circular references issues when serializing... 
+                        if (property.Value is IPublishedContent)
+                            return Mapper.Map<ContentRepresentation>(property.Value);
+
+                        return property.Value;
+                    });
+                    
+
+                    return result;
                 }));
 
             //config.CreateMap<SearchResult, ContentRepresentation>()

@@ -9,20 +9,16 @@ using Examine;
 using Examine.Providers;
 using Umbraco.Core;
 using Umbraco.Core.Models;
-using Umbraco.Core.Services;
-using Umbraco.RestApi.Links;
 using Umbraco.RestApi.Models;
 using Umbraco.RestApi.Routing;
 using Umbraco.Web;
+using System.Web.Http.ModelBinding;
 
 namespace Umbraco.RestApi.Controllers
 {
- 
     [UmbracoRoutePrefix("rest/v1/content")]
-    public class ContentController : UmbracoHalContentControllerBase<int, IContent, ContentRepresentation>
+    public class ContentController : UmbracoHalController
     {
-        
-
         /// <summary>
         /// Default ctor
         /// </summary>
@@ -42,167 +38,234 @@ namespace Umbraco.RestApi.Controllers
             BaseSearchProvider searchProvider)
             : base(umbracoContext, umbracoHelper)
         {
-            if (searchProvider == null) throw new ArgumentNullException("searchProvider");
-            _searchProvider = searchProvider;
+            _searchProvider = searchProvider ?? throw new ArgumentNullException("searchProvider");
         }
 
         private BaseSearchProvider _searchProvider;
-        protected BaseSearchProvider SearchProvider
+        protected BaseSearchProvider SearchProvider => _searchProvider ?? (_searchProvider = ExamineManager.Instance.SearchProviderCollection["InternalSearcher"]);
+
+        [HttpGet]
+        [CustomRoute("")]
+        public virtual HttpResponseMessage Get()
         {
-            get { return _searchProvider ?? (_searchProvider = ExamineManager.Instance.SearchProviderCollection["InternalSearcher"]); }
+            var rootContent = Services.ContentService.GetRootContent();
+            var result = AutoMapper.Mapper.Map<IEnumerable<ContentRepresentation>>(rootContent).ToList();
+            var representation = new ContentListRepresenation(result);
+
+            return Request.CreateResponse(HttpStatusCode.OK, representation);
         }
 
-        protected override PagedResult<IContent> PerformSearch(QueryStructure query)
+        [HttpGet]
+        [CustomRoute("{id}")]
+        public HttpResponseMessage Get(int id)
         {
-            if (query.Lucene.IsNullOrWhiteSpace()) throw new HttpResponseException(HttpStatusCode.NotFound);
+            var content = Services.ContentService.GetById(id);
+            var result = AutoMapper.Mapper.Map<ContentRepresentation>(content);
 
-            var result =
-                SearchProvider.Search(
-                    SearchProvider.CreateSearchCriteria().RawQuery(query.Lucene),
-                    query.PageSize);
-
-            var paged = result.Skip(GetSkipSize(query.PageIndex, query.PageSize)).ToArray();
-
-            //TODO: We really need to make a model mapper from search result to IContent, for now well just go lookup that content :(
-
-            if (paged.Any())
-            {
-                var foundContent = ContentService.GetByIds(paged.Select(x => x.Id)).WhereNotNull();
-
-                return new PagedResult<IContent>(result.TotalItemCount, query.PageIndex + 1, query.PageSize)
-                {
-                    Items = foundContent
-                };    
-            }
-
-            return new PagedResult<IContent>(result.TotalItemCount, query.PageIndex + 1, query.PageSize)
-            {
-                Items = Enumerable.Empty<IContent>()
-            };    
-            
+            return result == null
+                ? Request.CreateResponse(HttpStatusCode.NotFound)
+                : Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
-        protected override IEnumerable<IContent> GetRootContent()
+        [HttpGet]
+        [CustomRoute("{id}/meta")]
+        public HttpResponseMessage GetMetadata(int id)
         {
-            return ContentService.GetRootContent();
-        }
-
-        protected override ContentMetadataRepresentation GetMetadataForItem(int id)
-        {
-            var found = ContentService.GetById(id);     
+            var found = Services.ContentService.GetById(id);
             if (found == null) throw new HttpResponseException(HttpStatusCode.NotFound);
 
-            var result = new ContentMetadataRepresentation(LinkTemplate, id)
+            var result = new ContentMetadataRepresentation(LinkTemplates.Content.MetaData, LinkTemplates.Content.Self, id)
             {
                 Fields = GetDefaultFieldMetaData(),
                 Properties = Mapper.Map<IDictionary<string, ContentPropertyInfo>>(found),
                 CreateTemplate = Mapper.Map<ContentTemplate>(found)
             };
-            return result;
+
+            return Request.CreateResponse(HttpStatusCode.OK, result); 
         }
 
-        protected override IContent GetItem(int id)
+        [HttpGet]
+        [CustomRoute("{id}/children")]
+        public HttpResponseMessage GetChildren(int id,
+            [ModelBinder(typeof(QueryStructureModelBinder))]
+            QueryStructure query
+            )
         {
-            return ContentService.GetById(id);                       
+
+            long total;
+            var items = Services.ContentService.GetPagedChildren(id, query.Page, query.PageSize, out total);
+            var pages = Decimal.Round((decimal)(total / query.PageSize), 0);
+            var mapped = Mapper.Map<IEnumerable<ContentRepresentation>>(items).ToList();
+
+            var result = new ContentPagedListRepresentation(mapped, (int)total, (int)pages, (int)query.Page, query.PageSize, LinkTemplates.Content.PagedChildren, new { id = id });
+            return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
-        protected override PagedResult<IContent> GetChildContent(int id, long pageIndex = 0, int pageSize = 100)
+
+        [HttpGet]
+        [CustomRoute("{id}/descendants/")]
+        public HttpResponseMessage GetDescendants(int id,
+            [ModelBinder(typeof(QueryStructureModelBinder))]
+            QueryStructure query
+            )
         {
             long total;
-            var items = ContentService.GetPagedChildren(id, pageIndex, pageSize, out total);
-            return new PagedResult<IContent>(total, pageIndex + 1, pageSize)
-            {
-                Items = items
-            };
+            var items = Services.ContentService.GetPagedDescendants(id, query.Page, query.PageSize, out total);
+            var pages = Decimal.Round((decimal)(total / query.PageSize), 0);
+            var mapped = Mapper.Map<IEnumerable<ContentRepresentation>>(items).ToList();
+
+            var result = new ContentPagedListRepresentation(mapped, (int)total, (int)pages, (int)query.Page, query.PageSize, LinkTemplates.Content.PagedDescendants, new { id = id });
+            return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
-        protected override PagedResult<IContent> GetDescendantContent(int id, long pageIndex = 0, int pageSize = 100)
+        [HttpGet]
+        [CustomRoute("{id}/ancestors/")]
+        public HttpResponseMessage GetAncestors(int id,
+           [ModelBinder(typeof(QueryStructureModelBinder))]
+            QueryStructure query
+           )
         {
-            long total;
-            var items = ContentService.GetPagedDescendants(id, pageIndex, pageSize, out total);
-            return new PagedResult<IContent>(total, pageIndex + 1, pageSize)
-            {
-                Items = items
-            };
+            var items = Services.ContentService.GetAncestors(id).ToArray();
+            var total = items.Length;
+            var pages = Decimal.Round((decimal)(total / query.PageSize), 0);
+            var paged = items.Skip(GetSkipSize(query.Page, query.PageSize)).Take(query.PageSize);
+            var mapped = Mapper.Map<IEnumerable<ContentRepresentation>>(paged).ToList();
+
+            var result = new ContentPagedListRepresentation(mapped, (int)total, (int)pages, (int)query.Page, query.PageSize, LinkTemplates.Content.PagedAncestors, new { id = id });
+            return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
-        protected override IContent CreateNew(ContentRepresentation content)
+        //NOTE: We cannot accept POST here for now unless we modify the routing structure since there's only one POST per
+        // controller currently (with the way we've routed).
+        [HttpGet]
+        [CustomRoute("search")]
+        public HttpResponseMessage Search(
+            [ModelBinder(typeof(QueryStructureModelBinder))]
+            QueryStructure query)
         {
-            //we cannot continue here if the mandatory items are empty (i.e. name, etc...)
-            if (!ModelState.IsValid)
+
+            if (query.Query.IsNullOrWhiteSpace()) throw new HttpResponseException(HttpStatusCode.NotFound);
+
+            //Query prepping - ensure that we only search for content items...
+            var mediaQuery = "__IndexType:content AND " + query.Query;
+
+            //search
+            var result = SearchProvider.Search(
+                    SearchProvider.CreateSearchCriteria().RawQuery(mediaQuery),
+                    query.PageSize);
+
+            //paging
+            var paged = result.Skip(GetSkipSize(query.Page, query.PageSize)).ToArray();
+            var pages = Decimal.Round((decimal)(result.TotalItemCount / query.PageSize), 0);
+
+            var foundContent = Enumerable.Empty<IContent>();
+
+            //Map to Imedia
+            if (paged.Any())
             {
-                throw ValidationException(ModelState, content);
+                foundContent = Services.ContentService.GetByIds(paged.Select(x => x.Id)).WhereNotNull();
             }
 
-            var contentType = Services.ContentTypeService.GetContentType(content.ContentTypeAlias);
-            if (contentType == null)
+            //Map to representation
+            var items = AutoMapper.Mapper.Map<IEnumerable<ContentRepresentation>>(foundContent).ToList();
+
+            //return as paged list of media items
+            var representation = new ContentPagedListRepresentation(items, result.TotalItemCount, (int)pages, (int)query.Page, query.PageSize, LinkTemplates.Content.Search, new { query = query.Query, pageSize = query.PageSize });
+
+            return Request.CreateResponse(HttpStatusCode.OK, representation);
+        }
+
+
+
+        // Content CRUD:
+
+
+        [HttpPost]
+        [CustomRoute("")]
+        public HttpResponseMessage Post(ContentRepresentation content)
+        {
+            try
             {
-                ModelState.AddModelError("content.contentTypeAlias", "No content type found with alias " + content.ContentTypeAlias);
-                throw ValidationException(ModelState, content);
+                //we cannot continue here if the mandatory items are empty (i.e. name, etc...)
+                if (!ModelState.IsValid)
+                {
+                    throw ValidationException(ModelState, content, LinkTemplates.Content.Root);
+                }
+
+                var contentType = Services.ContentTypeService.GetContentType(content.ContentTypeAlias);
+                if (contentType == null)
+                {
+                    ModelState.AddModelError("content.contentTypeAlias", "No content type found with alias " + content.ContentTypeAlias);
+                    throw ValidationException<ContentRepresentation>(ModelState, content, LinkTemplates.Content.Root);
+                }
+
+                //create an item before persisting of the correct content type
+                var created = Services.ContentService.CreateContent(content.Name, content.ParentId, content.ContentTypeAlias, Security.CurrentUser.Id);
+
+                //Validate properties
+                var validator = new ContentPropertyValidator<IContent>(ModelState, Services.DataTypeService);
+                validator.ValidateItem(content, created);
+
+                if (!ModelState.IsValid)
+                {
+                    throw ValidationException<ContentRepresentation>(ModelState, content, LinkTemplates.Content.Root);
+                }
+
+                Mapper.Map(content, created);
+                Services.ContentService.Save(created);
+
+                return Request.CreateResponse(HttpStatusCode.OK, Mapper.Map<ContentRepresentation>(created));
             }
-
-            //create an item before persisting of the correct content type
-            var created = ContentService.CreateContent(content.Name, content.ParentId, content.ContentTypeAlias, Security.CurrentUser.Id);
-
-            //Validate properties
-            var validator = new ContentPropertyValidator<IContent>(ModelState, Services.DataTypeService);
-            validator.ValidateItem(content, created);
-
-            if (!ModelState.IsValid)
+            catch (ModelValidationException exception)
             {
-                throw ValidationException(ModelState, content);
+                return Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors);
             }
-
-            Mapper.Map(content, created);
-            
-            ContentService.Save(created);
-
-            return created;
         }
 
-        protected override IContent Update(int id, ContentRepresentation content)
+        [HttpPut]
+        [CustomRoute("{id}")]
+        public HttpResponseMessage Put(int id, ContentRepresentation content)
         {
-            var found = ContentService.GetById(id);
-            if (found == null) throw new HttpResponseException(HttpStatusCode.NotFound);
-
-            //Validate properties
-            var validator = new ContentPropertyValidator<IContent>(ModelState, Services.DataTypeService);
-            validator.ValidateItem(content, found);
-
-            if (!ModelState.IsValid)
+            try
             {
-                throw ValidationException(ModelState, content, id: id);
+                var found = Services.ContentService.GetById(id);
+                if (found == null) throw new HttpResponseException(HttpStatusCode.NotFound);
+
+                //Validate properties
+                var validator = new ContentPropertyValidator<IContent>(ModelState, Services.DataTypeService);
+                validator.ValidateItem(content, found);
+
+                if (!ModelState.IsValid)
+                {
+                    throw ValidationException(ModelState, content, LinkTemplates.Content.Self, id: id);
+                }
+
+                Mapper.Map(content, found);
+
+                Services.ContentService.Save(found);
+
+                var rep = Mapper.Map<ContentRepresentation>(found);
+                return Request.CreateResponse(HttpStatusCode.OK, rep);
             }
-
-            Mapper.Map(content, found);
-
-            ContentService.Save(found);
-
-            return found;
+            catch (ModelValidationException exception)
+            {
+                return Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors);
+            }
         }
 
-        protected override IContentLinkTemplate<int> LinkTemplate
+        [HttpDelete]
+        [CustomRoute("{id}")]
+        public virtual HttpResponseMessage Delete(int id)
         {
-            get { return new ContentLinkTemplate(CurrentVersionRequest); }
+            var found = Services.ContentService.GetById(id);
+            if (found == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            Services.ContentService.Delete(found);
+            return Request.CreateResponse(HttpStatusCode.OK);
         }
 
-        /// <summary>
-        /// Creates the content representation from the entity based on the current API version
-        /// </summary>
-        /// <param name="entity"></param>
-        /// <returns></returns>
-        protected override ContentRepresentation CreateRepresentation(IContent entity)
-        {
-            //create it with the current version link representation
-            var representation = new ContentRepresentation(LinkTemplate);
-            return Mapper.Map(entity, representation);
-        }
-
-        protected IContentService ContentService
-        {
-            get { return ApplicationContext.Services.ContentService; }
-        }
-
+        
     }
    
 }

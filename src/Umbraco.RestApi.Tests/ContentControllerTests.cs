@@ -9,8 +9,6 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Web.Http;
 using Examine;
-using Examine.LuceneEngine;
-using Examine.Providers;
 using Examine.SearchCriteria;
 using Microsoft.Owin.Testing;
 using Moq;
@@ -18,11 +16,9 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using Umbraco.Core.Configuration;
-using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using Umbraco.Core.Persistence.DatabaseModelDefinitions;
 using Umbraco.Core.PropertyEditors;
-using Umbraco.Core.Services;
 using Umbraco.RestApi.Routing;
 using Umbraco.RestApi.Tests.TestHelpers;
 
@@ -133,7 +129,6 @@ namespace Umbraco.RestApi.Tests
                 var djson = JsonConvert.DeserializeObject<JObject>(json);
 
                 Assert.AreEqual("/umbraco/rest/v1/content", djson["_links"]["root"]["href"].Value<string>());
-                Assert.AreEqual(2, djson["totalResults"].Value<int>());
                 Assert.AreEqual(2, djson["_links"]["content"].Count());
                 Assert.AreEqual(2, djson["_embedded"]["content"].Count()); 
             }
@@ -172,7 +167,7 @@ namespace Umbraco.RestApi.Tests
             {
                 var request = new HttpRequestMessage()
                 {
-                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}/search?lucene=parentID:\\-1", RouteConstants.ContentSegment)),
+                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}/search?query=parentID:\\-1", RouteConstants.ContentSegment)),
                     Method = HttpMethod.Get,
                 };
 
@@ -228,7 +223,7 @@ namespace Umbraco.RestApi.Tests
 
                 Assert.AreEqual("/umbraco/rest/v1/content/123", djson["_links"]["self"]["href"].Value<string>());
                 Assert.AreEqual("/umbraco/rest/v1/content/456", djson["_links"]["parent"]["href"].Value<string>());
-                Assert.AreEqual("/umbraco/rest/v1/content/123/children{?pageIndex,pageSize}", djson["_links"]["children"]["href"].Value<string>());
+                Assert.AreEqual("/umbraco/rest/v1/content/123/children{?page,size}", djson["_links"]["children"]["href"].Value<string>());
                 Assert.AreEqual("/umbraco/rest/v1/content", djson["_links"]["root"]["href"].Value<string>());
 
                 var properties = djson["properties"].ToObject<IDictionary<string, object>>();
@@ -345,7 +340,7 @@ namespace Umbraco.RestApi.Tests
             {
                 var request = new HttpRequestMessage()
                 {
-                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}/123/children?pageIndex=1&pageSize=2", RouteConstants.ContentSegment)),
+                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}/123/children?page=1&size=2", RouteConstants.ContentSegment)),
                     Method = HttpMethod.Get,
                 };
 

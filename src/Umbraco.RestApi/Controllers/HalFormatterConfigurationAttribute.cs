@@ -1,6 +1,4 @@
 using System;
-using System.Reflection;
-using System.Web.Http;
 using System.Web.Http.Controllers;
 using Newtonsoft.Json.Serialization;
 using WebApi.Hal;

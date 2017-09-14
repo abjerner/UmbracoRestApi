@@ -1,289 +1,67 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Web.Http;
-using System.Web.Http.Controllers;
 using System.Web.Http.ModelBinding;
-using AutoMapper;
-using Examine;
-using Examine.Providers;
-using Newtonsoft.Json.Serialization;
-using Umbraco.Core;
 using Umbraco.Core.Models;
 using Umbraco.Core.Services;
-using Umbraco.RestApi.Links;
 using Umbraco.RestApi.Models;
-using Umbraco.RestApi.Routing;
 using Umbraco.Web;
 using Umbraco.Web.WebApi;
 using WebApi.Hal;
-using System.Threading.Tasks;
-
 
 namespace Umbraco.RestApi.Controllers
 {
     [DynamicCors]
     [UmbracoAuthorize]
-    [IsBackOffice]    
+    [IsBackOffice]
     [HalFormatterConfiguration]
-    public abstract class UmbracoHalController<TId, TEntity, TRepresentation, TLinkTemplate> : UmbracoApiControllerBase
-        where TEntity : class
-        where TId: struct
-        where TLinkTemplate : ILinkTemplate
-        where TRepresentation: UmbracoRepresentationBase
+    public abstract class UmbracoHalController : UmbracoApiControllerBase
     {
-       
+
         protected UmbracoHalController()
         {
         }
 
         protected UmbracoHalController(
-            UmbracoContext umbracoContext, 
+            UmbracoContext umbracoContext,
             UmbracoHelper umbracoHelper)
             : base(umbracoContext, umbracoHelper)
         {
         }
 
-        #region Actions
+        protected int CurrentVersionRequest => int.Parse(Regex.Match(Request.RequestUri.AbsolutePath, "/v(\\d+)/", RegexOptions.Compiled).Groups[1].Value);
 
-        //NOTE: We cannot accept POST here for now unless we modify the routing structure since there's only one POST per
-        // controller currently (with the way we've routed).
-        [HttpGet]
-        [CustomRoute("search")]
-        public HttpResponseMessage Search(
-            [ModelBinder(typeof(QueryStructureModelBinder))]
-            QueryStructure query)
+        public int GetSkipSize(long pageIndex, int pageSize)
         {
-            var result = PerformSearch(query);
-            return result == null
-                ? Request.CreateResponse(HttpStatusCode.NotImplemented)
-                : Request.CreateResponse(HttpStatusCode.OK, CreatePagedContentRepresentation(
-                    result,
-                    LinkTemplate.Search,
-                    new {lucene = query.Lucene}));
-
-        }
-
-        [HttpGet]
-        [CustomRoute("")]
-        public virtual HttpResponseMessage Get()
-        {
-            var result = GetRootContent();
-            return result == null
-                ? Request.CreateResponse(HttpStatusCode.NotImplemented)
-                : Request.CreateResponse(HttpStatusCode.OK, CreateContentRepresentation(result));
-        }
-
-        [HttpGet]
-        [CustomRoute("{id}")]
-        public HttpResponseMessage Get(TId id)
-        {
-            var result = GetItem(id);
-            return result == null
-                ? Request.CreateResponse(HttpStatusCode.NotFound)
-                : Request.CreateResponse(HttpStatusCode.OK, CreateRepresentation(result));
-        }
-
-        
-
-        [HttpGet]
-        [CustomRoute("{id}/meta")]
-        public HttpResponseMessage GetMetadata(TId id)
-        {
-            var result = GetMetadataForItem(id);
-            return result == null
-                ? Request.CreateResponse(HttpStatusCode.NotImplemented)
-                : Request.CreateResponse(HttpStatusCode.OK, result);
-        }
-
-        [HttpPost]
-        [CustomRoute("")]
-        public HttpResponseMessage Post(TRepresentation content)
-        {
-            try
+            if (pageIndex >= 0 && pageSize > 0)
             {
-                var result = CreateNew(content);
-                return result == null
-                    ? Request.CreateResponse(HttpStatusCode.NotImplemented)
-                    : content == null
-                    ? Request.CreateResponse(HttpStatusCode.BadRequest, "content is null")
-                    : Request.CreateResponse(HttpStatusCode.Created, CreateRepresentation(result));
+                return Convert.ToInt32((pageIndex) * pageSize);
             }
-            catch (ModelValidationException exception)
-            {
-                return Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors);
-            }
+            return 0;
         }
-
-        [HttpPut]
-        [CustomRoute("{id}")]
-        public HttpResponseMessage Put(TId id, TRepresentation content)
-        {
-            try
-            {
-                var result = Update(id, content);
-                return result == null
-                    ? Request.CreateResponse(HttpStatusCode.NotImplemented)
-                    : content == null
-                    ? Request.CreateResponse(HttpStatusCode.BadRequest, "content is null")
-                    : Request.CreateResponse(HttpStatusCode.OK, CreateRepresentation(result));
-            }
-            catch (ModelValidationException exception)
-            {
-                return Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors);
-            }
-        }
-
-        [HttpDelete]
-        [CustomRoute("{id}")]
-        public virtual HttpResponseMessage Delete(int id)
-        {
-            return Request.CreateResponse(HttpStatusCode.NotImplemented);
-        }
-
-        [HttpPut]
-        [CustomRoute("{id}/upload")]
-        public async Task<HttpResponseMessage> UploadFile(TId id, string property = "umbracoFile")
-        {
-            if (!Request.Content.IsMimeMultipartContent())
-            {
-                return Request.CreateErrorResponse(HttpStatusCode.UnsupportedMediaType, "The request doesn't contain valid content!");
-            }
-
-            try
-            {
-                var provider = new MultipartMemoryStreamProvider();
-                await Request.Content.ReadAsMultipartAsync(provider);
-
-                if (provider.Contents.Count != 1)
-                    return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "This method only works with a single file at a time");
-
-                StreamContent file = (StreamContent)provider.Contents.First();
-                var name = file.Headers.ContentDisposition.FileName;
-                var contentType = file.Headers.ContentType;
-                var dataStream = await file.ReadAsStreamAsync();
-
-                //build an in-memory file for umbraco
-                var httpFile = new Umbraco.RestApi.Models.MemoryFile(dataStream, contentType.ToString(), name);
-                var entity = SetFileOnProperty(id, property, httpFile);
-                var representation = CreateRepresentation(entity);
-
-                return Request.CreateResponse(HttpStatusCode.OK, representation);
-            }
-            catch (Exception e)
-            {
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, e.Message);
-            }
-        }
-        #endregion
-
-        #region Protected - to override for REST implementation
-
-        protected virtual PagedResult<TEntity> PerformSearch(QueryStructure query)
-        {
-            return null;
-        } 
-
-        protected abstract ContentMetadataRepresentation GetMetadataForItem(TId id);
-
-        protected abstract TEntity GetItem(TId id);
-
-        protected virtual IEnumerable<TEntity> GetRootContent()
-        {
-            return null;
-        }
-
-        protected virtual PagedResult<TEntity> GetChildContent(TId id, long pageIndex = 0, int pageSize = 100)
-        {
-            return null;
-        }
-
-        protected virtual PagedResult<TEntity> GetDescendantContent(TId id, long pageIndex = 0, int pageSize = 100)
-        {
-            return null;
-        }
-
-        protected virtual TEntity CreateNew(TRepresentation content)
-        {
-            return null;
-        }
-
-        protected virtual TEntity Update(TId id, TRepresentation content)
-        {
-            return null;
-        }
-
-        protected virtual TEntity SetFileOnProperty(TId id, string property, System.Web.HttpPostedFileBase file)
-        {
-            return null;
-        } 
-
-        #endregion
-
-        protected abstract TLinkTemplate LinkTemplate { get; }
-
-        /// <summary>
-        /// Returns the current version request
-        /// </summary>
-        protected int CurrentVersionRequest
-        {
-            get { return int.Parse(Regex.Match(Request.RequestUri.AbsolutePath, "/v(\\d+)/", RegexOptions.Compiled).Groups[1].Value); }
-        }
-
-        /// <summary>
-        /// Creates the content list representation from the entities based on the current API version
-        /// </summary>
-        /// <param name="entities"></param>
-        /// <returns></returns>
-        protected UmbracoListRepresentation<TRepresentation> CreateContentRepresentation(IEnumerable<TEntity> entities)
-        {
-            return new UmbracoListRepresentation<TRepresentation>(entities.Select(CreateRepresentation).ToList(), LinkTemplate);
-        }
-
-        protected virtual PagedRepresentationList<TRepresentation> CreatePagedContentRepresentation(
-            PagedResult<TEntity> pagedResult, 
-            Link pagedUriTemplate,
-            object uriTemplateParams = null)
-        {
-            return new PagedRepresentationList<TRepresentation>(
-                pagedResult.Items.Select(CreateRepresentation).ToList(),
-                pagedResult.TotalItems,
-                pagedResult.TotalPages,
-                pagedResult.PageNumber - 1,
-                Convert.ToInt32(pagedResult.PageSize),
-                pagedUriTemplate,
-                uriTemplateParams);
-        }
-
-        /// <summary>
-        /// Creates the content representation from the entity based on the current API version
-        /// </summary>
-        /// <param name="entity"></param>
-        /// <returns></returns>
-        protected abstract TRepresentation CreateRepresentation(TEntity entity);
-        
 
         /// <summary>
         /// Used to throw validation exceptions
         /// </summary>
         /// <param name="modelState"></param>
         /// <param name="content"></param>
+        /// <param name="linkTemplate"></param>
         /// <param name="message"></param>
         /// <param name="id"></param>
         /// <param name="errors"></param>
         /// <returns></returns>
-        protected ModelValidationException ValidationException(
+        protected ModelValidationException ValidationException<TRepresentation>(
             ModelStateDictionary modelState,
             TRepresentation content,
+            Link linkTemplate,
             string message = null, int? id = null, params string[] errors)
         {
-            var metaDataProvider = this.Configuration.Services.GetModelMetadataProvider();
-            
+            var metaDataProvider = Configuration.Services.GetModelMetadataProvider();
             var errorList = new List<ValidationErrorRepresentation>();
+
             foreach (KeyValuePair<string, ModelState> ms in modelState)
             {
                 foreach (var error in ms.Value.Errors)
@@ -308,39 +86,23 @@ namespace Umbraco.RestApi.Controllers
                         Message = error.ErrorMessage
                     });
                 }
-                    
             }
-                
-
+            
             //add additional messages
             foreach (var error in errors)
             {
-                errorList.Add(new ValidationErrorRepresentation {Message = error});
+                errorList.Add(new ValidationErrorRepresentation { Message = error });
             }
 
-            var errorModel = new ValidationErrorListRepresentation(errorList, LinkTemplate, id)
+            var errorModel = new ValidationErrorListRepresentation(errorList, linkTemplate, id)
             {
-                HttpStatus = (int) HttpStatusCode.BadRequest,
-                Message = message ?? "Validation errors occurred"                
+                HttpStatus = (int)HttpStatusCode.BadRequest,
+                Message = message ?? "Validation errors occurred"
             };
 
             return new ModelValidationException(errorModel);
         }
 
-        /// <summary>
-        /// Calculates the skip size based on the paged parameters specified
-        /// </summary>
-        /// <remarks>
-        /// Returns 0 if the page number or page size is zero
-        /// </remarks>
-        public int GetSkipSize(long pageIndex, int pageSize)
-        {
-            if (pageIndex >= 0 && pageSize > 0)
-            {
-                return Convert.ToInt32((pageIndex) * pageSize);
-            }
-            return 0;
-        }
 
         [NonAction]
         protected IDictionary<string, ContentPropertyInfo> GetDefaultFieldMetaData()
@@ -373,14 +135,8 @@ namespace Umbraco.RestApi.Controllers
         }
 
         private CultureInfo _userCulture;
-        protected CultureInfo UserCulture
-        {
-            get { return _userCulture ?? (_userCulture = Security.CurrentUser.GetUserCulture(TextService)); }
-        }
+        protected CultureInfo UserCulture => _userCulture ?? (_userCulture = Security.CurrentUser.GetUserCulture(TextService));
 
-        private ILocalizedTextService TextService
-        {
-            get { return Services.TextService; }
-        }
+        private ILocalizedTextService TextService => Services.TextService;
     }
 }

@@ -9,8 +9,6 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Web.Http;
 using Examine;
-using Examine.LuceneEngine;
-using Examine.Providers;
 using Examine.SearchCriteria;
 using Microsoft.Owin.Testing;
 using Moq;
@@ -18,11 +16,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using Umbraco.Core.Configuration;
-using Umbraco.Core.Logging;
-using Umbraco.Core.Models;
-using Umbraco.Core.Persistence.DatabaseModelDefinitions;
 using Umbraco.Core.PropertyEditors;
-using Umbraco.Core.Services;
 using Umbraco.RestApi.Routing;
 using Umbraco.RestApi.Tests.TestHelpers;
 using System.IO;
@@ -117,13 +111,12 @@ namespace Umbraco.RestApi.Tests
 
                 var djson = JsonConvert.DeserializeObject<JObject>(json);
 
-                Assert.AreEqual("/umbraco/rest/v1/members{?pageIndex,pageSize,orderBy,direction,memberTypeAlias,filter}", djson["_links"]["root"]["href"].Value<string>());
+                Assert.AreEqual("/umbraco/rest/v1/members{?page,size,orderBy,direction,memberTypeAlias,filter}", djson["_links"]["root"]["href"].Value<string>());
                 Assert.AreEqual(0, djson["totalResults"].Value<int>());
               
             }
         }
 
-        [Ignore("This is not implemented yet")]
         [Test]
         public async void Search_200_Result()
         {
@@ -157,7 +150,7 @@ namespace Umbraco.RestApi.Tests
             {
                 var request = new HttpRequestMessage()
                 {
-                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}/search?lucene=parentID:\\-1", RouteConstants.MembersSegment)),
+                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}/search?query=parentID:\\-1", RouteConstants.MembersSegment)),
                     Method = HttpMethod.Get,
                 };
 

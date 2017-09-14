@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
-using Umbraco.RestApi.Links;
 using Umbraco.RestApi.Serialization;
 using WebApi.Hal;
 
@@ -9,11 +8,14 @@ namespace Umbraco.RestApi.Models
 {
     public class ContentMetadataRepresentation : Representation
     {
-        private readonly ILinkTemplate _linkTemplate;       
+        private readonly Link _selfLink;
+        private readonly Link _contentLink;
 
-        public ContentMetadataRepresentation(ILinkTemplate linkTemplate, int id)
+        public ContentMetadataRepresentation(Link selfLink, Link contentLink, int id)
         {
-            _linkTemplate = linkTemplate;
+            _selfLink = selfLink;
+            _contentLink = contentLink;
+
             Id = id;
             Fields = new Dictionary<string, ContentPropertyInfo>();
             Properties = new Dictionary<string, ContentPropertyInfo>();
@@ -36,26 +38,26 @@ namespace Umbraco.RestApi.Models
         {
             get
             {
-                if (_linkTemplate == null) throw new NullReferenceException("LinkTemplate is null");
-                return _linkTemplate.MetaData.Rel;
+                if (_selfLink == null) throw new NullReferenceException("LinkTemplate is null");
+                return _selfLink.Rel;
             }
-            set { throw new NotSupportedException(); }
+            set => throw new NotSupportedException();
         }
 
         public override string Href
         {
             get
             {
-                if (_linkTemplate == null) throw new NullReferenceException("LinkTemplate is null");
-                return _linkTemplate.MetaData.CreateLink(new { id = Id }).Href;
+                if (_selfLink == null) throw new NullReferenceException("LinkTemplate is null");
+                return _selfLink.CreateLink(new { id = Id }).Href;
             }
-            set { throw new NotSupportedException(); }
+            set => throw new NotSupportedException();
         }
 
         protected override void CreateHypermedia()
         {
-            if (_linkTemplate == null) throw new NullReferenceException("LinkTemplate is null");
-            Links.Add(_linkTemplate.Self.CreateLink(new { id = Id }));      
+            if (_contentLink == null) throw new NullReferenceException("LinkTemplate is null");
+            Links.Add(_contentLink.CreateLink(new { id = Id }));      
         }
     }
 }

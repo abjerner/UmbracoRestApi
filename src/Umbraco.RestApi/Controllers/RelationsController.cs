@@ -4,12 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
 using System.Web.Http;
 using Umbraco.Core.Models;
-using Umbraco.Core.Services;
-using Umbraco.RestApi.Links;
 using Umbraco.RestApi.Models;
 using Umbraco.RestApi.Routing;
 using Umbraco.Web;
@@ -18,7 +14,7 @@ using WebApi.Hal;
 namespace Umbraco.RestApi.Controllers
 {
     [UmbracoRoutePrefix("rest/v1/relations")]
-    public class RelationsController : UmbracoHalControllerBase
+    public class RelationsController : UmbracoHalController
     {
         /// <summary>
         /// Default ctor
@@ -33,24 +29,36 @@ namespace Umbraco.RestApi.Controllers
         /// </summary>
         /// <param name="umbracoContext"></param>
         /// <param name="umbracoHelper"></param>
-        /// <param name="searchProvider"></param>
         public RelationsController(
             UmbracoContext umbracoContext,
             UmbracoHelper umbracoHelper)
             : base(umbracoContext, umbracoHelper)
         { }
 
-        //QUERY RELATIONS
+        [HttpGet]
+        [CustomRoute("")]
+        public HttpResponseMessage Get()
+        {   
+            var relationTypes = Services.RelationService.GetAllRelationTypes();
+            var mapped = Mapper.Map<IEnumerable<RelationTypeRepresentation>>(relationTypes).ToList();
+
+            var result = new RelationTypeListRepresentation(mapped);
+            return Request.CreateResponse(HttpStatusCode.OK, result);
+        }
+        
         [HttpGet]
         [CustomRoute("children/{id}")]
         public HttpResponseMessage GetByParent(int id, string relationType = null)
         {
-            var parent = EntityService.Get(id);
+            var parent = Services.EntityService.Get(id);
+
             if (parent == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
+                
+            var relations = (string.IsNullOrEmpty(relationType)) ? Services.RelationService.GetByParent(parent) : Services.RelationService.GetByParent(parent, relationType);
+            var mapped = relations.Select(CreateRepresentation).ToList();
 
-            var relations = (string.IsNullOrEmpty(relationType)) ? RelationService.GetByParent(parent) : RelationService.GetByParent(parent, relationType);
-            var relationsRep = new RelationListRepresentation(relations.Select(CreateRepresentation).ToList(), new RelationLinkTemplate(CurrentVersionRequest));
+            var relationsRep = new RelationListRepresentation( mapped );
             return Request.CreateResponse(HttpStatusCode.OK, relationsRep);
         }
 
@@ -58,15 +66,22 @@ namespace Umbraco.RestApi.Controllers
         [CustomRoute("parents/{id}")]
         public HttpResponseMessage GetByChild(int id, string relationType = null)
         {
-            var child = EntityService.Get(id);
+            var child = Services.EntityService.Get(id);
             if (child == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
+            var type = Services.RelationService.GetRelationTypeByAlias(relationType);
+            if (type == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var relations = (string.IsNullOrEmpty(relationType)) ? RelationService.GetByChild(child) : RelationService.GetByChild(child, relationType);
-            var relationsRep = new RelationListRepresentation(relations.Select(CreateRepresentation).ToList(), new RelationLinkTemplate(CurrentVersionRequest));
+
+            var relations = (string.IsNullOrEmpty(relationType)) ? Services.RelationService.GetByChild(child) : Services.RelationService.GetByChild(child, relationType);
+            var mapped = relations.Select(CreateRepresentation).ToList();
+            var relationsRep = new RelationListRepresentation(mapped);
+
             return Request.CreateResponse(HttpStatusCode.OK, relationsRep);
         }
+        
 
 
 
@@ -75,7 +90,7 @@ namespace Umbraco.RestApi.Controllers
         [CustomRoute("{id}")]
         public HttpResponseMessage Get(int id)
         {
-            var result = RelationService.GetById(id);
+            var result = Services.RelationService.GetById(id);
 
             return result == null
                 ? Request.CreateResponse(HttpStatusCode.NotFound)
@@ -89,7 +104,7 @@ namespace Umbraco.RestApi.Controllers
             try
             {
                 var relation = Mapper.Map<IRelation>(representation);
-                RelationService.Save(relation);
+                Services.RelationService.Save(relation);
                 return Request.CreateResponse(HttpStatusCode.OK, CreateRepresentation(relation));
             }
             catch (ModelValidationException exception)
@@ -104,12 +119,12 @@ namespace Umbraco.RestApi.Controllers
         {
             try
             {
-                var found = RelationService.GetById(id);
+                var found = Services.RelationService.GetById(id);
                 if (found == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
                 Mapper.Map(rel, found);
-                RelationService.Save(found);
+                Services.RelationService.Save(found);
 
                 return Request.CreateResponse(HttpStatusCode.OK, CreateRepresentation(found));
             }
@@ -123,56 +138,44 @@ namespace Umbraco.RestApi.Controllers
         [CustomRoute("{id}")]
         public virtual HttpResponseMessage Delete(int id)
         {
-            var found = RelationService.GetById(id);
+            var found = Services.RelationService.GetById(id);
             if (found == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            RelationService.Delete(found);
+            Services.RelationService.Delete(found);
             return Request.CreateResponse(HttpStatusCode.OK);
         }
-
-
+        
 
         private RelationRepresentation CreateRepresentation(IRelation relation)
         {
             var parentLinkTemplate = GetLinkTemplate(relation.RelationType.ParentObjectType);
             var childLinkTemplate = GetLinkTemplate(relation.RelationType.ChildObjectType);
 
-            var rep = new RelationRepresentation(RelationLinkTemplate, parentLinkTemplate, childLinkTemplate);
+            var rep = new RelationRepresentation(parentLinkTemplate, childLinkTemplate);
             return Mapper.Map(relation, rep);
         }
 
-        private ILinkTemplate GetLinkTemplate(Guid nodeObjectType)
+        private Link GetLinkTemplate(Guid nodeObjectType)
         {
             switch (nodeObjectType.ToString().ToUpper())
             {
                 case Core.Constants.ObjectTypes.ContentItem:
-                    return new ContentLinkTemplate(CurrentVersionRequest);
+                    return LinkTemplates.PublishedContent.Self;
+
                 case Core.Constants.ObjectTypes.Media:
-                    return new MediaLinkTemplate(CurrentVersionRequest);
+                    return LinkTemplates.Media.Self;
+
                 case Core.Constants.ObjectTypes.Member:
-                    return new MembersLinkTemplate(CurrentVersionRequest);
+                    return LinkTemplates.Members.Self;
+
                 default:
                     break;
             }
 
             return null;
         }
-
-        private IRelationLinkTemplate RelationLinkTemplate
-        {
-            get { return new RelationLinkTemplate(CurrentVersionRequest); }
-        }
-
-        protected IRelationService RelationService
-        {
-            get { return ApplicationContext.Services.RelationService; }
-        }
-
-        protected IEntityService EntityService
-        {
-            get { return ApplicationContext.Services.EntityService; }
-        }
+        
     }
 
 

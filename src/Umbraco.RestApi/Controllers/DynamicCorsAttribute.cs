@@ -2,13 +2,8 @@ using System;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web;
 using System.Web.Cors;
-using System.Web.Http.Controllers;
 using System.Web.Http.Cors;
-using System.Web.Http.Filters;
-using Microsoft.Owin;
-using Umbraco.Web.WebApi;
 
 namespace Umbraco.RestApi.Controllers
 {

@@ -5,7 +5,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using Examine;
 using Examine.Providers;
 using Examine.SearchCriteria;
 using Microsoft.Owin.Testing;
@@ -85,7 +84,7 @@ namespace Umbraco.RestApi.Tests
             {
                 var request = new HttpRequestMessage()
                 {
-                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}/{1}/search?lucene=parentID:\\-1", RouteConstants.ContentSegment, RouteConstants.PublishedSegment)),
+                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}/{1}/search?query=parentID:\\-1", RouteConstants.ContentSegment, RouteConstants.PublishedSegment)),
                     Method = HttpMethod.Get,
                 };
 
@@ -141,7 +140,7 @@ namespace Umbraco.RestApi.Tests
 
                 Assert.AreEqual("/umbraco/rest/v1/content/published/123", djson["_links"]["self"]["href"].Value<string>());
                 Assert.AreEqual("/umbraco/rest/v1/content/published/456", djson["_links"]["parent"]["href"].Value<string>());
-                Assert.AreEqual("/umbraco/rest/v1/content/published/123/children{?pageIndex,pageSize}", djson["_links"]["children"]["href"].Value<string>());
+                Assert.AreEqual("/umbraco/rest/v1/content/published/123/children{?page,size,query}", djson["_links"]["children"]["href"].Value<string>());
                 Assert.AreEqual("/umbraco/rest/v1/content/published", djson["_links"]["root"]["href"].Value<string>());
 
                 var properties = djson["properties"].ToObject<IDictionary<string, object>>();
@@ -228,14 +227,13 @@ namespace Umbraco.RestApi.Tests
                 var djson = JsonConvert.DeserializeObject<JObject>(json);
 
                 Assert.AreEqual("/umbraco/rest/v1/content/published", djson["_links"]["root"]["href"].Value<string>());
-                Assert.AreEqual(2, djson["totalResults"].Value<int>());
                 Assert.AreEqual(2, djson["_links"]["content"].Count());
                 Assert.AreEqual(2, djson["_embedded"]["content"].Count()); 
             }
         }
 
         [Test]
-        public async void Post_Is_501_Response()
+        public async void Post_Is_405_Response()
         {
             var startup = new TestStartup((request, umbCtx, typedContent, serviceContext, searchProvider) => { });
 
@@ -256,13 +254,13 @@ namespace Umbraco.RestApi.Tests
                 var json = await ((StreamContent)result.Content).ReadAsStringAsync();
                 Console.Write(JsonConvert.SerializeObject(JsonConvert.DeserializeObject(json), Formatting.Indented));
 
-                //NOTE: NotImplemented because we cannot post for published content
-                Assert.AreEqual(HttpStatusCode.NotImplemented, result.StatusCode);
+                //NOTE: MethodNotAllowed because we cannot post for published content
+                Assert.AreEqual(HttpStatusCode.MethodNotAllowed, result.StatusCode);
             }
         }
 
         [Test]
-        public async void Put_Is_501_Response()
+        public async void Put_Is_405_Response()
         {
             var startup = new TestStartup((request, umbCtx, typedContent, serviceContext, searchProvider) => { });
 
@@ -283,13 +281,13 @@ namespace Umbraco.RestApi.Tests
                 var json = await ((StreamContent)result.Content).ReadAsStringAsync();
                 Console.Write(JsonConvert.SerializeObject(JsonConvert.DeserializeObject(json), Formatting.Indented));
 
-                //NOTE: NotImplemented because we cannot post for published content
-                Assert.AreEqual(HttpStatusCode.NotImplemented, result.StatusCode);
+                //NOTE: MethodNotAllowed because we cannot post for published content
+                Assert.AreEqual(HttpStatusCode.MethodNotAllowed, result.StatusCode);
             }
         }
 
         [Test]
-        public async void Delete_Is_501_Response()
+        public async void Delete_Is_405_Response()
         {
             var startup = new TestStartup((request, umbCtx, typedContent, serviceContext, searchProvider) => { });
 
@@ -310,8 +308,8 @@ namespace Umbraco.RestApi.Tests
                 var json = await ((StreamContent)result.Content).ReadAsStringAsync();
                 Console.Write(JsonConvert.SerializeObject(JsonConvert.DeserializeObject(json), Formatting.Indented));
 
-                //NOTE: NotImplemented because we cannot post for published content
-                Assert.AreEqual(HttpStatusCode.NotImplemented, result.StatusCode);
+                //NOTE: MethodNotAllowed because we cannot post for published content
+                Assert.AreEqual(HttpStatusCode.MethodNotAllowed, result.StatusCode);
 
             }
         }

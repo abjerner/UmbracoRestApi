@@ -1,21 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Web.Cors;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
-using Microsoft.Owin.Builder;
-using Microsoft.Owin.Logging;
 using Owin;
 using umbraco;
 using Umbraco.Core;
 using Umbraco.Core.Configuration;
 using Umbraco.Core.Models.Identity;
 using Umbraco.Core.Security;
-using Umbraco.RestApi.Controllers;
-using Umbraco.Web;
 using Umbraco.Web.Security.Identity;
 
 namespace Umbraco.RestApi

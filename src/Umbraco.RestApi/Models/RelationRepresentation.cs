@@ -1,25 +1,22 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Umbraco.Core.Models.EntityBase;
-using Umbraco.RestApi.Links;
+using Umbraco.Core.Models;
 using WebApi.Hal;
 
 namespace Umbraco.RestApi.Models
 {
     public class RelationRepresentation : Representation
     {
-        private readonly ILinkTemplate _parentLink;
-        private readonly ILinkTemplate _childLink;
-        private readonly IRelationLinkTemplate _relationLink;
+        private readonly Link _parentLink;
+        private readonly Link _childLink;
 
-        public RelationRepresentation(IRelationLinkTemplate linktemplate, ILinkTemplate parentLinkTemplate, ILinkTemplate childLinkTemplate)
+        public RelationRepresentation()
         {
-            _parentLink = parentLinkTemplate;
-            _childLink = childLinkTemplate;
-            _relationLink = linktemplate;
+
+        }
+
+        public RelationRepresentation(Link parentLink, Link childLink)
+        {
+
         }
 
         public int Id { get; set; }
@@ -27,24 +24,33 @@ namespace Umbraco.RestApi.Models
         public int ChildId { get; set; }
         public int ParentId { get; set; }
 
+        public PublishedItemType ParentType { get; set; }
+        public PublishedItemType ChildType { get; set; }
+
         public string Comment { get; set; }
         public DateTime CreateDate { get; set; }
         public string RelationTypeAlias { get; set; }
 
+        
         protected override void CreateHypermedia()
         {
             base.CreateHypermedia();
 
             //link to self
-            Href = _relationLink.ContentItem.CreateLink(new { id = Id }).Href;
-            Rel = _relationLink.ContentItem.Rel;
+            Href = LinkTemplates.Relations.Self.CreateLink(new { id = Id }).Href;
+            Rel = LinkTemplates.Relations.Self.Rel;
+            
 
-            if (_parentLink != null)
-                Links.Add(_parentLink.Self.CreateLink("parent", new { id = ParentId }));
+            if(_parentLink != null)
+            {
+                Links.Add(_parentLink);
+            }
 
             if (_childLink != null)
-                Links.Add(_childLink.Self.CreateLink("child", new { id = ChildId }));
-
+            {
+                Links.Add(_childLink);
+            }
+            
         }
 
 

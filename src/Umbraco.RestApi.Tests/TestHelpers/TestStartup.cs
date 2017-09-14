@@ -1,7 +1,6 @@
 using System;
 using System.Net.Http;
 using System.Web.Http;
-using System.Web.Http.Cors;
 using System.Web.Http.Dispatcher;
 using AutoMapper;
 using Examine.Providers;
@@ -42,6 +41,9 @@ namespace Umbraco.RestApi.Tests.TestHelpers
 
                 var relationRepresentationMapper = new RelationModelMapper();
                 relationRepresentationMapper.ConfigureMappings(configuration, umbracoContext.Application);
+
+                var publishedContentRepresentationMapper = new PublishedContentMapper();
+                publishedContentRepresentationMapper.ConfigureMappings(configuration, umbracoContext.Application);
             });
         }
 

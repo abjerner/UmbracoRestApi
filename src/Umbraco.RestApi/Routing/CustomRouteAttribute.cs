@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Web.Http;
 using System.Web.Http.Routing;
 
@@ -15,14 +14,14 @@ namespace Umbraco.RestApi.Routing
 
         public string Name
         {
-            get { return InnerAttribute.Name; }
-            set { InnerAttribute.Name = value; }
+            get => InnerAttribute.Name;
+            set => InnerAttribute.Name = value;
         }
 
         public int Order
         {
-            get { return InnerAttribute.Order; }
-            set { InnerAttribute.Order = value; }
+            get => InnerAttribute.Order;
+            set => InnerAttribute.Order = value;
         }
 
         public RouteAttribute InnerAttribute;

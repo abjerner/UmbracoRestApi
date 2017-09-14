@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.IO;
 using System.Web;
 
 namespace Umbraco.RestApi.Models
@@ -21,25 +16,13 @@ namespace Umbraco.RestApi.Models
             this.fileName = fileName;
         }
 
-        public override int ContentLength
-        {
-            get { return (int)stream.Length; }
-        }
+        public override int ContentLength => (int)stream.Length;
 
-        public override string ContentType
-        {
-            get { return contentType; }
-        }
+        public override string ContentType => contentType;
 
-        public override string FileName
-        {
-            get { return fileName; }
-        }
+        public override string FileName => fileName;
 
-        public override Stream InputStream
-        {
-            get { return stream; }
-        }
+        public override Stream InputStream => stream;
 
         public override void SaveAs(string filename)
         {

@@ -52,14 +52,8 @@ namespace Umbraco.RestApi.Routing
         /// Uses reflection to get the internal property in umb core, we don't want to expose this publicly in the core
         /// until we sort out the Global configuration bits and make it an interface, put them in the correct place, etc...
         /// </remarks>
-        internal static string UmbracoMvcArea
-        {
-            get
-            {
-                return _umbracoMvcArea ??
-                       //Use reflection to get the type and value and cache
-                       (_umbracoMvcArea = (string)Assembly.Load("Umbraco.Core").GetType("Umbraco.Core.Configuration.GlobalSettings").GetStaticProperty("UmbracoMvcArea"));
-            }
-        }
+        internal static string UmbracoMvcArea => _umbracoMvcArea ??
+                                                 //Use reflection to get the type and value and cache
+                                                 (_umbracoMvcArea = (string)Assembly.Load("Umbraco.Core").GetType("Umbraco.Core.Configuration.GlobalSettings").GetStaticProperty("UmbracoMvcArea"));
     }
 }

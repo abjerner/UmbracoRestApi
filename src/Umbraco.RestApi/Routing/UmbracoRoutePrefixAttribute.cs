@@ -25,10 +25,7 @@ namespace Umbraco.RestApi.Routing
         /// <summary>
         /// Gets the prefix with the umbraco back office configured route 
         /// </summary>
-        public override string Prefix
-        {
-            get { return UmbracoMvcArea.EnsureEndsWith('/') + base.Prefix.TrimEnd('/'); }
-        }
+        public override string Prefix => UmbracoMvcArea.EnsureEndsWith('/') + base.Prefix.TrimEnd('/');
 
         private readonly bool _fromConfig;
         private string _umbracoMvcArea;

@@ -1,17 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Web.Http;
-using Examine;
-using Examine.LuceneEngine;
-using Examine.Providers;
-using Examine.SearchCriteria;
 using Microsoft.Owin.Testing;
 using Moq;
 using Newtonsoft.Json;
@@ -20,12 +15,10 @@ using NUnit.Framework;
 using Umbraco.Core.Configuration;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
-using Umbraco.Core.Persistence.DatabaseModelDefinitions;
 using Umbraco.Core.PropertyEditors;
 using Umbraco.Core.Services;
 using Umbraco.RestApi.Routing;
 using Umbraco.RestApi.Tests.TestHelpers;
-using System.IO;
 using Umbraco.Core.Models.EntityBase;
 
 namespace Umbraco.RestApi.Tests

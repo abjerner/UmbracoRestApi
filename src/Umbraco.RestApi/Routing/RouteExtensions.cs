@@ -5,7 +5,6 @@ using System.Web.Http;
 using System.Web.Http.Controllers;
 using System.Web.Http.Dispatcher;
 using System.Web.Http.Routing;
-using System.Web.Routing;
 
 namespace Umbraco.RestApi.Routing
 {

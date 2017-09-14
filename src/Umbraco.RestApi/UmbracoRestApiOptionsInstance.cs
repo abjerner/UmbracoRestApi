@@ -1,6 +1,3 @@
-using System.CodeDom;
-using System.Web.Cors;
-
 namespace Umbraco.RestApi
 {
     internal static class UmbracoRestApiOptionsInstance

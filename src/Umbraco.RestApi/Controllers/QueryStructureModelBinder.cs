@@ -1,9 +1,7 @@
-using System;
 using System.Linq;
 using System.Net.Http;
 using System.Web.Http.Controllers;
 using System.Web.Http.ModelBinding;
-using ClientDependency.Core;
 using Umbraco.Core;
 using Umbraco.RestApi.Models;
 
@@ -25,20 +23,20 @@ namespace Umbraco.RestApi.Controllers
             var query = actionContext.Request.GetQueryNameValuePairs().ToArray();
 
             int pageSize;
-            if (query.Any(x => x.Key.InvariantEquals("pageSize")) && int.TryParse(query.Single(x => x.Key.InvariantEquals("pageSize")).Value, out pageSize))
+            if (query.Any(x => x.Key.InvariantEquals("size")) && int.TryParse(query.Single(x => x.Key.InvariantEquals("size")).Value, out pageSize))
             {
                 queryStructure.PageSize = pageSize;
             }
 
             int pageIndex;
-            if (query.Any(x => x.Key.InvariantEquals("pageIndex")) && int.TryParse(query.Single(x => x.Key.InvariantEquals("pageIndex")).Value, out pageIndex))
+            if (query.Any(x => x.Key.InvariantEquals("page")) && int.TryParse(query.Single(x => x.Key.InvariantEquals("page")).Value, out pageIndex))
             {
-                queryStructure.PageIndex = pageIndex;
+                queryStructure.Page = pageIndex;
             }
 
-            if (query.Any(x => x.Key.InvariantEquals("lucene")))
+            if (query.Any(x => x.Key.InvariantEquals("query")))
             {
-                queryStructure.Lucene = query.Single(x => x.Key.InvariantEquals("lucene")).Value;
+                queryStructure.Query = query.Single(x => x.Key.InvariantEquals("query")).Value;
             }
 
             bindingContext.Model = queryStructure;

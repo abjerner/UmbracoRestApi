@@ -20,14 +20,14 @@ namespace Umbraco.RestApi.Models
     {
         public QueryStructure()
         {
-            PageIndex = 0;
+            Page = 0;
             PageSize = 100;
         }
 
-        public long PageIndex { get; set; }
+        public long Page { get; set; }
         public int PageSize { get; set; }
 
 
-        public string Lucene { get; set; }
+        public string Query { get; set; }
     }
 }
