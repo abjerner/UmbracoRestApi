@@ -18,6 +18,10 @@ namespace Umbraco.RestApi.Models
 
             Links.Add(LinkTemplates.Content.Root);
             Links.Add(LinkTemplates.Content.Search);
+
+            Links.Add(LinkTemplates.Content.PagedChildren);
+            Links.Add(LinkTemplates.Content.PagedDescendants);
+            Links.Add(LinkTemplates.Content.PagedAncestors);
         }
     }
 }

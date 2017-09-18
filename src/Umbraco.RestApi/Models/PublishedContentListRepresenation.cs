@@ -19,6 +19,11 @@ namespace Umbraco.RestApi.Models {
             Links.Add(new Link("self", Href));
             Links.Add( LinkTemplates.PublishedContent.Root );
 
+            Links.Add(LinkTemplates.PublishedContent.PagedChildren);
+            Links.Add(LinkTemplates.PublishedContent.PagedDescendants);
+            Links.Add(LinkTemplates.PublishedContent.PagedAncestors);
+
+
             Links.Add(LinkTemplates.PublishedContent.Query);
             Links.Add(LinkTemplates.PublishedContent.Search);
             Links.Add(LinkTemplates.PublishedContent.Url);
