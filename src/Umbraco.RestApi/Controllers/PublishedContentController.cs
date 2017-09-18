@@ -172,7 +172,7 @@ namespace Umbraco.RestApi.Controllers
             //TODO: This would be more efficient if we went straight to the ExamineManager and used it's built in Skip method
             // but then we have to write our own model mappers and don't have time for that right now.
             
-            var result = Umbraco.ContentQuery.TypedSearch(_searchProvider.CreateSearchCriteria().RawQuery(query.Query), _searchProvider).ToArray();
+            var result = Umbraco.ContentQuery.TypedSearch(SearchProvider.CreateSearchCriteria().RawQuery(query.Query), _searchProvider).ToArray();
             var paged = result.Skip(GetSkipSize(query.Page, query.PageSize)).Take(query.PageSize);
 
             var items = AutoMapper.Mapper.Map<IEnumerable<PublishedContentRepresentation>>(paged).ToList();
