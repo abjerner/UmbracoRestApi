@@ -105,6 +105,16 @@ namespace Umbraco.RestApi.Controllers
             return MediaService.GetById(id);
         }
 
+        public override HttpResponseMessage Delete(int id)
+        {
+            var media = MediaService.GetById(id);
+            if (media == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            MediaService.Delete(media);
+            return Request.CreateResponse(HttpStatusCode.OK);
+        }
+
         protected override PagedResult<IMedia> GetChildContent(int id, long pageIndex = 0, int pageSize = 100)
         {
             long total;

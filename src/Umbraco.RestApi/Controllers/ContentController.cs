@@ -106,6 +106,16 @@ namespace Umbraco.RestApi.Controllers
             return ContentService.GetById(id);                       
         }
 
+        public override HttpResponseMessage Delete(int id)
+        {
+            var content = ContentService.GetById(id);
+            if (content == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            ContentService.Delete(content);
+            return Request.CreateResponse(HttpStatusCode.OK);
+        }
+
         protected override PagedResult<IContent> GetChildContent(int id, long pageIndex = 0, int pageSize = 100)
         {
             long total;
