@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Umbraco.Core.Cache;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using Umbraco.Core.PropertyEditors;
@@ -35,7 +36,8 @@ namespace Umbraco.RestApi.Tests.TestHelpers
             var mockPropertyEditorResolver = new Mock<PropertyEditorResolver>(
                 Mock.Of<IServiceProvider>(),
                 Mock.Of<ILogger>(),
-                producerList);
+                producerList,
+                Mock.Of< IRuntimeCacheProvider>());
 
             mockPropertyEditorResolver.Setup(x => x.PropertyEditors).Returns(new[] { new ModelMocks.SimplePropertyEditor() });
 
