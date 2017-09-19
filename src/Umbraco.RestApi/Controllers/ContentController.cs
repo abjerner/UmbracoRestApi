@@ -191,6 +191,16 @@ namespace Umbraco.RestApi.Controllers
             return found;
         }
 
+        protected override IContent Publish(int id)
+        {
+            var found = ContentService.GetById(id);
+            if (found == null) throw new HttpResponseException(HttpStatusCode.NotFound);
+
+            ContentService.Publish(found, Security.CurrentUser.Id);
+
+            return found;
+        }
+
         protected override IContentLinkTemplate<int> LinkTemplate
         {
             get { return new ContentLinkTemplate(CurrentVersionRequest); }

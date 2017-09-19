@@ -179,6 +179,23 @@ namespace Umbraco.RestApi.Controllers
                 return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, e.Message);
             }
         }
+
+        [HttpPut]
+        [CustomRoute("{id}/publish")]
+        public HttpResponseMessage PublishContent(TId id)
+        {
+            try
+            {
+                var result = Publish(id);
+                return result == null
+                    ? Request.CreateResponse(HttpStatusCode.NotImplemented)
+                    : Request.CreateResponse(HttpStatusCode.OK, CreateRepresentation(result));
+            }
+            catch (ModelValidationException exception)
+            {
+                return Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors);
+            }
+        }
         #endregion
 
         #region Protected - to override for REST implementation
@@ -221,6 +238,11 @@ namespace Umbraco.RestApi.Controllers
         {
             return null;
         } 
+
+        protected virtual TEntity Publish(TId id)
+        {
+            return null;
+        }
 
         #endregion
 
