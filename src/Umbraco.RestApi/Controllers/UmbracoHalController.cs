@@ -237,8 +237,9 @@ namespace Umbraco.RestApi.Controllers
         protected virtual TEntity SetFileOnProperty(TId id, string property, System.Web.HttpPostedFileBase file)
         {
             return null;
-        } 
+        }
 
+        //TODO: Check this - need to decouple all of the inheritance
         protected virtual TEntity Publish(TId id)
         {
             return null;

@@ -191,6 +191,7 @@ namespace Umbraco.RestApi.Controllers
             return found;
         }
 
+        //TODO: Check this
         protected override IContent Publish(int id)
         {
             var found = ContentService.GetById(id);
