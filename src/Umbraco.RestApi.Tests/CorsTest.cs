@@ -15,13 +15,14 @@ using Umbraco.Core.Models;
 using Umbraco.Core.PropertyEditors;
 using Umbraco.RestApi.Routing;
 using Umbraco.RestApi.Tests.TestHelpers;
+using Task = System.Threading.Tasks.Task;
 
 namespace Umbraco.RestApi.Tests
 {
     [TestFixture]
     public class CorsTests
     {
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void FixtureSetUp()
         {
             ConfigurationManager.AppSettings.Set("umbracoPath", "~/umbraco");
@@ -39,7 +40,7 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
-        public async void Default_Options_Allow_Any_Origin()
+        public async Task Default_Options_Allow_Any_Origin()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services,
@@ -84,7 +85,7 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
-        public async void Supports_Creds()
+        public async Task Supports_Creds()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services,
@@ -134,7 +135,7 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
-        public async void Supports_Post()
+        public async Task Supports_Post()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services

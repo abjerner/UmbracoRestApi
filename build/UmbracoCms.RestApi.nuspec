@@ -10,7 +10,7 @@
     <summary>Umbraco REST Api</summary>
     <language>en-US</language>
     <licenseUrl>http://opensource.org/licenses/MIT</licenseUrl>
-    <projectUrl>https://github.com/umbraco/UmbracoRestApi</projectUrl>
+    <projectUrl>https://github.com/umbraco/UmbracoRestApi </projectUrl>
     <iconUrl>http://umbraco.com/media/357769/100px_transparent.png</iconUrl>
     <tags>umbraco rest webapi hal</tags>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>

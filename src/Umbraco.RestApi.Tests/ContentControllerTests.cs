@@ -21,13 +21,14 @@ using Umbraco.Core.Persistence.DatabaseModelDefinitions;
 using Umbraco.Core.PropertyEditors;
 using Umbraco.RestApi.Routing;
 using Umbraco.RestApi.Tests.TestHelpers;
+using Task = System.Threading.Tasks.Task;
 
 namespace Umbraco.RestApi.Tests
 {
     [TestFixture]
     public class ContentControllerTests
     {
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void FixtureSetUp()
         {
             ConfigurationManager.AppSettings.Set("umbracoPath", "~/umbraco");
@@ -45,7 +46,7 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
-        public async void Get_Root_With_OPTIONS()
+        public async Task Get_Root_With_OPTIONS()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services,
@@ -89,7 +90,7 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
-        public async void Get_Root_Result()
+        public async Task Get_Root_Result()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services,
@@ -135,7 +136,7 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
-        public async void Search_200_Result()
+        public async Task Search_200_Result()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
@@ -185,7 +186,7 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
-        public async void Get_Id_Result()
+        public async Task Get_Id_Result()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
@@ -234,7 +235,7 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
-        public async void Get_Metadata_Result()
+        public async Task Get_Metadata_Result()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
@@ -278,7 +279,7 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
-        public async void Get_Children_Is_200_Response()
+        public async Task Get_Children_Is_200_Response()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
@@ -315,7 +316,7 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
-        public async void Get_Children_Is_With_Params_Result()
+        public async Task Get_Children_Is_With_Params_Result()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
@@ -367,7 +368,7 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
-        public async void Post_Is_201_Response()
+        public async Task Post_Is_201_Response()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
@@ -408,7 +409,7 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
-        public async void Post_Is_400_Validation_Required_Fields()
+        public async Task Post_Is_400_Validation_Required_Fields()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
@@ -457,7 +458,7 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
-        public async void Post_Is_400_Validation_Property_Missing()
+        public async Task Post_Is_400_Validation_Property_Missing()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
@@ -505,7 +506,7 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
-        public async void Post_Is_400_Validation_Property_Required()
+        public async Task Post_Is_400_Validation_Property_Required()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
@@ -556,7 +557,7 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
-        public async void Put_Is_200_Response()
+        public async Task Put_Is_200_Response()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
@@ -583,6 +584,43 @@ namespace Umbraco.RestApi.Tests
     ""TestProperty1"": ""property value1"",
     ""testProperty2"": ""property value2""
   }
+}", Encoding.UTF8, "application/json");
+
+                Console.WriteLine(request);
+                var result = await server.HttpClient.SendAsync(request);
+                Console.WriteLine(result);
+
+                var json = await ((StreamContent)result.Content).ReadAsStringAsync();
+                Console.Write(JsonConvert.SerializeObject(JsonConvert.DeserializeObject(json), Formatting.Indented));
+
+                Assert.AreEqual(HttpStatusCode.OK, result.StatusCode);
+            }
+        }
+
+        //TODO: Check this test
+        [Test]
+        public async Task Publish_Is_200_Response()
+        {
+            var startup = new TestStartup(
+                 //This will be invoked before the controller is created so we can modify these mocked services
+                 (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                 {
+                     var mockContentService = Mock.Get(serviceContext.ContentService);
+
+                     mockContentService.Setup(x => x.GetById(It.IsAny<int>())).Returns(() => ModelMocks.SimpleMockedContent());
+                 });
+
+            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
+            {
+                var request = new HttpRequestMessage()
+                {
+                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}/123/publish", RouteConstants.ContentSegment)),
+                    Method = HttpMethod.Put,
+                };
+
+                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/hal+json"));
+                request.Content = new StringContent(@"{
+  ""id"": ""123""
 }", Encoding.UTF8, "application/json");
 
                 Console.WriteLine(request);

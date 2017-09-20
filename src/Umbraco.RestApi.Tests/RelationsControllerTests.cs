@@ -20,6 +20,7 @@ using Umbraco.Core.Services;
 using Umbraco.RestApi.Routing;
 using Umbraco.RestApi.Tests.TestHelpers;
 using Umbraco.Core.Models.EntityBase;
+using Task = System.Threading.Tasks.Task;
 
 namespace Umbraco.RestApi.Tests
 {
@@ -27,7 +28,7 @@ namespace Umbraco.RestApi.Tests
     [TestFixture]
     public class RelationsControllerTests
     {
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void FixtureSetUp()
         {
             ConfigurationManager.AppSettings.Set("umbracoPath", "~/umbraco");
@@ -45,7 +46,7 @@ namespace Umbraco.RestApi.Tests
 
 
         [Test]
-        public async void Get_Root_With_OPTIONS()
+        public async Task Get_Root_With_OPTIONS()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services,
@@ -75,7 +76,7 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
-        public async void Get_Root_Result()
+        public async Task Get_Root_Result()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services,
@@ -114,7 +115,7 @@ namespace Umbraco.RestApi.Tests
 
 
         [Test]
-        public async void Get_Id_Result()
+        public async Task Get_Id_Result()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
@@ -153,7 +154,7 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
-        public async void Post_Is_201_Response()
+        public async Task Post_Is_201_Response()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
@@ -190,7 +191,7 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
-        public async void Post_Is_400_Validation_Required_Fields()
+        public async Task Post_Is_400_Validation_Required_Fields()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
@@ -234,7 +235,7 @@ namespace Umbraco.RestApi.Tests
 
     
         [Test]
-        public async void Put_Is_200_Response()
+        public async Task Put_Is_200_Response()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services

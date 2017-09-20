@@ -15,13 +15,14 @@ using NUnit.Framework;
 using Umbraco.Core.Configuration;
 using Umbraco.RestApi.Routing;
 using Umbraco.RestApi.Tests.TestHelpers;
+using Task = System.Threading.Tasks.Task;
 
 namespace Umbraco.RestApi.Tests
 {
     [TestFixture]
     public class PublishedContentControllerTests
     {
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void TearDown()
         {
             ConfigurationManager.AppSettings.Set("umbracoPath", "~/umbraco");
@@ -29,7 +30,7 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
-        public async void Get_Children_Is_200_Response()
+        public async Task Get_Children_Is_200_Response()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
@@ -61,7 +62,7 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
-        public async void Search_200_Result()
+        public async Task Search_200_Result()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
@@ -102,7 +103,7 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
-        public async void Get_Id_Result()
+        public async Task Get_Id_Result()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
@@ -151,7 +152,7 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
-        public async void Get_Root_With_OPTIONS()
+        public async Task Get_Root_With_OPTIONS()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services,
@@ -191,7 +192,7 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
-        public async void Get_Root_Result()
+        public async Task Get_Root_Result()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services,
@@ -233,6 +234,7 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
+        public async Task Post_Is_501_Response()
         public async void Post_Is_405_Response()
         {
             var startup = new TestStartup((request, umbCtx, typedContent, serviceContext, searchProvider) => { });
@@ -260,6 +262,7 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
+        public async Task Put_Is_501_Response()
         public async void Put_Is_405_Response()
         {
             var startup = new TestStartup((request, umbCtx, typedContent, serviceContext, searchProvider) => { });
@@ -287,6 +290,7 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
+        public async Task Delete_Is_501_Response()
         public async void Delete_Is_405_Response()
         {
             var startup = new TestStartup((request, umbCtx, typedContent, serviceContext, searchProvider) => { });

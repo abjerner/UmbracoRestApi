@@ -244,6 +244,17 @@ namespace Umbraco.RestApi.Controllers
 
                 Services.ContentService.Save(found);
 
+            return found;
+        }
+
+        //TODO: Check this
+        protected override IContent Publish(int id)
+        {
+            var found = ContentService.GetById(id);
+            if (found == null) throw new HttpResponseException(HttpStatusCode.NotFound);
+
+            ContentService.Publish(found, Security.CurrentUser.Id);
+
                 var rep = Mapper.Map<ContentRepresentation>(found);
                 return Request.CreateResponse(HttpStatusCode.OK, rep);
             }

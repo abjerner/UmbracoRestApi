@@ -34,6 +34,25 @@ namespace Umbraco.RestApi.Controllers
 
         protected int CurrentVersionRequest => int.Parse(Regex.Match(Request.RequestUri.AbsolutePath, "/v(\\d+)/", RegexOptions.Compiled).Groups[1].Value);
 
+/*
+        [HttpPut]
+        [CustomRoute("{id}/publish")]
+        public HttpResponseMessage PublishContent(TId id)
+        {
+            try
+            {
+                var result = Publish(id);
+                return result == null
+                    ? Request.CreateResponse(HttpStatusCode.NotImplemented)
+                    : Request.CreateResponse(HttpStatusCode.OK, CreateRepresentation(result));
+            }
+            catch (ModelValidationException exception)
+            {
+                return Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors);
+            }
+        }*/
+
+        
         public int GetSkipSize(long pageIndex, int pageSize)
         {
             if (pageIndex >= 0 && pageSize > 0)
