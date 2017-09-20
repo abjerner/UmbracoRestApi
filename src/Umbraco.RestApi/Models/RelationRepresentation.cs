@@ -11,21 +11,18 @@ namespace Umbraco.RestApi.Models
 
         public RelationRepresentation()
         {
-
         }
 
         public RelationRepresentation(Link parentLink, Link childLink)
         {
-
+            _parentLink = parentLink;
+            _childLink = childLink;
         }
 
         public int Id { get; set; }
 
         public int ChildId { get; set; }
         public int ParentId { get; set; }
-
-        public PublishedItemType ParentType { get; set; }
-        public PublishedItemType ChildType { get; set; }
 
         public string Comment { get; set; }
         public DateTime CreateDate { get; set; }

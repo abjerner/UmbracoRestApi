@@ -1,50 +1,46 @@
-﻿using AutoMapper;
-using System;
+﻿using System;
+using AutoMapper;
 using Umbraco.Core;
 using Umbraco.Core.Models;
 using Umbraco.Core.Models.Mapping;
 
-namespace Umbraco.RestApi.Models
+namespace Umbraco.RestApi.Models.Mapping
 {
-    class RelationModelMapper : MapperConfiguration
+    public class RelationModelMapper : MapperConfiguration
     {
         
         public override void ConfigureMappings(IConfiguration config, ApplicationContext applicationContext)
         {
             config.CreateMap<IRelation, RelationRepresentation>()
+                .IgnoreHalProperties()
                 .ForMember(representation => representation.RelationTypeAlias, expression => expression.MapFrom(member => member.RelationType.Alias));
-
-
+            
             config.CreateMap<IRelationType, RelationTypeRepresentation>()
-                .ForMember(rep => rep.ParentEntityType, ex => ex.ResolveUsing(content => convertGuidToPublishedType(content.ParentObjectType)))
-                .ForMember(rep => rep.ChildEntityType, ex => ex.ResolveUsing(content => convertGuidToPublishedType(content.ChildObjectType)));
-
-
+                .IgnoreHalProperties()
+                .ForMember(rep => rep.ParentEntityType, ex => ex.ResolveUsing(content => ConvertGuidToPublishedType(content.ParentObjectType)))
+                .ForMember(rep => rep.ChildEntityType, ex => ex.ResolveUsing(content => ConvertGuidToPublishedType(content.ChildObjectType)));
 
             config.CreateMap<RelationRepresentation, IRelation>()
-                .ConstructUsing((RelationRepresentation source) => new Relation(source.ParentId, source.ChildId, ApplicationContext.Current.Services.RelationService.GetRelationTypeByAlias(source.RelationTypeAlias)))
-
-                .ForMember(dto => dto.ParentId, expression => expression.Ignore())
-                .ForMember(dto => dto.ChildId, expression => expression.Ignore())
-
+                .ConstructUsing(source => new Relation(source.ParentId, source.ChildId, applicationContext.Services.RelationService.GetRelationTypeByAlias(source.RelationTypeAlias)))
+                .ForMember(dto => dto.DeletedDate, expression => expression.Ignore())
+                .ForMember(dto => dto.UpdateDate, expression => expression.Ignore())
+                .ForMember(dto => dto.Key, expression => expression.Ignore())                
+                .ForMember(dto => dto.RelationType, expression => expression.MapFrom(x => applicationContext.Services.RelationService.GetRelationTypeByAlias(x.RelationTypeAlias)))
                 .ForMember(dest => dest.Id, expression => expression.Condition(representation => (representation.Id > 0)));
         }
 
 
-        private PublishedItemType convertGuidToPublishedType(Guid guid)
+        private static PublishedItemType ConvertGuidToPublishedType(Guid guid)
         {
-            var id = guid.ToString();
-
-            if (id == Core.Constants.ObjectTypes.ContentItem)
+            if (guid == Constants.ObjectTypes.DocumentGuid)
                 return PublishedItemType.Content;
 
-            if (id == Core.Constants.ObjectTypes.Media)
+            if (guid == Constants.ObjectTypes.MediaGuid)
                 return PublishedItemType.Media;
 
-            if (id == Core.Constants.ObjectTypes.Member)
+            if (guid == Constants.ObjectTypes.MemberGuid)
                 return PublishedItemType.Member;
-
-
+            
             //default return value
             return PublishedItemType.Content;
         } 

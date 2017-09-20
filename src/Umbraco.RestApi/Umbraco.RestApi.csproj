@@ -307,7 +307,7 @@
     <Compile Include="Controllers\HalFormatterConfigurationAttribute.cs" />
     <Compile Include="ModelStateExtensions.cs" />
     <Compile Include="Models\ContentMetadataRepresentation.cs" />
-    <Compile Include="Models\ContentTemplate.cs" />
+    <Compile Include="Models\ContentCreationTemplate.cs" />
     <Compile Include="Models\ContentPropertyInfo.cs" />
     <Compile Include="Models\ValidationErrorRepresentation.cs" />
     <Compile Include="Models\ValidationErrorListRepresentation.cs" />

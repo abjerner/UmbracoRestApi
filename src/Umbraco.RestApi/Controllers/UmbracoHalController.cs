@@ -78,7 +78,7 @@ namespace Umbraco.RestApi.Controllers
             Link linkTemplate,
             string message = null, int? id = null, params string[] errors)
         {
-            var metaDataProvider = Configuration.Services.GetModelMetadataProvider();
+            //var metaDataProvider = Configuration.Services.GetModelMetadataProvider();
             var errorList = new List<ValidationErrorRepresentation>();
 
             foreach (KeyValuePair<string, ModelState> ms in modelState)

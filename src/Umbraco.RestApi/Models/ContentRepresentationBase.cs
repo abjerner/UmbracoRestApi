@@ -20,7 +20,7 @@ namespace Umbraco.RestApi.Models
         public DateTimeOffset CreateDate { get; set; }
         public DateTimeOffset UpdateDate { get; set; }
 
-        public PublishedItemType ItemType { get; set; }
+        //public PublishedItemType ItemType { get; set; }
 
         [Required]
         [Display(Name = "contentTypeAlias")]

@@ -7,7 +7,7 @@ namespace Umbraco.RestApi.Models
     /// <summary>
     /// If the model supports creating, then this is it's template
     /// </summary>
-    public class ContentTemplate
+    public class ContentCreationTemplate
     {        
         public string ContentTypeAlias { get; set; }
         public int ParentId { get; set; }

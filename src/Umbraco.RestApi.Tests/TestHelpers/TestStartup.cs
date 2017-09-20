@@ -8,6 +8,7 @@ using Owin;
 using Umbraco.Core.Configuration.UmbracoSettings;
 using Umbraco.Core.Services;
 using Umbraco.RestApi.Models;
+using Umbraco.RestApi.Models.Mapping;
 using Umbraco.Web;
 using Umbraco.Web.WebApi;
 

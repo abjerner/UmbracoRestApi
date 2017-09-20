@@ -8,10 +8,13 @@ namespace Umbraco.RestApi.Models
         {
         }
         
-
         [Required]
         [Display(Name = "templateId")]
         public int TemplateId { get; set; }
+
+        [Required]
+        [Display(Name = "published")]
+        public bool Published { get; set; }
 
         public override string Rel
         {

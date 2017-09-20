@@ -27,7 +27,7 @@ namespace Umbraco.RestApi.Models
         /// <summary>
         /// If the model supports creating, then this is it's template, null means it does not support creating
         /// </summary>
-        public ContentTemplate CreateTemplate { get; set; }
+        public ContentCreationTemplate CreateTemplate { get; set; }
 
         public IDictionary<string, ContentPropertyInfo> Fields { get; set; }
 

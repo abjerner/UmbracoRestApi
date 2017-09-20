@@ -289,6 +289,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AutoMapperTests.cs" />
     <Compile Include="CamelCaseTests.cs" />
     <Compile Include="ContentControllerTests.cs" />
     <Compile Include="CorsTest.cs" />
@@ -303,6 +304,7 @@
     <Compile Include="TestHelpers\MemberServiceMocks.cs" />
     <Compile Include="TestHelpers\MockUmbracoSettings.cs" />
     <Compile Include="TestHelpers\ModelMocks.cs" />
+    <Compile Include="TestHelpers\ServiceMocks.cs" />
     <Compile Include="TestHelpers\TestControllerActivator.cs" />
     <Compile Include="TestHelpers\TestStartup.cs" />
     <Compile Include="TestHelpers\ProviderUtilities.cs" />

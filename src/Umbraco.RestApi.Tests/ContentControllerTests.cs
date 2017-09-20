@@ -15,10 +15,12 @@ using Moq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
+using Umbraco.Core;
 using Umbraco.Core.Configuration;
 using Umbraco.Core.Models;
 using Umbraco.Core.Persistence.DatabaseModelDefinitions;
 using Umbraco.Core.PropertyEditors;
+using Umbraco.Core.Publishing;
 using Umbraco.RestApi.Routing;
 using Umbraco.RestApi.Tests.TestHelpers;
 using Task = System.Threading.Tasks.Task;
@@ -557,7 +559,7 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
-        public async Task Put_Is_200_Response()
+        public async Task Put_Is_200_Response_Non_Published()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
@@ -579,6 +581,7 @@ namespace Umbraco.RestApi.Tests
   ""contentTypeAlias"": ""testType"",
   ""parentId"": 456,
   ""templateId"": 9,
+  ""published"": false,
   ""name"": ""Home"",
   ""properties"": {
     ""TestProperty1"": ""property value1"",
@@ -597,30 +600,38 @@ namespace Umbraco.RestApi.Tests
             }
         }
 
-        //TODO: Check this test
         [Test]
-        public async Task Publish_Is_200_Response()
+        public async Task Put_Is_200_Response_With_Published()
         {
             var startup = new TestStartup(
-                 //This will be invoked before the controller is created so we can modify these mocked services
-                 (testServices) =>
-                 {
-                     var mockContentService = Mock.Get(testServices.ServiceContext.ContentService);
-
-                     mockContentService.Setup(x => x.GetById(It.IsAny<int>())).Returns(() => ModelMocks.SimpleMockedContent());
-                 });
+                //This will be invoked before the controller is created so we can modify these mocked services
+                (testServices) =>
+                {
+                    ContentServiceMocks.SetupMocksForPost(testServices.ServiceContext);
+                    var mockContentService = Mock.Get(testServices.ServiceContext.ContentService);
+                    mockContentService.Setup(x => x.SaveAndPublishWithStatus(It.IsAny<IContent>(), It.IsAny<int>(), It.IsAny<bool>()))
+                        .Returns(Attempt<PublishStatus>.Succeed);
+                });
 
             using (var server = TestServer.Create(builder => startup.Configuration(builder)))
             {
                 var request = new HttpRequestMessage()
                 {
-                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}/123/publish", RouteConstants.ContentSegment)),
+                    RequestUri = new Uri($"http://testserver/umbraco/rest/v1/{RouteConstants.ContentSegment}/123"),
                     Method = HttpMethod.Put,
                 };
 
                 request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/hal+json"));
                 request.Content = new StringContent(@"{
-  ""id"": ""123""
+  ""contentTypeAlias"": ""testType"",
+  ""parentId"": 456,
+  ""templateId"": 9,
+  ""published"": true,
+  ""name"": ""Home"",
+  ""properties"": {
+    ""TestProperty1"": ""property value1"",
+    ""testProperty2"": ""property value2""
+  }
 }", Encoding.UTF8, "application/json");
 
                 Console.WriteLine(request);

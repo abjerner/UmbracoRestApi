@@ -21,10 +21,12 @@ namespace Umbraco.RestApi.Models
         [Display(Name = "bidirectional")]
         public bool IsBidirectional { get; set; }
 
-        [Display(Name = "parententitytype")]
+        //TODO: relations can be between more than these types
+        [Display(Name = "parentEntityType")]
         public PublishedItemType ParentEntityType { get; set; }
 
-        [Display(Name = "childentitytype")]
+        //TODO: relations can be between more than these types
+        [Display(Name = "childEntityType")]
         public PublishedItemType ChildEntityType { get; set; }
     }
 }

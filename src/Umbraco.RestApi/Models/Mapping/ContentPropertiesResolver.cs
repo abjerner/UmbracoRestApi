@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using AutoMapper;
 using Umbraco.Core.Models;
 
-namespace Umbraco.RestApi.Models
+namespace Umbraco.RestApi.Models.Mapping
 {
     internal class ContentPropertiesResolver : ValueResolver<IContentBase, IDictionary<string, object>>
     {

@@ -1,37 +1,24 @@
-﻿using AutoMapper;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using AutoMapper;
 using Umbraco.Core;
 using Umbraco.Core.Models;
 using Umbraco.Core.Models.Mapping;
 
-namespace Umbraco.RestApi.Models
+namespace Umbraco.RestApi.Models.Mapping
 {
     public class MediaModelMapper : MapperConfiguration
     {
 
         public override void ConfigureMappings(IConfiguration config, ApplicationContext applicationContext)
         {
-
-            config.CreateMap<IMedia, ContentRepresentation>()
-                    .ForMember(representation => representation.HasChildren, expression => expression.MapFrom(content =>
-                        applicationContext.Services.MediaService.HasChildren(content.Id)))
-                    
-                    .ForMember(representation => representation.Properties, expression => expression.ResolveUsing(content =>
-                    {
-                        var d = new Dictionary<string, object>();
-                        foreach (var propertyType in content.PropertyTypes)
-                        {
-                            var prop = content.HasProperty(propertyType.Alias) ? content.Properties[propertyType.Alias] : null;
-                            if (prop != null)
-                            {
-                                d.Add(propertyType.Alias, prop.Value);
-                            }
-                        }
-                        return d;
-                    }));
-
-            config.CreateMap<IMedia, ContentTemplate>()
+            config.CreateMap<IMedia, MediaRepresentation>()
+                .IgnoreHalProperties()
+                .ForMember(representation => representation.HasChildren, expression => expression.MapFrom(content =>
+                    applicationContext.Services.MediaService.HasChildren(content.Id)))
+                .ForMember(representation => representation.Properties, expression => expression.ResolveUsing<ContentPropertiesResolver>());
+            
+            config.CreateMap<IMedia, ContentCreationTemplate>()
                 .IgnoreAllUnmapped()
                 .ForMember(representation => representation.Properties, expression => expression.ResolveUsing(content =>
                 {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -13,6 +14,9 @@ using Umbraco.RestApi.Models;
 using Umbraco.RestApi.Routing;
 using Umbraco.Web;
 using System.Web.Http.ModelBinding;
+using Umbraco.Core.Publishing;
+using Umbraco.Web.Models.ContentEditing;
+using Umbraco.Core.Services;
 
 namespace Umbraco.RestApi.Controllers
 {
@@ -41,6 +45,8 @@ namespace Umbraco.RestApi.Controllers
             _searchProvider = searchProvider ?? throw new ArgumentNullException("searchProvider");
         }
 
+        //this is the default language culture for umbraco translation files
+        private static readonly CultureInfo DefaultCulture = CultureInfo.GetCultureInfo("en-US");
         private BaseSearchProvider _searchProvider;
         protected BaseSearchProvider SearchProvider => _searchProvider ?? (_searchProvider = ExamineManager.Instance.SearchProviderCollection["InternalSearcher"]);
 
@@ -78,7 +84,7 @@ namespace Umbraco.RestApi.Controllers
             {
                 Fields = GetDefaultFieldMetaData(),
                 Properties = Mapper.Map<IDictionary<string, ContentPropertyInfo>>(found),
-                CreateTemplate = Mapper.Map<ContentTemplate>(found)
+                CreateTemplate = Mapper.Map<ContentCreationTemplate>(found)
             };
 
             return Request.CreateResponse(HttpStatusCode.OK, result); 
@@ -216,6 +222,15 @@ namespace Umbraco.RestApi.Controllers
             }
         }
 
+        /// <summary>
+        /// Updates a content item
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="content"></param>
+        /// <returns></returns>
+        /// <remarks>
+        /// This can also be used to publish/unpublish an item
+        /// </remarks>
         [HttpPut]
         [CustomRoute("{id}")]
         public HttpResponseMessage Put(int id, ContentRepresentation content)
@@ -238,7 +253,21 @@ namespace Umbraco.RestApi.Controllers
 
                 Mapper.Map(content, found);
 
-                Services.ContentService.Save(found);
+                if (!content.Published)
+                {
+                    //if the flag is not published then we just save a draft
+                    Services.ContentService.Save(found);
+                }
+                else
+                {
+                    //publish it if the flag is set, if it's already published that's ok too
+                    var result = Services.ContentService.SaveAndPublishWithStatus(found);
+                    if (!result.Success)
+                    {
+                        SetModelStateForPublishStatus(result.Result);
+                        throw ValidationException(ModelState, content, LinkTemplates.Content.Self, id: id);
+                    }
+                }
 
                 var rep = Mapper.Map<ContentRepresentation>(found);
                 return Request.CreateResponse(HttpStatusCode.OK, rep);
@@ -249,26 +278,9 @@ namespace Umbraco.RestApi.Controllers
             }
         }
 
-        ////TODO: Check this
-        //protected override IContent Publish(int id)
-        //{
-        //    var found = ContentService.GetById(id);
-        //    if (found == null) throw new HttpResponseException(HttpStatusCode.NotFound);
-
-        //    ContentService.Publish(found, Security.CurrentUser.Id);
-
-        //        var rep = Mapper.Map<ContentRepresentation>(found);
-        //        return Request.CreateResponse(HttpStatusCode.OK, rep);
-        //    }
-        //    catch (ModelValidationException exception)
-        //    {
-        //        return Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors);
-        //    }
-        //}
-
         [HttpDelete]
         [CustomRoute("{id}")]
-        public virtual HttpResponseMessage Delete(int id)
+        public HttpResponseMessage Delete(int id)
         {
             var found = Services.ContentService.GetById(id);
             if (found == null)
@@ -278,7 +290,62 @@ namespace Umbraco.RestApi.Controllers
             return Request.CreateResponse(HttpStatusCode.OK);
         }
 
-        
+
+        private void SetModelStateForPublishStatus(PublishStatus status)
+        {
+            switch (status.StatusType)
+            {                
+                case PublishStatusType.FailedPathNotPublished:
+                    ModelState.AddModelError(
+                        "content.isPublished",
+                        Services.TextService.Localize(
+                            "publish/contentPublishedFailedByParent",
+                            DefaultCulture, 
+                            new[] {$"{status.ContentItem.Name} ({status.ContentItem.Id})"}).Trim());
+                    break;
+                case PublishStatusType.FailedCancelledByEvent:
+                    ModelState.AddModelError(
+                        "content.isPublished",
+                        Services.TextService.Localize("speechBubbles/contentPublishedFailedByEvent", DefaultCulture));
+                    break;
+                case PublishStatusType.FailedAwaitingRelease:
+                    ModelState.AddModelError(
+                        "content.isPublished",
+                        Services.TextService.Localize(
+                            "publish/contentPublishedFailedAwaitingRelease",
+                            CultureInfo.GetCultureInfo("en-US"),
+                            new[] {$"{status.ContentItem.Name} ({status.ContentItem.Id})"}).Trim());          
+                    break;
+                case PublishStatusType.FailedHasExpired:
+                    ModelState.AddModelError(
+                        "content.isPublished",
+                        Services.TextService.Localize(
+                            "publish/contentPublishedFailedExpired",
+                            DefaultCulture,
+                            new[] { $"{status.ContentItem.Name} ({status.ContentItem.Id})" }).Trim());
+                    break;
+                case PublishStatusType.FailedIsTrashed:
+                    //TODO: We should add proper error messaging for this!
+                    break;
+                case PublishStatusType.FailedContentInvalid:
+                    ModelState.AddModelError(
+                        "content.isPublished",
+                        Services.TextService.Localize(
+                            "publish/contentPublishedFailedInvalid",
+                            DefaultCulture,
+                            new[]
+                            {
+                                $"{status.ContentItem.Name} ({status.ContentItem.Id})",
+                                string.Join(",", status.InvalidProperties.Select(x => x.Alias))
+                            }).Trim());
+                    break;
+                case PublishStatusType.Success:
+                case PublishStatusType.SuccessAlreadyPublished:
+                default:
+                    return;
+            }
+        }
+
     }
    
 }

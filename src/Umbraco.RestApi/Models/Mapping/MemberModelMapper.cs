@@ -1,33 +1,22 @@
-﻿using AutoMapper;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using AutoMapper;
 using Umbraco.Core;
 using Umbraco.Core.Models;
 using Umbraco.Core.Models.Mapping;
 
-namespace Umbraco.RestApi.Models
+namespace Umbraco.RestApi.Models.Mapping
 {
-    class MemberModelMapper : MapperConfiguration
+    public class MemberModelMapper : MapperConfiguration
     {
-
         public override void ConfigureMappings(IConfiguration config, ApplicationContext applicationContext)
         {
             config.CreateMap<IMember, MemberRepresentation>()
-                .ForMember(representation => representation.Properties, expression => expression.ResolveUsing(content =>
-                    {
-                        var d = new Dictionary<string, object>();
-                        foreach (var propertyType in content.PropertyTypes)
-                        {
-                            var prop = content.HasProperty(propertyType.Alias) ? content.Properties[propertyType.Alias] : null;
-                            if (prop != null)
-                            {
-                                d.Add(propertyType.Alias, prop.Value);
-                            }
-                        }
-                        return d;
-                    }));
-
-            config.CreateMap<IMember, ContentTemplate>()
+                .IgnoreHalProperties()
+                .ForMember(representation => representation.HasChildren, expression => expression.UseValue(false))
+                .ForMember(representation => representation.Properties, expression => expression.ResolveUsing<ContentPropertiesResolver>());
+            
+            config.CreateMap<IMember, ContentCreationTemplate>()
                 .IgnoreAllUnmapped()
                 .ForMember(representation => representation.Properties, expression => expression.ResolveUsing(content =>
                 {
@@ -71,12 +60,12 @@ namespace Umbraco.RestApi.Models
                     }
                 });
 
-            config.CreateMap<IPublishedContent, MemberRepresentation>()
-                .ForMember(representation => representation.Properties, expression => expression.ResolveUsing(content =>
-                {
-                    return content.Properties.ToDictionary(property => property.PropertyTypeAlias,
-                        property => property.Value);
-                }));
+            //config.CreateMap<IPublishedContent, MemberRepresentation>()
+            //    .ForMember(representation => representation.Properties, expression => expression.ResolveUsing(content =>
+            //    {
+            //        return content.Properties.ToDictionary(property => property.PropertyTypeAlias,
+            //            property => property.Value);
+            //    }));
         }
     }
 }

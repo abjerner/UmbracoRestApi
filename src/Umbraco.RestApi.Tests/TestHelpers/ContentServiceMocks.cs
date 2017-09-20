@@ -19,7 +19,7 @@ namespace Umbraco.RestApi.Tests.TestHelpers
             mockContentService.Setup(x => x.GetChildren(It.IsAny<int>())).Returns(new List<IContent>(new[] { ModelMocks.SimpleMockedContent(789) }));
             mockContentService.Setup(x => x.HasChildren(It.IsAny<int>())).Returns(true);
             mockContentService.Setup(x => x.CreateContent(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>()))
-                .Returns(() => ModelMocks.SimpleMockedContent(8888));
+                .Returns(() => ModelMocks.SimpleMockedContent(8888));            
 
             var mockContentTypeService = Mock.Get(serviceContext.ContentTypeService);
             mockContentTypeService.Setup(x => x.GetContentType(It.IsAny<string>())).Returns(ModelMocks.SimpleMockedContentType());

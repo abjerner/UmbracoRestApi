@@ -16,8 +16,6 @@ using Umbraco.Core.Dictionary;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using Umbraco.Core.Models.Membership;
-using Umbraco.Core.Persistence;
-using Umbraco.Core.Persistence.SqlSyntax;
 using Umbraco.Core.Profiling;
 using Umbraco.Core.Security;
 using Umbraco.Core.Services;
@@ -36,39 +34,19 @@ namespace Umbraco.RestApi.Tests.TestHelpers
             {
                 var owinContext = request.GetOwinContext();
 
-                //Create mocked services that we are going to pass to the callback for unit tests to modify
-                // before passing these services to the main container objects
                 var mockedTypedContentQuery = Mock.Of<ITypedPublishedContentQuery>();
-                var mockedContentService = Mock.Of<IContentService>();
-                var mockedContentTypeService = Mock.Of<IContentTypeService>();
-                var mockedMemberTypeService = Mock.Of<IMemberTypeService>();
-                var mockedMediaService = Mock.Of<IMediaService>();
-                var mockedMemberService = Mock.Of<IMemberService>();
-                var mockedTextService = Mock.Of<ILocalizedTextService>();
-                var mockedDataTypeService = Mock.Of<IDataTypeService>();
-                var mockedRelationService = Mock.Of<IRelationService>();
-                var mockedMigrationService = new Mock<IMigrationEntryService>();
-                //set it up to return anything so that the app ctx is 'Configured'
-                mockedMigrationService.Setup(x => x.FindEntry(It.IsAny<string>(), It.IsAny<SemVersion>())).Returns(Mock.Of<IMigrationEntry>());
 
-                var serviceContext = new ServiceContext(
-                    dataTypeService:mockedDataTypeService,
-                    contentTypeService:mockedContentTypeService,
-                    contentService: mockedContentService, 
-                    mediaService: mockedMediaService, 
-                    memberService: mockedMemberService, 
-                    localizedTextService: mockedTextService,
-                    memberTypeService:mockedMemberTypeService,
-                    relationService:mockedRelationService,
-                    migrationEntryService:mockedMigrationService.Object);
+                var serviceContext = ServiceMocks.GetServiceContext();
+                var mockedMigrationService = Mock.Get(serviceContext.MigrationEntryService);
+
+                //set it up to return anything so that the app ctx is 'Configured'
+                mockedMigrationService.Setup(x => x.FindEntry(It.IsAny<string>(), It.IsAny<SemVersion>())).Returns(Mock.Of<IMigrationEntry>());                
+                
+                var dbCtx = ServiceMocks.GetDatabaseContext();
 
                 //new app context
-                var dbCtx = new Mock<DatabaseContext>(Mock.Of<IDatabaseFactory2>(), Mock.Of<ILogger>(), Mock.Of<ISqlSyntaxProvider>(), "test");
-                //ensure these are set so that the appctx is 'Configured'
-                dbCtx.Setup(x => x.CanConnect).Returns(true);
-                dbCtx.Setup(x => x.IsDatabaseConfigured).Returns(true);
                 var appCtx = ApplicationContext.EnsureContext(
-                    dbCtx.Object,
+                    dbCtx,
                     //pass in mocked services
                     serviceContext,
                     CacheHelper.CreateDisabledCacheHelper(),

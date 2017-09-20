@@ -92,7 +92,7 @@ namespace Umbraco.RestApi.Controllers
             {
                 Fields = GetDefaultFieldMetaData(),
                 Properties = Mapper.Map<IDictionary<string, ContentPropertyInfo>>(found),
-                CreateTemplate = Mapper.Map<ContentTemplate>(found)
+                CreateTemplate = Mapper.Map<ContentCreationTemplate>(found)
             };
 
             return Request.CreateResponse(HttpStatusCode.OK, result);

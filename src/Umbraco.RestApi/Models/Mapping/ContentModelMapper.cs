@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using AutoMapper;
@@ -5,26 +6,19 @@ using Umbraco.Core;
 using Umbraco.Core.Models;
 using Umbraco.Core.Models.Mapping;
 
-namespace Umbraco.RestApi.Models
+namespace Umbraco.RestApi.Models.Mapping
 {
     public class ContentModelMapper : MapperConfiguration
     {
         public override void ConfigureMappings(IConfiguration config, ApplicationContext applicationContext)
         {
             config.CreateMap<IContent, ContentRepresentation>()
+                .IgnoreHalProperties()
                 .ForMember(representation => representation.HasChildren, expression => expression.MapFrom(content =>
                     applicationContext.Services.ContentService.HasChildren(content.Id)))
                 .ForMember(representation => representation.Properties, expression => expression.ResolveUsing<ContentPropertiesResolver>());
-
-            config.CreateMap<IMedia, MediaRepresentation>()
-                .ForMember(representation => representation.HasChildren, expression => expression.MapFrom(content =>
-                    applicationContext.Services.MediaService.HasChildren(content.Id)))
-                .ForMember(representation => representation.Properties, expression => expression.ResolveUsing<ContentPropertiesResolver>());
-
-            config.CreateMap<IMember, MemberRepresentation>()
-                .ForMember(representation => representation.Properties, expression => expression.ResolveUsing<ContentPropertiesResolver>());
-
-            config.CreateMap<IContent, ContentTemplate>()
+            
+            config.CreateMap<IContent, ContentCreationTemplate>()
                 .IgnoreAllUnmapped()
                 .ForMember(representation => representation.Properties, expression => expression.ResolveUsing(content =>
                 {
@@ -68,25 +62,28 @@ namespace Umbraco.RestApi.Models
                     }
                 });
 
-            config.CreateMap<IPublishedContent, ContentRepresentation>()
-                .ForMember(representation => representation.HasChildren, expression => expression.MapFrom(content => content.Children.Any()))
-                .ForMember(representation => representation.Properties, expression => expression.ResolveUsing(content =>
-                {
+            //config.CreateMap<IPublishedContent, ContentRepresentation>()
+            //    .IgnoreHalProperties()
+            //    .ForMember(representation => representation.Key, expression => expression.MapFrom(x => (x is IPublishedContentWithKey) ? ((IPublishedContentWithKey)x).Key : Guid.Empty))
+            //    .ForMember(representation => representation.Published, expression => expression.UseValue(true))
+            //    .ForMember(representation => representation.HasChildren, expression => expression.MapFrom(content => content.Children.Any()))
+            //    .ForMember(representation => representation.Properties, expression => expression.ResolveUsing(content =>
+            //    {
 
-                   var result = content.Properties.ToDictionary(property => property.PropertyTypeAlias, property => 
-                    {
+            //       var result = content.Properties.ToDictionary(property => property.PropertyTypeAlias, property => 
+            //        {
 
-                        //PP: Special rule - if a piece of content is pointing at a IPublished content - this is put here to make the current published API work - but it will
-                        //lead to possible circular references issues when serializing... 
-                        if (property.Value is IPublishedContent)
-                            return Mapper.Map<ContentRepresentation>(property.Value);
+            //            //PP: Special rule - if a piece of content is pointing at a IPublished content - this is put here to make the current published API work - but it will
+            //            //lead to possible circular references issues when serializing... 
+            //            if (property.Value is IPublishedContent)
+            //                return Mapper.Map<ContentRepresentation>(property.Value);
 
-                        return property.Value;
-                    });
+            //            return property.Value;
+            //        });
                     
 
-                    return result;
-                }));
+            //        return result;
+            //    }));
 
             //config.CreateMap<SearchResult, ContentRepresentation>()
             //    //TODO: Lookup children
