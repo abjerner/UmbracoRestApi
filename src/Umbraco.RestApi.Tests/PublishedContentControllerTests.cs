@@ -34,9 +34,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                    var mockTypedContent = Mock.Get(typedContent);
+                    var mockTypedContent = Mock.Get(testServices.PublishedContentQuery);
                     mockTypedContent.Setup(x => x.TypedContent(It.IsAny<int>())).Returns(() => ModelMocks.SimpleMockedPublishedContent(123, 456, 789));
                 });
 
@@ -66,9 +66,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                    var mockTypedContent = Mock.Get(typedContent);
+                    var mockTypedContent = Mock.Get(testServices.PublishedContentQuery);
                     mockTypedContent.Setup(x => x.TypedSearch(It.IsAny<ISearchCriteria>(), It.IsAny<BaseSearchProvider>()))
                         .Returns(new[]
                         {
@@ -76,7 +76,7 @@ namespace Umbraco.RestApi.Tests
                             ModelMocks.SimpleMockedPublishedContent(456, -1, 321)
                         });
 
-                    var mockSearchProvider = Mock.Get(searchProvider);
+                    var mockSearchProvider = Mock.Get(testServices.SearchProvider);
                     mockSearchProvider.Setup(x => x.CreateSearchCriteria()).Returns(Mock.Of<ISearchCriteria>());                  
 
                 });
@@ -107,9 +107,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                    var mockTypedContent = Mock.Get(typedContent);
+                    var mockTypedContent = Mock.Get(testServices.PublishedContentQuery);
                     mockTypedContent.Setup(x => x.TypedContent(It.IsAny<int>())).Returns(() => ModelMocks.SimpleMockedPublishedContent(123, 456, 789));
                 });
 
@@ -156,9 +156,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services,
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                    var mockTypedContent = Mock.Get(typedContent);
+                    var mockTypedContent = Mock.Get(testServices.PublishedContentQuery);
                     mockTypedContent.Setup(x => x.TypedContentAtRoot()).Returns(new[]
                     {
                         ModelMocks.SimpleMockedPublishedContent(123, -1, 789),
@@ -170,7 +170,7 @@ namespace Umbraco.RestApi.Tests
             {
                 var request = new HttpRequestMessage()
                 {
-                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}/{1}", RouteConstants.ContentSegment, RouteConstants.PublishedSegment)),
+                    RequestUri = new Uri($"http://testserver/umbraco/rest/v1/{RouteConstants.ContentSegment}/{RouteConstants.PublishedSegment}"),
                     Method = HttpMethod.Get,
                 };
 
@@ -196,9 +196,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services,
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                    var mockTypedContent = Mock.Get(typedContent);
+                    var mockTypedContent = Mock.Get(testServices.PublishedContentQuery);
                     mockTypedContent.Setup(x => x.TypedContentAtRoot()).Returns(new[]
                     {
                         ModelMocks.SimpleMockedPublishedContent(123, -1, 789),
@@ -234,10 +234,10 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
-        public async Task Post_Is_501_Response()
-        public async void Post_Is_405_Response()
+        //public async Task Post_Is_501_Response()
+        public async Task Post_Is_405_Response()
         {
-            var startup = new TestStartup((request, umbCtx, typedContent, serviceContext, searchProvider) => { });
+            var startup = new TestStartup((testServices) => { });
 
             using (var server = TestServer.Create(builder => startup.Configuration(builder)))
             {
@@ -262,10 +262,10 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
-        public async Task Put_Is_501_Response()
-        public async void Put_Is_405_Response()
+        //public async Task Put_Is_501_Response()
+        public async Task Put_Is_405_Response()
         {
-            var startup = new TestStartup((request, umbCtx, typedContent, serviceContext, searchProvider) => { });
+            var startup = new TestStartup((testServices) => { });
 
             using (var server = TestServer.Create(builder => startup.Configuration(builder)))
             {
@@ -290,10 +290,10 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
-        public async Task Delete_Is_501_Response()
-        public async void Delete_Is_405_Response()
+        //public async Task Delete_Is_501_Response()
+        public async Task Delete_Is_405_Response()
         {
-            var startup = new TestStartup((request, umbCtx, typedContent, serviceContext, searchProvider) => { });
+            var startup = new TestStartup((testServices) => { });
 
             using (var server = TestServer.Create(builder => startup.Configuration(builder)))
             {

@@ -50,9 +50,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services,
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                    var mockRelationService = Mock.Get(serviceContext.RelationService);
+                    var mockRelationService = Mock.Get(testServices.ServiceContext.RelationService);
                 });
 
             using (var server = TestServer.Create(builder => startup.Configuration(builder)))
@@ -80,9 +80,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services,
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                    var mockRelationService = Mock.Get(serviceContext.RelationService);
+                    var mockRelationService = Mock.Get(testServices.ServiceContext.RelationService);
                 });
 
             using (var server = TestServer.Create(builder => startup.Configuration(builder)))
@@ -119,9 +119,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                 (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                 (testServices) =>
                  {
-                     var mockRelationService = Mock.Get(serviceContext.RelationService);
+                     var mockRelationService = Mock.Get(testServices.ServiceContext.RelationService);
                      mockRelationService.Setup(x => x.GetById(It.IsAny<int>())).Returns(() => ModelMocks.SimpleMockedRelation(123, 4567,8910));
                  });
 
@@ -158,9 +158,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                    SetupMocksForPost(serviceContext);
+                    SetupMocksForPost(testServices.ServiceContext);
                 });
 
             using (var server = TestServer.Create(builder => startup.Configuration(builder)))
@@ -195,9 +195,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                    SetupMocksForPost(serviceContext);
+                    SetupMocksForPost(testServices.ServiceContext);
                 });
 
             using (var server = TestServer.Create(builder => startup.Configuration(builder)))
@@ -239,9 +239,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                    SetupMocksForPost(serviceContext);
+                    SetupMocksForPost(testServices.ServiceContext);
                 });
 
             using (var server = TestServer.Create(builder => startup.Configuration(builder)))

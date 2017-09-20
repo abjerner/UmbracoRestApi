@@ -2,6 +2,8 @@ using System;
 using System.Net.Http;
 using System.Web.Http;
 using Examine.Providers;
+using LightInject;
+using Umbraco.Core.Configuration.UmbracoSettings;
 using Umbraco.Core.Services;
 using Umbraco.Web;
 
@@ -9,39 +11,21 @@ namespace Umbraco.RestApi.Tests.TestHelpers
 {
     public class TestControllerActivator : TestControllerActivatorBase
     {
-        private readonly Action<HttpRequestMessage, UmbracoContext, ITypedPublishedContentQuery, ServiceContext, BaseSearchProvider> _onServicesCreated;
+        private readonly Action<TestServices> _onServicesCreated;
 
-        public TestControllerActivator(Action<HttpRequestMessage, UmbracoContext, ITypedPublishedContentQuery, ServiceContext, BaseSearchProvider> onServicesCreated)
+        public TestControllerActivator(Action<TestServices> onServicesCreated)
         {
             _onServicesCreated = onServicesCreated;
         }
 
-        protected override ApiController CreateController(Type controllerType, HttpRequestMessage msg, UmbracoHelper helper, ITypedPublishedContentQuery qry, ServiceContext serviceContext, BaseSearchProvider searchProvider)
+        protected override ApiController CreateController(
+            IServiceFactory container, Type controllerType,
+            UmbracoHelper helper,
+            TestServices testServices)
         {
-            _onServicesCreated(msg, helper.UmbracoContext, qry, serviceContext, searchProvider);
+            _onServicesCreated(testServices);
 
-            //Create the controller with all dependencies
-            var ctor = controllerType.GetConstructor(new[]
-                {
-                    typeof(UmbracoContext), 
-                    typeof(UmbracoHelper),
-                    typeof(BaseSearchProvider)
-                });
-
-            if (ctor == null)
-            {
-                throw new MethodAccessException("Could not find the required constructor for the controller");
-            }
-
-            var created = (ApiController)ctor.Invoke(new object[]
-                    {
-                        //ctor args
-                        helper.UmbracoContext, 
-                        helper,
-                        searchProvider
-                    });
-
-            return created;
+            return (ApiController)container.GetInstance(controllerType);
         }
     }
 }

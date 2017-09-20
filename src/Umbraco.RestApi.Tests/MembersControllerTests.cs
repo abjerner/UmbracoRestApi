@@ -49,9 +49,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services,
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                    var mockMemberService = Mock.Get(serviceContext.MemberService);
+                    var mockMemberService = Mock.Get(testServices.ServiceContext.MemberService);
                 });
 
             using (var server = TestServer.Create(builder => startup.Configuration(builder)))
@@ -79,9 +79,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services,
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                    var mockMemberService = Mock.Get(serviceContext.MemberService);
+                    var mockMemberService = Mock.Get(testServices.ServiceContext.MemberService);
                     var mockedOut = 0;
                     mockMemberService.Setup(x => x.GetAll(It.IsAny<int>(), 100, out mockedOut)).Returns(new[]
                     {
@@ -123,7 +123,7 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
                     var mockSearchResults = new Mock<ISearchResults>();
                     mockSearchResults.Setup(results => results.TotalItemCount).Returns(10);
@@ -133,12 +133,12 @@ namespace Umbraco.RestApi.Tests
                         new SearchResult() {Id = 456},
                     });
 
-                    var mockSearchProvider = Mock.Get(searchProvider);
+                    var mockSearchProvider = Mock.Get(testServices.SearchProvider);
                     mockSearchProvider.Setup(x => x.CreateSearchCriteria()).Returns(Mock.Of<ISearchCriteria>());
                     mockSearchProvider.Setup(x => x.Search(It.IsAny<ISearchCriteria>(), It.IsAny<int>()))
                         .Returns(mockSearchResults.Object);
 
-                    var mockMemberService = Mock.Get(serviceContext.MemberService);
+                    var mockMemberService = Mock.Get(testServices.ServiceContext.MemberService);
                     mockMemberService.Setup(x => x.GetAllMembers( It.IsAny<int[]>()))
                         .Returns(new[]
                         {
@@ -173,9 +173,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                 (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                 (testServices) =>
                  {
-                     var mockMemberService = Mock.Get(serviceContext.MemberService);
+                     var mockMemberService = Mock.Get(testServices.ServiceContext.MemberService);
                      mockMemberService.Setup(x => x.GetById(It.IsAny<int>())).Returns(() => ModelMocks.SimpleMockedMember());
                  });
 
@@ -216,12 +216,12 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                 (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                 (testServices) =>
                  {
-                     var mockMemberService = Mock.Get(serviceContext.MemberService);
+                     var mockMemberService = Mock.Get(testServices.ServiceContext.MemberService);
 
                      mockMemberService.Setup(x => x.GetById(It.IsAny<int>())).Returns(() => ModelMocks.SimpleMockedMember());
-                     var mockTextService = Mock.Get(serviceContext.TextService);
+                     var mockTextService = Mock.Get(testServices.ServiceContext.TextService);
 
                      mockTextService.Setup(x => x.Localize(It.IsAny<string>(), It.IsAny<CultureInfo>(), It.IsAny<IDictionary<string, string>>()))
                          .Returns((string input, CultureInfo culture, IDictionary<string, string> tokens) => input);
@@ -257,9 +257,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                   MemberServiceMocks.SetupMocksForPost(serviceContext);
+                   MemberServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
             using (var server = TestServer.Create(builder => startup.Configuration(builder)))
@@ -298,9 +298,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                    MemberServiceMocks.SetupMocksForPost(serviceContext);
+                    MemberServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
             using (var server = TestServer.Create(builder => startup.Configuration(builder)))
@@ -347,9 +347,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                    MemberServiceMocks.SetupMocksForPost(serviceContext);
+                    MemberServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
             using (var server = TestServer.Create(builder => startup.Configuration(builder)))
@@ -397,9 +397,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                    MemberServiceMocks.SetupMocksForPost(serviceContext);
+                    MemberServiceMocks.SetupMocksForPost(testServices.ServiceContext);
 
                     var mockPropertyEditor = Mock.Get(PropertyEditorResolver.Current);
                     mockPropertyEditor.Setup(x => x.GetByAlias("testEditor")).Returns(new ModelMocks.SimplePropertyEditor());
@@ -448,9 +448,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                    MemberServiceMocks.SetupMocksForPost(serviceContext);
+                    MemberServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
             using (var server = TestServer.Create(builder => startup.Configuration(builder)))
@@ -490,9 +490,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                    MemberServiceMocks.SetupMocksForPost(serviceContext);
+                    MemberServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
             using (var server = TestServer.Create(builder => startup.Configuration(builder)))

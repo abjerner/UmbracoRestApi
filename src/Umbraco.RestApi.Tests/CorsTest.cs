@@ -26,9 +26,7 @@ namespace Umbraco.RestApi.Tests
         public void FixtureSetUp()
         {
             ConfigurationManager.AppSettings.Set("umbracoPath", "~/umbraco");
-            ConfigurationManager.AppSettings.Set("umbracoConfigurationStatus", UmbracoVersion.Current.ToString(3));
-            var mockSettings = MockUmbracoSettings.GenerateMockSettings();
-            UmbracoConfig.For.CallMethod("SetUmbracoSettings", mockSettings);
+            ConfigurationManager.AppSettings.Set("umbracoConfigurationStatus", UmbracoVersion.Current.ToString(3));            
         }
 
         [TearDown]
@@ -44,9 +42,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services,
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                    var mockContentService = Mock.Get(serviceContext.ContentService);
+                    var mockContentService = Mock.Get(testServices.ServiceContext.ContentService);
                     mockContentService.Setup(x => x.GetRootContent()).Returns(Enumerable.Empty<IContent>());
                 });
 
@@ -89,9 +87,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services,
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                    var mockContentService = Mock.Get(serviceContext.ContentService);
+                    var mockContentService = Mock.Get(testServices.ServiceContext.ContentService);
                     mockContentService.Setup(x => x.GetRootContent()).Returns(Enumerable.Empty<IContent>());
                 });
 
@@ -139,9 +137,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                   TestHelpers.ContentServiceMocks.SetupMocksForPost(serviceContext);
+                   TestHelpers.ContentServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
             using (var server = TestServer.Create(builder => startup.Configuration(builder)))

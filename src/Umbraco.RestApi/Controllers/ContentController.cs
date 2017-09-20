@@ -49,7 +49,7 @@ namespace Umbraco.RestApi.Controllers
         public virtual HttpResponseMessage Get()
         {
             var rootContent = Services.ContentService.GetRootContent();
-            var result = AutoMapper.Mapper.Map<IEnumerable<ContentRepresentation>>(rootContent).ToList();
+            var result = Mapper.Map<IEnumerable<ContentRepresentation>>(rootContent).ToList();
             var representation = new ContentListRepresenation(result);
 
             return Request.CreateResponse(HttpStatusCode.OK, representation);
@@ -60,7 +60,7 @@ namespace Umbraco.RestApi.Controllers
         public HttpResponseMessage Get(int id)
         {
             var content = Services.ContentService.GetById(id);
-            var result = AutoMapper.Mapper.Map<ContentRepresentation>(content);
+            var result = Mapper.Map<ContentRepresentation>(content);
 
             return result == null
                 ? Request.CreateResponse(HttpStatusCode.NotFound)
@@ -88,13 +88,10 @@ namespace Umbraco.RestApi.Controllers
         [CustomRoute("{id}/children")]
         public HttpResponseMessage GetChildren(int id,
             [ModelBinder(typeof(QueryStructureModelBinder))]
-            QueryStructure query
-            )
+            QueryStructure query)
         {
-
-            long total;
-            var items = Services.ContentService.GetPagedChildren(id, query.Page, query.PageSize, out total);
-            var pages = Decimal.Round((decimal)(total / query.PageSize), 0);
+            var items = Services.ContentService.GetPagedChildren(id, query.Page, query.PageSize, out var total);
+            var pages = decimal.Round(total / query.PageSize, 0);
             var mapped = Mapper.Map<IEnumerable<ContentRepresentation>>(items).ToList();
 
             var result = new ContentPagedListRepresentation(mapped, (int)total, (int)pages, (int)query.Page, query.PageSize, LinkTemplates.Content.PagedChildren, new { id = id });
@@ -106,12 +103,10 @@ namespace Umbraco.RestApi.Controllers
         [CustomRoute("{id}/descendants/")]
         public HttpResponseMessage GetDescendants(int id,
             [ModelBinder(typeof(QueryStructureModelBinder))]
-            QueryStructure query
-            )
+            QueryStructure query)
         {
-            long total;
-            var items = Services.ContentService.GetPagedDescendants(id, query.Page, query.PageSize, out total);
-            var pages = Decimal.Round((decimal)(total / query.PageSize), 0);
+            var items = Services.ContentService.GetPagedDescendants(id, query.Page, query.PageSize, out var total);
+            var pages = decimal.Round(total / query.PageSize, 0);
             var mapped = Mapper.Map<IEnumerable<ContentRepresentation>>(items).ToList();
 
             var result = new ContentPagedListRepresentation(mapped, (int)total, (int)pages, (int)query.Page, query.PageSize, LinkTemplates.Content.PagedDescendants, new { id = id });
@@ -122,21 +117,18 @@ namespace Umbraco.RestApi.Controllers
         [CustomRoute("{id}/ancestors/")]
         public HttpResponseMessage GetAncestors(int id,
            [ModelBinder(typeof(QueryStructureModelBinder))]
-            QueryStructure query
-           )
+            QueryStructure query)
         {
             var items = Services.ContentService.GetAncestors(id).ToArray();
             var total = items.Length;
-            var pages = Decimal.Round((decimal)(total / query.PageSize), 0);
+            var pages = decimal.Round(total / query.PageSize, 0);
             var paged = items.Skip(GetSkipSize(query.Page, query.PageSize)).Take(query.PageSize);
             var mapped = Mapper.Map<IEnumerable<ContentRepresentation>>(paged).ToList();
 
-            var result = new ContentPagedListRepresentation(mapped, (int)total, (int)pages, (int)query.Page, query.PageSize, LinkTemplates.Content.PagedAncestors, new { id = id });
+            var result = new ContentPagedListRepresentation(mapped, total, (int)pages, (int)query.Page, query.PageSize, LinkTemplates.Content.PagedAncestors, new { id = id });
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
-
-        //NOTE: We cannot accept POST here for now unless we modify the routing structure since there's only one POST per
-        // controller currently (with the way we've routed).
+        
         [HttpGet]
         [CustomRoute("search")]
         public HttpResponseMessage Search(
@@ -156,7 +148,7 @@ namespace Umbraco.RestApi.Controllers
 
             //paging
             var paged = result.Skip(GetSkipSize(query.Page, query.PageSize)).ToArray();
-            var pages = Decimal.Round((decimal)(result.TotalItemCount / query.PageSize), 0);
+            var pages = decimal.Round(result.TotalItemCount / query.PageSize, 0);
 
             var foundContent = Enumerable.Empty<IContent>();
 
@@ -167,7 +159,7 @@ namespace Umbraco.RestApi.Controllers
             }
 
             //Map to representation
-            var items = AutoMapper.Mapper.Map<IEnumerable<ContentRepresentation>>(foundContent).ToList();
+            var items = Mapper.Map<IEnumerable<ContentRepresentation>>(foundContent).ToList();
 
             //return as paged list of media items
             var representation = new ContentPagedListRepresentation(items, result.TotalItemCount, (int)pages, (int)query.Page, query.PageSize, LinkTemplates.Content.Search, new { query = query.Query, pageSize = query.PageSize });
@@ -184,6 +176,8 @@ namespace Umbraco.RestApi.Controllers
         [CustomRoute("")]
         public HttpResponseMessage Post(ContentRepresentation content)
         {
+            if (content == null) Request.CreateResponse(HttpStatusCode.NotFound);
+
             try
             {
                 //we cannot continue here if the mandatory items are empty (i.e. name, etc...)
@@ -196,7 +190,7 @@ namespace Umbraco.RestApi.Controllers
                 if (contentType == null)
                 {
                     ModelState.AddModelError("content.contentTypeAlias", "No content type found with alias " + content.ContentTypeAlias);
-                    throw ValidationException<ContentRepresentation>(ModelState, content, LinkTemplates.Content.Root);
+                    throw ValidationException(ModelState, content, LinkTemplates.Content.Root);
                 }
 
                 //create an item before persisting of the correct content type
@@ -208,13 +202,13 @@ namespace Umbraco.RestApi.Controllers
 
                 if (!ModelState.IsValid)
                 {
-                    throw ValidationException<ContentRepresentation>(ModelState, content, LinkTemplates.Content.Root);
+                    throw ValidationException(ModelState, content, LinkTemplates.Content.Root);
                 }
 
                 Mapper.Map(content, created);
                 Services.ContentService.Save(created);
 
-                return Request.CreateResponse(HttpStatusCode.OK, Mapper.Map<ContentRepresentation>(created));
+                return Request.CreateResponse(HttpStatusCode.Created, Mapper.Map<ContentRepresentation>(created));
             }
             catch (ModelValidationException exception)
             {
@@ -226,6 +220,8 @@ namespace Umbraco.RestApi.Controllers
         [CustomRoute("{id}")]
         public HttpResponseMessage Put(int id, ContentRepresentation content)
         {
+            if (content == null) Request.CreateResponse(HttpStatusCode.NotFound);
+
             try
             {
                 var found = Services.ContentService.GetById(id);
@@ -244,17 +240,6 @@ namespace Umbraco.RestApi.Controllers
 
                 Services.ContentService.Save(found);
 
-            return found;
-        }
-
-        //TODO: Check this
-        protected override IContent Publish(int id)
-        {
-            var found = ContentService.GetById(id);
-            if (found == null) throw new HttpResponseException(HttpStatusCode.NotFound);
-
-            ContentService.Publish(found, Security.CurrentUser.Id);
-
                 var rep = Mapper.Map<ContentRepresentation>(found);
                 return Request.CreateResponse(HttpStatusCode.OK, rep);
             }
@@ -263,6 +248,23 @@ namespace Umbraco.RestApi.Controllers
                 return Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors);
             }
         }
+
+        ////TODO: Check this
+        //protected override IContent Publish(int id)
+        //{
+        //    var found = ContentService.GetById(id);
+        //    if (found == null) throw new HttpResponseException(HttpStatusCode.NotFound);
+
+        //    ContentService.Publish(found, Security.CurrentUser.Id);
+
+        //        var rep = Mapper.Map<ContentRepresentation>(found);
+        //        return Request.CreateResponse(HttpStatusCode.OK, rep);
+        //    }
+        //    catch (ModelValidationException exception)
+        //    {
+        //        return Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors);
+        //    }
+        //}
 
         [HttpDelete]
         [CustomRoute("{id}")]

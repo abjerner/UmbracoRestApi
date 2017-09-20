@@ -50,9 +50,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services,
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                    var mockMediaService = Mock.Get(serviceContext.MediaService);
+                    var mockMediaService = Mock.Get(testServices.ServiceContext.MediaService);
                     mockMediaService.Setup(x => x.GetRootMedia()).Returns(new[]
                     {
                         ModelMocks.SimpleMockedMedia(123, -1),
@@ -94,9 +94,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services,
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                    var mockMediaService = Mock.Get(serviceContext.MediaService);
+                    var mockMediaService = Mock.Get(testServices.ServiceContext.MediaService);
                     mockMediaService.Setup(x => x.GetRootMedia()).Returns(new[]
                     {
                         ModelMocks.SimpleMockedMedia(123, -1),
@@ -112,7 +112,7 @@ namespace Umbraco.RestApi.Tests
 
                 var request = new HttpRequestMessage()
                 {
-                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}", RouteConstants.MediaSegment)),
+                    RequestUri = new Uri($"http://testserver/umbraco/rest/v1/{RouteConstants.MediaSegment}"),
                     Method = HttpMethod.Get,
                 };
                 request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/hal+json"));
@@ -140,7 +140,7 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
                     var mockSearchResults = new Mock<ISearchResults>();
                     mockSearchResults.Setup(results => results.TotalItemCount).Returns(10);
@@ -150,12 +150,12 @@ namespace Umbraco.RestApi.Tests
                         new SearchResult() {Id = 456},
                     });
 
-                    var mockSearchProvider = Mock.Get(searchProvider);
+                    var mockSearchProvider = Mock.Get(testServices.SearchProvider);
                     mockSearchProvider.Setup(x => x.CreateSearchCriteria()).Returns(Mock.Of<ISearchCriteria>());
                     mockSearchProvider.Setup(x => x.Search(It.IsAny<ISearchCriteria>(), It.IsAny<int>()))
                         .Returns(mockSearchResults.Object);
 
-                    var mockMediaService = Mock.Get(serviceContext.MediaService);
+                    var mockMediaService = Mock.Get(testServices.ServiceContext.MediaService);
                     mockMediaService.Setup(x => x.GetByIds(It.IsAny<IEnumerable<int>>()))
                         .Returns(new[]
                         {
@@ -168,7 +168,7 @@ namespace Umbraco.RestApi.Tests
             {
                 var request = new HttpRequestMessage()
                 {
-                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}/search?query=parentID:\\-1", RouteConstants.MediaSegment)),
+                    RequestUri = new Uri($"http://testserver/umbraco/rest/v1/{RouteConstants.MediaSegment}/search?query=parentID:\\-1"),
                     Method = HttpMethod.Get,
                 };
 
@@ -190,9 +190,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                 (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                 (testServices) =>
                  {
-                     var mockMediaService = Mock.Get(serviceContext.MediaService);
+                     var mockMediaService = Mock.Get(testServices.ServiceContext.MediaService);
 
                      mockMediaService.Setup(x => x.GetById(It.IsAny<int>())).Returns(() => ModelMocks.SimpleMockedMedia());
 
@@ -205,7 +205,7 @@ namespace Umbraco.RestApi.Tests
             {
                 var request = new HttpRequestMessage()
                 {
-                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}/123", RouteConstants.MediaSegment)),
+                    RequestUri = new Uri($"http://testserver/umbraco/rest/v1/{RouteConstants.MediaSegment}/123"),
                     Method = HttpMethod.Get,
                 };
 
@@ -239,15 +239,15 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                 (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                 (testServices) =>
                  {
-                     var mockMediaService = Mock.Get(serviceContext.MediaService);
+                     var mockMediaService = Mock.Get(testServices.ServiceContext.MediaService);
 
                      mockMediaService.Setup(x => x.GetById(It.IsAny<int>())).Returns(() => ModelMocks.SimpleMockedMedia());
                      mockMediaService.Setup(x => x.GetChildren(It.IsAny<int>())).Returns(new List<IMedia>(new[] { ModelMocks.SimpleMockedMedia(789) }));
                      mockMediaService.Setup(x => x.HasChildren(It.IsAny<int>())).Returns(true);
 
-                     var mockTextService = Mock.Get(serviceContext.TextService);
+                     var mockTextService = Mock.Get(testServices.ServiceContext.TextService);
 
                      mockTextService.Setup(x => x.Localize(It.IsAny<string>(), It.IsAny<CultureInfo>(), It.IsAny<IDictionary<string, string>>()))
                          .Returns((string input, CultureInfo culture, IDictionary<string, string> tokens) => input);
@@ -257,7 +257,7 @@ namespace Umbraco.RestApi.Tests
             {
                 var request = new HttpRequestMessage()
                 {
-                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}/123/meta", RouteConstants.MediaSegment)),
+                    RequestUri = new Uri($"http://testserver/umbraco/rest/v1/{RouteConstants.MediaSegment}/123/meta"),
                     Method = HttpMethod.Get,
                 };
 
@@ -283,9 +283,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                    var mockMediaService = Mock.Get(serviceContext.MediaService);
+                    var mockMediaService = Mock.Get(testServices.ServiceContext.MediaService);
 
                     mockMediaService.Setup(x => x.GetById(It.IsAny<int>())).Returns(() => ModelMocks.SimpleMockedMedia());
 
@@ -298,7 +298,7 @@ namespace Umbraco.RestApi.Tests
             {
                 var request = new HttpRequestMessage()
                 {
-                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}/123/children", RouteConstants.MediaSegment)),
+                    RequestUri = new Uri($"http://testserver/umbraco/rest/v1/{RouteConstants.MediaSegment}/123/children"),
                     Method = HttpMethod.Get,
                 };
 
@@ -320,9 +320,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                    var mockMediaService = Mock.Get(serviceContext.MediaService);
+                    var mockMediaService = Mock.Get(testServices.ServiceContext.MediaService);
 
                     mockMediaService.Setup(x => x.GetById(It.IsAny<int>())).Returns(() => ModelMocks.SimpleMockedMedia());
 
@@ -372,9 +372,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                    MediaServiceMocks.SetupMocksForPost(serviceContext);
+                    MediaServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
             using (var server = TestServer.Create(builder => startup.Configuration(builder)))
@@ -413,9 +413,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                    MediaServiceMocks.SetupMocksForPost(serviceContext);
+                    MediaServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
             using (var server = TestServer.Create(builder => startup.Configuration(builder)))
@@ -462,9 +462,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                    MediaServiceMocks.SetupMocksForPost(serviceContext);
+                    MediaServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
             using (var server = TestServer.Create(builder => startup.Configuration(builder)))
@@ -510,9 +510,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                    MediaServiceMocks.SetupMocksForPost(serviceContext);
+                    MediaServiceMocks.SetupMocksForPost(testServices.ServiceContext);
 
                     var mockPropertyEditor = Mock.Get(PropertyEditorResolver.Current);
                     mockPropertyEditor.Setup(x => x.GetByAlias("testEditor")).Returns(new ModelMocks.SimplePropertyEditor());
@@ -561,9 +561,9 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (request, umbCtx, typedContent, serviceContext, searchProvider) =>
+                (testServices) =>
                 {
-                    MediaServiceMocks.SetupMocksForPost(serviceContext);
+                    MediaServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
             using (var server = TestServer.Create(builder => startup.Configuration(builder)))

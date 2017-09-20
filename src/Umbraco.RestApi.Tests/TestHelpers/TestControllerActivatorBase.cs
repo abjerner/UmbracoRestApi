@@ -7,6 +7,7 @@ using System.Web.Http.Controllers;
 using System.Web.Http.Dispatcher;
 using System.Web.Security;
 using Examine.Providers;
+using LightInject;
 using Moq;
 using Semver;
 using Umbraco.Core;
@@ -37,7 +38,7 @@ namespace Umbraco.RestApi.Tests.TestHelpers
 
                 //Create mocked services that we are going to pass to the callback for unit tests to modify
                 // before passing these services to the main container objects
-                var mockedTypedContent = Mock.Of<ITypedPublishedContentQuery>();
+                var mockedTypedContentQuery = Mock.Of<ITypedPublishedContentQuery>();
                 var mockedContentService = Mock.Of<IContentService>();
                 var mockedContentTypeService = Mock.Of<IContentTypeService>();
                 var mockedMemberTypeService = Mock.Of<IMemberTypeService>();
@@ -62,7 +63,7 @@ namespace Umbraco.RestApi.Tests.TestHelpers
                     migrationEntryService:mockedMigrationService.Object);
 
                 //new app context
-                var dbCtx = new Mock<DatabaseContext>(Mock.Of<IDatabaseFactory>(), Mock.Of<ILogger>(), Mock.Of<ISqlSyntaxProvider>(), "test");
+                var dbCtx = new Mock<DatabaseContext>(Mock.Of<IDatabaseFactory2>(), Mock.Of<ILogger>(), Mock.Of<ISqlSyntaxProvider>(), "test");
                 //ensure these are set so that the appctx is 'Configured'
                 dbCtx.Setup(x => x.CanConnect).Returns(true);
                 dbCtx.Setup(x => x.IsDatabaseConfigured).Returns(true);
@@ -117,7 +118,7 @@ namespace Umbraco.RestApi.Tests.TestHelpers
 
                 var umbHelper = new UmbracoHelper(umbCtx,
                     Mock.Of<IPublishedContent>(),
-                    mockedTypedContent,
+                    mockedTypedContentQuery,
                     Mock.Of<IDynamicPublishedContentQuery>(),
                     Mock.Of<ITagQuery>(),
                     Mock.Of<IDataTypeService>(),
@@ -131,12 +132,28 @@ namespace Umbraco.RestApi.Tests.TestHelpers
 
                 var searchProvider = Mock.Of<BaseSearchProvider>();
 
-                return CreateController(controllerType, request, umbHelper, mockedTypedContent, serviceContext, searchProvider);
+                var mockSettings = MockUmbracoSettings.GenerateMockSettings();
+
+                //build a container which will be used to construct the controllers
+                var container = new ServiceContainer();
+                container.Register<UmbracoHelper>(factory => umbHelper);
+                container.Register<UmbracoContext>(factory => umbHelper.UmbracoContext);
+                container.Register<BaseSearchProvider>(factory => searchProvider);
+                container.Register<IUmbracoSettingsSection>(factory => mockSettings);
+                container.Register<IContentSection>(factory => mockSettings.Content);
+                container.Register(controllerType);
+
+                var testServices = new TestServices(request, umbHelper.UmbracoContext, mockedTypedContentQuery, serviceContext, searchProvider, mockSettings);
+
+                return CreateController(container, controllerType, umbHelper, testServices);
             }
             //default
             return base.Create(request, controllerDescriptor, controllerType);
         }
 
-        protected abstract ApiController CreateController(Type controllerType, HttpRequestMessage msg, UmbracoHelper helper, ITypedPublishedContentQuery qry, ServiceContext serviceContext, BaseSearchProvider searchProvider);
+        protected abstract ApiController CreateController(
+            IServiceFactory container, Type controllerType, 
+            UmbracoHelper helper,
+            TestServices testServices);
     }
 }

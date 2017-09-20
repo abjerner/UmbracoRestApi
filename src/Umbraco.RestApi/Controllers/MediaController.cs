@@ -37,17 +37,23 @@ namespace Umbraco.RestApi.Controllers
         /// <param name="umbracoContext"></param>
         /// <param name="umbracoHelper"></param>
         /// <param name="searchProvider"></param>
+        /// <param name="contentSectionConfig"></param>
         public MediaController(
             UmbracoContext umbracoContext,
             UmbracoHelper umbracoHelper,
-            BaseSearchProvider searchProvider)
+            BaseSearchProvider searchProvider,
+            IContentSection contentSectionConfig)
             : base(umbracoContext, umbracoHelper)
         {
             if (searchProvider == null) throw new ArgumentNullException("searchProvider");
             _searchProvider = searchProvider;
+            _contentSectionConfig = contentSectionConfig;
         }
 
         private BaseSearchProvider _searchProvider;
+        private IContentSection _contentSectionConfig;
+
+        protected IContentSection ContentSectionConfig => _contentSectionConfig ?? (_contentSectionConfig = UmbracoConfig.For.UmbracoSettings().Content);
         protected BaseSearchProvider SearchProvider => _searchProvider ?? (_searchProvider = ExamineManager.Instance.SearchProviderCollection["ExternalSearcher"]);
 
         [HttpGet]
@@ -55,7 +61,7 @@ namespace Umbraco.RestApi.Controllers
         public virtual HttpResponseMessage Get()
         {
             var rootMedia = Services.MediaService.GetRootMedia();
-            var result = AutoMapper.Mapper.Map<IEnumerable<MediaRepresentation>>(rootMedia).ToList();
+            var result = Mapper.Map<IEnumerable<MediaRepresentation>>(rootMedia).ToList();
             var representation = new MediaListRepresenation(result);
 
             return Request.CreateResponse(HttpStatusCode.OK, representation);
@@ -68,7 +74,7 @@ namespace Umbraco.RestApi.Controllers
         public HttpResponseMessage Get(int id)
         {
             var content = Services.MediaService.GetById(id);
-            var result = AutoMapper.Mapper.Map<MediaRepresentation>(content);
+            var result = Mapper.Map<MediaRepresentation>(content);
 
             return result == null
                 ? Request.CreateResponse(HttpStatusCode.NotFound)
@@ -99,10 +105,8 @@ namespace Umbraco.RestApi.Controllers
             QueryStructure query
             )
         {
-
-            long total;
-            var items = Services.MediaService.GetPagedChildren(id, query.Page, query.PageSize, out total);
-            var pages = Decimal.Round((decimal)(total / query.PageSize), 0);
+            var items = Services.MediaService.GetPagedChildren(id, query.Page, query.PageSize, out var total);
+            var pages = decimal.Round(total / query.PageSize, 0);
             var mapped = Mapper.Map<IEnumerable<MediaRepresentation>>(items).ToList();
 
             var result = new MediaPagedListRepresentation(mapped, 
@@ -121,24 +125,20 @@ namespace Umbraco.RestApi.Controllers
             QueryStructure query
             )
         {
-            long total;
-            var items = Services.MediaService.GetPagedDescendants(id, query.Page, query.PageSize, out total);
-            var pages = Decimal.Round((decimal)(total / query.PageSize), 0);
+            var items = Services.MediaService.GetPagedDescendants(id, query.Page, query.PageSize, out var total);
+            var pages = decimal.Round(total / query.PageSize, 0);
             var mapped = Mapper.Map<IEnumerable<MediaRepresentation>>(items).ToList();
             
             var result = new MediaPagedListRepresentation(mapped, (int)total, (int)pages, (int)query.Page, query.PageSize, LinkTemplates.Media.PagedDescendants, new { id = id });
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
         
-        //NOTE: We cannot accept POST here for now unless we modify the routing structure since there's only one POST per
-        // controller currently (with the way we've routed).
         [HttpGet]
         [CustomRoute("search")]
         public HttpResponseMessage Search(
             [ModelBinder(typeof(QueryStructureModelBinder))]
             QueryStructure query)
         {
-
             if (query.Query.IsNullOrWhiteSpace()) throw new HttpResponseException(HttpStatusCode.NotFound);
 
             //Query prepping - ensure that we only search for media items...
@@ -151,7 +151,7 @@ namespace Umbraco.RestApi.Controllers
 
             //paging
             var paged = result.Skip( GetSkipSize(query.Page, query.PageSize)).ToArray();
-            var pages = Decimal.Round((decimal)(result.TotalItemCount / query.PageSize), 0);
+            var pages = decimal.Round(result.TotalItemCount / query.PageSize, 0);
 
             var foundContent = Enumerable.Empty<IMedia>();
             
@@ -162,7 +162,7 @@ namespace Umbraco.RestApi.Controllers
             }
             
             //Map to representation
-            var items = AutoMapper.Mapper.Map<IEnumerable<MediaRepresentation>>(foundContent).ToList();
+            var items = Mapper.Map<IEnumerable<MediaRepresentation>>(foundContent).ToList();
 
             //return as paged list of media items
             var representation = new MediaPagedListRepresentation(items, result.TotalItemCount, (int)pages, (int)query.Page, query.PageSize, LinkTemplates.Media.Search, new { query = query.Query, pageSize = query.PageSize });
@@ -179,20 +179,21 @@ namespace Umbraco.RestApi.Controllers
         [CustomRoute("")]
         public HttpResponseMessage Post(MediaRepresentation content)
         {
+            if (content == null) Request.CreateResponse(HttpStatusCode.NotFound);
+
             try
             {
-                
                 //we cannot continue here if the mandatory items are empty (i.e. name, etc...)
                 if (!ModelState.IsValid)
                 {
-                    throw ValidationException<MediaRepresentation>(ModelState, content, LinkTemplates.Media.Root);
+                    throw ValidationException(ModelState, content, LinkTemplates.Media.Root);
                 }
 
                 var contentType = Services.ContentTypeService.GetMediaType(content.ContentTypeAlias);
                 if (contentType == null)
                 {
                     ModelState.AddModelError("content.contentTypeAlias", "No media type found with alias " + content.ContentTypeAlias);
-                    throw ValidationException<MediaRepresentation>(ModelState, content, LinkTemplates.Media.Root);
+                    throw ValidationException(ModelState, content, LinkTemplates.Media.Root);
                 }
 
                 //create an item before persisting of the correct content type
@@ -204,13 +205,13 @@ namespace Umbraco.RestApi.Controllers
 
                 if (!ModelState.IsValid)
                 {
-                    throw ValidationException<MediaRepresentation>(ModelState, content, LinkTemplates.Media.Root);
+                    throw ValidationException(ModelState, content, LinkTemplates.Media.Root);
                 }
 
                 Mapper.Map(content, created);
                 Services.MediaService.Save(created);
                 
-                return Request.CreateResponse(HttpStatusCode.OK, Mapper.Map<MediaRepresentation>(created) );
+                return Request.CreateResponse(HttpStatusCode.Created, Mapper.Map<MediaRepresentation>(created) );
             }
             catch (ModelValidationException exception)
             {
@@ -220,15 +221,17 @@ namespace Umbraco.RestApi.Controllers
 
         [HttpPut]
         [CustomRoute("{id}")]
-        public HttpResponseMessage Put(int id, RelationRepresentation rel)
+        public HttpResponseMessage Put(int id, RelationRepresentation content)
         {
+            if (content == null) Request.CreateResponse(HttpStatusCode.NotFound);
+
             try
             {
                 var found = Services.MediaService.GetById(id);
                 if (found == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                Mapper.Map(rel, found);
+                Mapper.Map(content, found);
                 Services.MediaService.Save(found);
 
                 var rep = Mapper.Map<MediaRepresentation>(found);
@@ -263,35 +266,28 @@ namespace Umbraco.RestApi.Controllers
                 return Request.CreateErrorResponse(HttpStatusCode.UnsupportedMediaType, "The request doesn't contain valid content!");
             }
 
-            try
-            {
-                var provider = new MultipartMemoryStreamProvider();
-                await Request.Content.ReadAsMultipartAsync(provider);
+            var provider = new MultipartMemoryStreamProvider();
+            await Request.Content.ReadAsMultipartAsync(provider);
 
-                if (provider.Contents.Count != 1)
-                    return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "This method only works with a single file at a time");
+            if (provider.Contents.Count != 1)
+                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "This method only works with a single file at a time");
 
-                StreamContent file = (StreamContent)provider.Contents.First();
-                var name = file.Headers.ContentDisposition.FileName;
-                var contentType = file.Headers.ContentType;
-                var dataStream = await file.ReadAsStreamAsync();
+            var file = (StreamContent)provider.Contents.First();
+            var name = file.Headers.ContentDisposition.FileName;
+            var contentType = file.Headers.ContentType;
+            var dataStream = await file.ReadAsStreamAsync();
 
-                //build an in-memory file for umbraco
-                var httpFile = new Umbraco.RestApi.Models.MemoryFile(dataStream, contentType.ToString(), name);
+            //build an in-memory file for umbraco
+            var httpFile = new MemoryFile(dataStream, contentType.ToString(), name);
 
-                var media = Services.MediaService.GetById(id);
-                if (media == null)
-                    return Request.CreateResponse(HttpStatusCode.NotFound);
+            var media = Services.MediaService.GetById(id);
+            if (media == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                media.SetValue(property, httpFile as HttpPostedFileBase);
-                Services.MediaService.Save(media);
-                
-                return Request.CreateResponse(HttpStatusCode.OK, Mapper.Map<MediaRepresentation>(media));
-            }
-            catch (Exception e)
-            {
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, e.Message);
-            }
+            media.SetValue(property, httpFile);
+            Services.MediaService.Save(media);
+
+            return Request.CreateResponse(HttpStatusCode.OK, Mapper.Map<MediaRepresentation>(media));
         }
 
         [HttpPost]
@@ -303,46 +299,39 @@ namespace Umbraco.RestApi.Controllers
                 return Request.CreateErrorResponse(HttpStatusCode.UnsupportedMediaType, "The request doesn't contain valid content!");
             }
 
-            try
+            var provider = new MultipartMemoryStreamProvider();
+            await Request.Content.ReadAsMultipartAsync(provider);
+
+            if (provider.Contents.Count != 1)
+                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "This method only works with a single file at a time");
+
+            var file = (StreamContent)provider.Contents.First();
+            var name = file.Headers.ContentDisposition.FileName;
+            var safeFileName = file.Headers.ContentDisposition.FileName.ToSafeFileName();
+            var ext = safeFileName.Substring(safeFileName.LastIndexOf('.') + 1).ToLower();
+
+            if (ContentSectionConfig.IsFileAllowedForUpload(ext) == false)
+                return Request.CreateErrorResponse(HttpStatusCode.Forbidden, "Files of this type not allowed");
+
+            if (string.IsNullOrEmpty(mediaType))
             {
-                var provider = new MultipartMemoryStreamProvider();
-                await Request.Content.ReadAsMultipartAsync(provider);
-
-                if (provider.Contents.Count != 1)
-                    return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "This method only works with a single file at a time");
-
-                StreamContent file = (StreamContent)provider.Contents.First();
-                var name = file.Headers.ContentDisposition.FileName;
-                var safeFileName = file.Headers.ContentDisposition.FileName.ToSafeFileName();
-                var ext = safeFileName.Substring(safeFileName.LastIndexOf('.') + 1).ToLower();
-
-                if (UmbracoConfig.For.UmbracoSettings().Content.IsFileAllowedForUpload(ext) == false)
-                    return Request.CreateErrorResponse(HttpStatusCode.Forbidden, "Files of this type not allowed");
-
-                if(string.IsNullOrEmpty( mediaType ))
+                mediaType = Constants.Conventions.MediaTypes.File;
+                if (ContentSectionConfig.ImageFileTypes.Contains(ext))
                 {
-                    mediaType = Constants.Conventions.MediaTypes.File;
-                    if (UmbracoConfig.For.UmbracoSettings().Content.ImageFileTypes.Contains(ext))
-                    {
-                        mediaType = Constants.Conventions.MediaTypes.Image;
-                    }
+                    mediaType = Constants.Conventions.MediaTypes.Image;
                 }
-                
-                var contentType = file.Headers.ContentType;
-                var dataStream = await file.ReadAsStreamAsync();
+            }
 
-                //build an in-memory file for umbraco
-                var httpFile = new Umbraco.RestApi.Models.MemoryFile(dataStream, contentType.ToString(), name);
-                
-                var media = Services.MediaService.CreateMedia(name, id, mediaType);
-                media.SetValue(property, httpFile as HttpPostedFileBase);
-                Services.MediaService.Save(media);
-                return Request.CreateResponse(HttpStatusCode.OK, Mapper.Map<MediaRepresentation>(media));
-            }
-            catch (Exception e)
-            {
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, e.Message);
-            }
+            var contentType = file.Headers.ContentType;
+            var dataStream = await file.ReadAsStreamAsync();
+
+            //build an in-memory file for umbraco
+            var httpFile = new MemoryFile(dataStream, contentType.ToString(), name);
+
+            var media = Services.MediaService.CreateMedia(name, id, mediaType);
+            media.SetValue(property, httpFile);
+            Services.MediaService.Save(media);
+            return Request.CreateResponse(HttpStatusCode.OK, Mapper.Map<MediaRepresentation>(media));
         }
     }
 
