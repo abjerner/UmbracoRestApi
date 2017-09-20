@@ -483,44 +483,6 @@ namespace Umbraco.RestApi.Tests
                 Assert.AreEqual(HttpStatusCode.OK, result.StatusCode);
             }
         }
-
-
-        [Test]
-        public async Task Put_Upload_Is_200_Response()
-        {
-            var startup = new TestStartup(
-                //This will be invoked before the controller is created so we can modify these mocked services
-                (testServices) =>
-                {
-                    MemberServiceMocks.SetupMocksForPost(testServices.ServiceContext);
-                });
-
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
-            {
-                var mfdc = new MultipartFormDataContent();
-                mfdc.Add(
-                        new StreamContent(new MemoryStream(Encoding.UTF8.GetBytes("This is from a file")))
-                        {
-                            Headers =
-                            {
-                                ContentType = new MediaTypeHeaderValue("image/jpg")
-                            }
-                        },
-                        name: "Data",
-                        fileName: "File1.txt");
-
-                var uri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}/123/upload", RouteConstants.MembersSegment));
-                var result = await server.HttpClient.PutAsync(uri, mfdc);
-                Console.WriteLine(result);
-
-                var json = await ((StreamContent)result.Content).ReadAsStringAsync();
-                Console.Write(JsonConvert.SerializeObject(JsonConvert.DeserializeObject(json), Formatting.Indented));
-                Assert.AreEqual(HttpStatusCode.OK, result.StatusCode);
-            }
-        }
-
-
-
         
     }
 

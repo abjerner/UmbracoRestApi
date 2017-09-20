@@ -129,6 +129,8 @@ namespace Umbraco.RestApi.Controllers
         [CustomRoute("")]
         public HttpResponseMessage Post(MemberRepresentation content)
         {
+            if (content == null) Request.CreateResponse(HttpStatusCode.NotFound);
+
             try
             {
                 //we cannot continue here if the mandatory items are empty (i.e. name, etc...)
@@ -141,7 +143,7 @@ namespace Umbraco.RestApi.Controllers
                 if (contentType == null)
                 {
                     ModelState.AddModelError("content.contentTypeAlias", "No member type found with alias " + content.ContentTypeAlias);
-                    throw ValidationException<MemberRepresentation>(ModelState, content, LinkTemplates.Members.Root);
+                    throw ValidationException(ModelState, content, LinkTemplates.Members.Root);
                 }
 
                 //create an item before persisting of the correct content type
@@ -153,13 +155,13 @@ namespace Umbraco.RestApi.Controllers
 
                 if (!ModelState.IsValid)
                 {
-                    throw ValidationException<MemberRepresentation>(ModelState, content, LinkTemplates.Members.Root);
+                    throw ValidationException(ModelState, content, LinkTemplates.Members.Root);
                 }
 
                 Mapper.Map(content, created);
                 Services.MemberService.Save(created);
 
-                return Request.CreateResponse(HttpStatusCode.OK, Mapper.Map<MemberRepresentation>(created));
+                return Request.CreateResponse(HttpStatusCode.Created, Mapper.Map<MemberRepresentation>(created));
             }
             catch (ModelValidationException exception)
             {

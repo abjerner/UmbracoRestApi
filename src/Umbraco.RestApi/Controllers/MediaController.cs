@@ -221,7 +221,7 @@ namespace Umbraco.RestApi.Controllers
 
         [HttpPut]
         [CustomRoute("{id}")]
-        public HttpResponseMessage Put(int id, RelationRepresentation content)
+        public HttpResponseMessage Put(int id, MediaRepresentation content)
         {
             if (content == null) Request.CreateResponse(HttpStatusCode.NotFound);
 
