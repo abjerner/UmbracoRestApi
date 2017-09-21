@@ -101,18 +101,17 @@ namespace Umbraco.RestApi.Controllers
         [HttpGet]
         [CustomRoute("{id}/children")]
         public HttpResponseMessage GetChildren(int id,
-            [ModelBinder(typeof(QueryStructureModelBinder))]
-            QueryStructure query
-            )
+            [ModelBinder(typeof(PagedQueryModelBinder))]
+            PagedQuery query)
         {
-            var items = Services.MediaService.GetPagedChildren(id, query.Page, query.PageSize, out var total);
+            var items = Services.MediaService.GetPagedChildren(id, query.Page - 1, query.PageSize, out var total, filter: query.Query);
             var pages = decimal.Round(total / query.PageSize, 0);
             var mapped = Mapper.Map<IEnumerable<MediaRepresentation>>(items).ToList();
 
             var result = new MediaPagedListRepresentation(mapped, 
                                                             (int)total, 
                                                             (int)pages, 
-                                                            (int)query.Page, 
+                                                            (int)query.Page - 1, 
                                                             query.PageSize, LinkTemplates.Media.PagedChildren, new { id = id });
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
@@ -121,23 +120,38 @@ namespace Umbraco.RestApi.Controllers
         [HttpGet]
         [CustomRoute("{id}/descendants/")]
         public HttpResponseMessage GetDescendants(int id,
-            [ModelBinder(typeof(QueryStructureModelBinder))]
-            QueryStructure query
-            )
+            [ModelBinder(typeof(PagedQueryModelBinder))]
+            PagedQuery query)
         {
-            var items = Services.MediaService.GetPagedDescendants(id, query.Page, query.PageSize, out var total);
+            var items = Services.MediaService.GetPagedDescendants(id, query.Page - 1, query.PageSize, out var total, filter: query.Query);
             var pages = decimal.Round(total / query.PageSize, 0);
             var mapped = Mapper.Map<IEnumerable<MediaRepresentation>>(items).ToList();
             
-            var result = new MediaPagedListRepresentation(mapped, (int)total, (int)pages, (int)query.Page, query.PageSize, LinkTemplates.Media.PagedDescendants, new { id = id });
+            var result = new MediaPagedListRepresentation(mapped, (int)total, (int)pages, (int)query.Page - 1, query.PageSize, LinkTemplates.Media.PagedDescendants, new { id = id });
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
-        
+
+        [HttpGet]
+        [CustomRoute("{id}/ancestors/")]
+        public HttpResponseMessage GetAncestors(int id,
+            [ModelBinder(typeof(PagedQueryModelBinder))]
+            PagedRequest query)
+        {
+            var items = Services.MediaService.GetAncestors(id).ToArray();
+            var total = items.Length;
+            var pages = decimal.Round(total / query.PageSize, 0);
+            var paged = items.Skip(GetSkipSize(query.Page - 1, query.PageSize)).Take(query.PageSize);
+            var mapped = Mapper.Map<IEnumerable<MediaRepresentation>>(paged).ToList();
+
+            var result = new MediaPagedListRepresentation(mapped, total, (int)pages, (int)query.Page - 1, query.PageSize, LinkTemplates.Media.PagedAncestors, new { id = id });
+            return Request.CreateResponse(HttpStatusCode.OK, result);
+        }
+
         [HttpGet]
         [CustomRoute("search")]
         public HttpResponseMessage Search(
-            [ModelBinder(typeof(QueryStructureModelBinder))]
-            QueryStructure query)
+            [ModelBinder(typeof(PagedQueryModelBinder))]
+            PagedQuery query)
         {
             if (query.Query.IsNullOrWhiteSpace()) throw new HttpResponseException(HttpStatusCode.NotFound);
 
@@ -150,7 +164,7 @@ namespace Umbraco.RestApi.Controllers
                     query.PageSize);
 
             //paging
-            var paged = result.Skip( GetSkipSize(query.Page, query.PageSize)).ToArray();
+            var paged = result.Skip( GetSkipSize(query.Page - 1, query.PageSize)).ToArray();
             var pages = decimal.Round(result.TotalItemCount / query.PageSize, 0);
 
             var foundContent = Enumerable.Empty<IMedia>();
@@ -165,7 +179,7 @@ namespace Umbraco.RestApi.Controllers
             var items = Mapper.Map<IEnumerable<MediaRepresentation>>(foundContent).ToList();
 
             //return as paged list of media items
-            var representation = new MediaPagedListRepresentation(items, result.TotalItemCount, (int)pages, (int)query.Page, query.PageSize, LinkTemplates.Media.Search, new { query = query.Query, pageSize = query.PageSize });
+            var representation = new MediaPagedListRepresentation(items, result.TotalItemCount, (int)pages, (int)query.Page - 1, query.PageSize, LinkTemplates.Media.Search, new { query = query.Query, pageSize = query.PageSize });
 
             return Request.CreateResponse(HttpStatusCode.OK, representation);
         }
@@ -232,7 +246,7 @@ namespace Umbraco.RestApi.Controllers
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
                 Mapper.Map(content, found);
-                Services.MediaService.Save(found);
+                Services.MediaService.Save(found, Security.GetUserId());
 
                 var rep = Mapper.Map<MediaRepresentation>(found);
                 return Request.CreateResponse(HttpStatusCode.OK, rep);

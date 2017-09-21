@@ -242,6 +242,7 @@
     <Compile Include="Controllers\ContentController.cs" />
     <Compile Include="Controllers\MediaController.cs" />
     <Compile Include="Controllers\MembersController.cs" />
+    <Compile Include="Controllers\PagedRequestModelBinder.cs" />
     <Compile Include="LinkTemplateExtensions.cs" />
     <Compile Include="LinkTemplates.cs" />
     <Compile Include="Models\ContentPagedListRepresentation.cs" />
@@ -250,6 +251,7 @@
     <Compile Include="Models\MediaPagedListRepresentation.cs" />
     <Compile Include="Models\MemberPagedListRepresentation.cs" />
     <Compile Include="Models\PagedListRepresentation.cs" />
+    <Compile Include="Models\PagedRequest.cs" />
     <Compile Include="Models\PublishedContentPagedListRepresentation.cs" />
     <Compile Include="Models\RelationTypeListRepresentation.cs" />
     <Compile Include="Models\RelationTypeRepresentation.cs" />
@@ -259,7 +261,7 @@
     <Compile Include="Controllers\CustomActionSelector.cs" />
     <Compile Include="Controllers\DynamicCorsAttribute.cs" />
     <Compile Include="Controllers\PublishedContentController.cs" />
-    <Compile Include="Controllers\QueryStructureModelBinder.cs" />
+    <Compile Include="Controllers\PagedQueryModelBinder.cs" />
     <Compile Include="Controllers\RelationsController.cs" />
     <Compile Include="Models\ContentListRepresentation.cs" />
     <Compile Include="Models\Mapping\ContentPropertiesResolver.cs" />
@@ -281,7 +283,7 @@
     <Compile Include="Routing\UmbracoRoutePrefixAttribute.cs" />
     <Compile Include="Routing\CustomRouteAttributeDirectRouteProvider.cs" />
     <Compile Include="Routing\CustomRouteAttribute.cs" />
-    <Compile Include="Models\QueryStructure.cs" />
+    <Compile Include="Models\PagedQuery.cs" />
     <Compile Include="Routing\WriteableRoute.cs" />
     <Compile Include="SpecificAssemblyResolver.cs" />
     <Compile Include="SpecificControllerTypeResolver.cs" />

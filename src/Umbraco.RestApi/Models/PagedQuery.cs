@@ -1,6 +1,5 @@
 namespace Umbraco.RestApi.Models
 {
-
     /// <summary>
     /// A query structure that gets parsed for incoming REST API calls that support query structures.
     /// </summary>
@@ -16,18 +15,14 @@ namespace Umbraco.RestApi.Models
     ///             though I think that both of those will require an IQueryable implementation which has been started in the Umbraco LinqPad project
     ///     Some other query structures that might be of interest: http://orangevolt.blogspot.com.au/2012/12/8-ways-to-query-json-structures.html
     /// </remarks>
-    public class QueryStructure
+    public class PagedQuery : PagedRequest
     {
-        public QueryStructure()
-        {
-            Page = 0;
-            PageSize = 100;
-        }
-
-        public long Page { get; set; }
-        public int PageSize { get; set; }
-
-
+        /// <summary>
+        /// The query to lookup results for
+        /// </summary>
+        /// <remarks>
+        /// Depending on how this structure is used could mean this query is of different formats
+        /// </remarks>
         public string Query { get; set; }
     }
 }

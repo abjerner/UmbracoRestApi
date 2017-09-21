@@ -42,7 +42,6 @@ namespace Umbraco.RestApi
             public static Link PagedAncestors => new Link("ancestors",
                 string.Format("{0}/{{id}}/ancestors{{?page,size,query}}", BaseUrl));
 
-
             public static Link Search => new Link("search", string.Format("{0}/search{{?page,size,query}}", BaseUrl));
 
             public static Link Query => new Link("query", string.Format("{0}/query/{{id}}{{?page,size,query}}", BaseUrl));
@@ -66,6 +65,9 @@ namespace Umbraco.RestApi
 
             public static Link PagedDescendants => new Link("descendants",
                 string.Format("{0}/{{id}}/descendants{{?pageIndex,pageSize}}", BaseUrl));
+
+            public static Link PagedAncestors => new Link("ancestors",
+                string.Format("{0}/{{id}}/ancestors{{?page,size,query}}", BaseUrl));
 
             public static Link MetaData => new Link("meta", string.Format("{0}/{{id}}/meta", BaseUrl));
 
