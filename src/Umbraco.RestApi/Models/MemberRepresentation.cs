@@ -31,7 +31,6 @@ namespace Umbraco.RestApi.Models
             
             Links.Add(LinkTemplates.Members.Root);
             Links.Add(LinkTemplates.Members.MetaData.CreateLink(new { id = Id }));
-            Links.Add(LinkTemplates.Members.Upload.CreateLinkTemplate(Id));
         }
     }
 }
