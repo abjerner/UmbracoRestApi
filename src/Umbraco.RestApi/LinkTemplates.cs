@@ -61,10 +61,10 @@ namespace Umbraco.RestApi
 
             public static Link Parent => new Link("parent", string.Format("{0}/{{parentId}}", BaseUrl));
 
-            public static Link PagedChildren => new Link("children", string.Format("{0}/{{id}}/children{{?pageIndex,pageSize}}", BaseUrl));
+            public static Link PagedChildren => new Link("children", string.Format("{0}/{{id}}/children{{?page,pageSize}}", BaseUrl));
 
             public static Link PagedDescendants => new Link("descendants",
-                string.Format("{0}/{{id}}/descendants{{?pageIndex,pageSize}}", BaseUrl));
+                string.Format("{0}/{{id}}/descendants{{?page,pageSize}}", BaseUrl));
 
             public static Link PagedAncestors => new Link("ancestors",
                 string.Format("{0}/{{id}}/ancestors{{?page,size,query}}", BaseUrl));

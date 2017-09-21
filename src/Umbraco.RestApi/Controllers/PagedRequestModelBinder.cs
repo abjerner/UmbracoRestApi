@@ -35,9 +35,9 @@ namespace Umbraco.RestApi.Controllers
                 queryStructure.PageSize = pageSize;
             }
 
-            if (queryStrings.TryGetValue("size", out qsVal) && int.TryParse(qsVal, out var pageIndex))
+            if (queryStrings.TryGetValue("page", out qsVal) && int.TryParse(qsVal, out var page))
             {
-                queryStructure.Page = pageIndex + 1;
+                queryStructure.Page = page;
             }
 
             bindingContext.Model = queryStructure;

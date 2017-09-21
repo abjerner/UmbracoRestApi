@@ -7,27 +7,27 @@ namespace Umbraco.RestApi.Models
     {
         private readonly Link _uriTemplate;
 
-        protected PagedListRepresentation(IList<TRepresentation> res, int totalResults, int totalPages, int page, int pageSize, Link uriTemplate, object uriTemplateSubstitutionParams)
+        protected PagedListRepresentation(IList<TRepresentation> res, long totalResults, long totalPages, long page, int pageSize, Link uriTemplate, object uriTemplateSubstitutionParams)
             : base(res)
         {
             _uriTemplate = uriTemplate;
             TotalResults = totalResults;
             TotalPages = totalPages;
-            PageIndex = page;
+            Page = page;
             PageSize = pageSize;
             UriTemplateSubstitutionParams = uriTemplateSubstitutionParams;
         }
 
-        public int TotalResults { get; set; }
-        public int TotalPages { get; set; }
-        public int PageIndex { get; set; }
+        public long TotalResults { get; set; }
+        public long TotalPages { get; set; }
+        public long Page { get; set; }
         public int PageSize { get; set; }
 
         protected object UriTemplateSubstitutionParams;
 
         protected override void CreateHypermedia()
         {
-            var prms = new List<object> { new { page = PageIndex, size = PageSize } };
+            var prms = new List<object> { new { page = Page, size = PageSize } };
             if (UriTemplateSubstitutionParams != null)
                 prms.Add(UriTemplateSubstitutionParams);
 
@@ -36,19 +36,19 @@ namespace Umbraco.RestApi.Models
             Links.Add(new Link { Href = Href, Rel = "self" });
 
 
-            if (PageIndex > 0)
+            if (Page > 1)
             {
                 var item = UriTemplateSubstitutionParams == null
-                                ? _uriTemplate.CreateLink("prev", new { page = PageIndex - 1, size = PageSize })
-                                : _uriTemplate.CreateLink("prev", UriTemplateSubstitutionParams, new { page = PageIndex - 1, size = PageSize }); // page overrides UriTemplateSubstitutionParams
+                                ? _uriTemplate.CreateLink("prev", new { page = Page - 1, size = PageSize })
+                                : _uriTemplate.CreateLink("prev", UriTemplateSubstitutionParams, new { page = Page - 1, size = PageSize }); // page overrides UriTemplateSubstitutionParams
                 Links.Add(item);
             }
 
-            if (PageIndex < (TotalPages - 1))
+            if (Page < TotalPages)
             {
                 var link = UriTemplateSubstitutionParams == null // kbr
-                               ? _uriTemplate.CreateLink("next", new { page = PageIndex + 1, size = PageSize })
-                               : _uriTemplate.CreateLink("next", UriTemplateSubstitutionParams, new { page = PageIndex + 1, size = PageSize }); // page overrides UriTemplateSubstitutionParams
+                               ? _uriTemplate.CreateLink("next", new { page = Page + 1, size = PageSize })
+                               : _uriTemplate.CreateLink("next", UriTemplateSubstitutionParams, new { page = Page + 1, size = PageSize }); // page overrides UriTemplateSubstitutionParams
                 Links.Add(link);
             }
 

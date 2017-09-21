@@ -17,11 +17,13 @@ using System.Web.Http.ModelBinding;
 using Umbraco.Core.Publishing;
 using Umbraco.Web.Models.ContentEditing;
 using Umbraco.Core.Services;
+using Umbraco.Web.WebApi;
 
 namespace Umbraco.RestApi.Controllers
 {
+    [UmbracoAuthorize]
     [UmbracoRoutePrefix("rest/v1/content")]
-    public class ContentController : UmbracoHalController
+    public class ContentController : UmbracoHalController, ITraversableController<ContentRepresentation>
     {
         /// <summary>
         /// Default ctor
@@ -48,7 +50,7 @@ namespace Umbraco.RestApi.Controllers
         //this is the default language culture for umbraco translation files
         private static readonly CultureInfo DefaultCulture = CultureInfo.GetCultureInfo("en-US");
         private BaseSearchProvider _searchProvider;
-        protected BaseSearchProvider SearchProvider => _searchProvider ?? (_searchProvider = ExamineManager.Instance.SearchProviderCollection["InternalSearcher"]);
+        protected BaseSearchProvider SearchProvider => _searchProvider ?? (_searchProvider = ExamineManager.Instance.SearchProviderCollection["InternalSearcher"]);        
 
         [HttpGet]
         [CustomRoute("")]
@@ -80,9 +82,11 @@ namespace Umbraco.RestApi.Controllers
             var found = Services.ContentService.GetById(id);
             if (found == null) throw new HttpResponseException(HttpStatusCode.NotFound);
 
+            var helper = new ContentControllerHelper(Services.TextService);
+
             var result = new ContentMetadataRepresentation(LinkTemplates.Content.MetaData, LinkTemplates.Content.Self, id)
             {
-                Fields = GetDefaultFieldMetaData(),
+                Fields = helper.GetDefaultFieldMetaData(Security.CurrentUser),
                 Properties = Mapper.Map<IDictionary<string, ContentPropertyInfo>>(found),
                 CreateTemplate = Mapper.Map<ContentCreationTemplate>(found)
             };
@@ -93,14 +97,14 @@ namespace Umbraco.RestApi.Controllers
         [HttpGet]
         [CustomRoute("{id}/children")]
         public HttpResponseMessage GetChildren(int id,
-            [ModelBinder(typeof(PagedRequestModelBinder))]
+            [ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query)
         {
             var items = Services.ContentService.GetPagedChildren(id, query.Page - 1, query.PageSize, out var total, filter:query.Query);
-            var pages = decimal.Round(total / query.PageSize, 0);
+            var pages = ContentControllerHelper.GetTotalPages(total, query.PageSize);
             var mapped = Mapper.Map<IEnumerable<ContentRepresentation>>(items).ToList();
 
-            var result = new ContentPagedListRepresentation(mapped, (int)total, (int)pages, (int)query.Page - 1, query.PageSize, LinkTemplates.Content.PagedChildren, new { id = id });
+            var result = new ContentPagedListRepresentation(mapped, total, pages, query.Page, query.PageSize, LinkTemplates.Content.PagedChildren, new { id = id });
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
@@ -112,10 +116,10 @@ namespace Umbraco.RestApi.Controllers
             PagedQuery query)
         {
             var items = Services.ContentService.GetPagedDescendants(id, query.Page - 1, query.PageSize, out var total, filter: query.Query);
-            var pages = decimal.Round(total / query.PageSize, 0);
+            var pages = ContentControllerHelper.GetTotalPages(total, query.PageSize);
             var mapped = Mapper.Map<IEnumerable<ContentRepresentation>>(items).ToList();
 
-            var result = new ContentPagedListRepresentation(mapped, (int)total, (int)pages, (int)query.Page - 1, query.PageSize, LinkTemplates.Content.PagedDescendants, new { id = id });
+            var result = new ContentPagedListRepresentation(mapped, total, pages, query.Page - 1, query.PageSize, LinkTemplates.Content.PagedDescendants, new { id = id });
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
@@ -127,11 +131,11 @@ namespace Umbraco.RestApi.Controllers
         {
             var items = Services.ContentService.GetAncestors(id).ToArray();
             var total = items.Length;
-            var pages = decimal.Round(total / query.PageSize, 0);
-            var paged = items.Skip(GetSkipSize(query.Page - 1, query.PageSize)).Take(query.PageSize);
+            var pages = (total + query.PageSize - 1) / query.PageSize;
+            var paged = items.Skip(ContentControllerHelper.GetSkipSize(query.Page - 1, query.PageSize)).Take(query.PageSize);
             var mapped = Mapper.Map<IEnumerable<ContentRepresentation>>(paged).ToList();
 
-            var result = new ContentPagedListRepresentation(mapped, total, (int)pages, (int)query.Page - 1, query.PageSize, LinkTemplates.Content.PagedAncestors, new { id = id });
+            var result = new ContentPagedListRepresentation(mapped, total, pages, query.Page - 1, query.PageSize, LinkTemplates.Content.PagedAncestors, new { id = id });
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
         
@@ -153,8 +157,8 @@ namespace Umbraco.RestApi.Controllers
                     query.PageSize);
 
             //paging
-            var paged = result.Skip(GetSkipSize(query.Page - 1, query.PageSize)).ToArray();
-            var pages = decimal.Round(result.TotalItemCount / query.PageSize, 0);
+            var paged = result.Skip(ContentControllerHelper.GetSkipSize(query.Page - 1, query.PageSize)).ToArray();
+            var pages = (result.TotalItemCount + query.PageSize - 1) / query.PageSize;
 
             var foundContent = Enumerable.Empty<IContent>();
 
@@ -168,7 +172,7 @@ namespace Umbraco.RestApi.Controllers
             var items = Mapper.Map<IEnumerable<ContentRepresentation>>(foundContent).ToList();
 
             //return as paged list of media items
-            var representation = new ContentPagedListRepresentation(items, result.TotalItemCount, (int)pages, (int)query.Page - 1, query.PageSize, LinkTemplates.Content.Search, new { query = query.Query, pageSize = query.PageSize });
+            var representation = new ContentPagedListRepresentation(items, result.TotalItemCount, pages, query.Page - 1, query.PageSize, LinkTemplates.Content.Search, new { query = query.Query, pageSize = query.PageSize });
 
             return Request.CreateResponse(HttpStatusCode.OK, representation);
         }

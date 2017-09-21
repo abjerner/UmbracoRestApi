@@ -19,7 +19,7 @@ namespace Umbraco.RestApi.Controllers
 {
     [UmbracoAuthorize]
     [UmbracoRoutePrefix("rest/v1/members")]
-    public class MembersController : UmbracoHalController
+    public class MembersController : UmbracoHalController, IUmbracoController<MemberRepresentation>
     {
         public MembersController()
         {
@@ -37,15 +37,18 @@ namespace Umbraco.RestApi.Controllers
         
         [HttpGet]
         [CustomRoute("")]
-        public HttpResponseMessage Get(long page = 0, int size = 100, string orderBy = "Name", string direction = "Ascending", string memberTypeAlias = null, string filter = "")
+        public HttpResponseMessage Get(
+            [ModelBinder(typeof(PagedQueryModelBinder))]
+            PagedQuery query,
+            string orderBy = "Name", string direction = "Ascending", string memberTypeAlias = null)
         {
             var directionEnum = Enum<Core.Persistence.DatabaseModelDefinitions.Direction>.Parse(direction);
-            var members = Services.MemberService.GetAll(page, size, out var totalRecords, orderBy, directionEnum, memberTypeAlias, filter);
-            var totalPages = ((int)totalRecords + size - 1) / size;
+            var members = Services.MemberService.GetAll(query.Page - 1, query.PageSize, out var totalRecords, orderBy, directionEnum, memberTypeAlias, query.Query);
+            var totalPages = ContentControllerHelper.GetTotalPages(totalRecords, query.PageSize);            
 
             var mapped = Mapper.Map<IEnumerable<MemberRepresentation>>(members).ToList();
 
-            var representation = new MemberPagedListRepresentation(mapped, (int)totalRecords, totalPages, (int)page, size, LinkTemplates.Members.Root, new { });
+            var representation = new MemberPagedListRepresentation(mapped, totalRecords, totalPages, query.Page, query.PageSize, LinkTemplates.Members.Root, new { });
             return Request.CreateResponse(HttpStatusCode.OK, representation);
         }
 
@@ -65,8 +68,8 @@ namespace Umbraco.RestApi.Controllers
                 query.PageSize);
 
             //paging
-            var paged = result.Skip(GetSkipSize(query.Page - 1, query.PageSize)).ToArray();
-            var pages = decimal.Round(result.TotalItemCount / query.PageSize, 0);
+            var paged = result.Skip(ContentControllerHelper.GetSkipSize(query.Page - 1, query.PageSize)).ToArray();
+            var pages = (result.TotalItemCount + query.PageSize - 1) / query.PageSize;
 
             var foundContent = Enumerable.Empty<IMedia>();
 
@@ -80,7 +83,7 @@ namespace Umbraco.RestApi.Controllers
             var items = Mapper.Map<IEnumerable<MediaRepresentation>>(foundContent).ToList();
 
             //return as paged list of media items
-            var representation = new MediaPagedListRepresentation(items, result.TotalItemCount, (int)pages, (int)query.Page - 1, query.PageSize, LinkTemplates.Media.Search, new { query = query.Query, pageSize = query.PageSize });
+            var representation = new MediaPagedListRepresentation(items, result.TotalItemCount, pages, query.Page - 1, query.PageSize, LinkTemplates.Media.Search, new { query = query.Query, pageSize = query.PageSize });
 
             return Request.CreateResponse(HttpStatusCode.OK, representation);
         }

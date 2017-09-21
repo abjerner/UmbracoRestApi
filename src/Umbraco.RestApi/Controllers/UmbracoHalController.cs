@@ -14,8 +14,7 @@ using WebApi.Hal;
 
 namespace Umbraco.RestApi.Controllers
 {
-    [DynamicCors]
-    [UmbracoAuthorize]
+    [DynamicCors]    
     [IsBackOffice]
     [HalFormatterConfiguration]
     public abstract class UmbracoHalController : UmbracoApiControllerBase
@@ -33,35 +32,7 @@ namespace Umbraco.RestApi.Controllers
         }
 
         protected int CurrentVersionRequest => int.Parse(Regex.Match(Request.RequestUri.AbsolutePath, "/v(\\d+)/", RegexOptions.Compiled).Groups[1].Value);
-
-/*
-        [HttpPut]
-        [CustomRoute("{id}/publish")]
-        public HttpResponseMessage PublishContent(TId id)
-        {
-            try
-            {
-                var result = Publish(id);
-                return result == null
-                    ? Request.CreateResponse(HttpStatusCode.NotImplemented)
-                    : Request.CreateResponse(HttpStatusCode.OK, CreateRepresentation(result));
-            }
-            catch (ModelValidationException exception)
-            {
-                return Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors);
-            }
-        }*/
-
         
-        public int GetSkipSize(long pageIndex, int pageSize)
-        {
-            if (pageIndex >= 0 && pageSize > 0)
-            {
-                return Convert.ToInt32((pageIndex) * pageSize);
-            }
-            return 0;
-        }
-
         /// <summary>
         /// Used to throw validation exceptions
         /// </summary>
@@ -121,41 +92,5 @@ namespace Umbraco.RestApi.Controllers
 
             return new ModelValidationException(errorModel);
         }
-
-
-        [NonAction]
-        protected IDictionary<string, ContentPropertyInfo> GetDefaultFieldMetaData()
-        {
-            //TODO: This shouldn't actually localize based on the current user!!!
-            // this should localize based on the current request's Accept-Language and Content-Language headers
-
-            return new Dictionary<string, ContentPropertyInfo>
-            {
-                {"id", new ContentPropertyInfo{Label = "Id", ValidationRequired = true}},
-                {"key", new ContentPropertyInfo{Label = "Key", ValidationRequired = true}},
-                {"contentTypeAlias", new ContentPropertyInfo{Label = TextService.Localize("content/documentType", UserCulture), ValidationRequired = true}},
-                {"parentId", new ContentPropertyInfo{Label = "Parent Id", ValidationRequired = true}},
-                {"hasChildren", new ContentPropertyInfo{Label = "Has Children"}},
-                {"templateId", new ContentPropertyInfo{Label = TextService.Localize("template/template", UserCulture) + " Id", ValidationRequired = true}},
-                {"sortOrder", new ContentPropertyInfo{Label = TextService.Localize("general/sort", UserCulture)}},
-                {"name", new ContentPropertyInfo{Label = TextService.Localize("general/name", UserCulture), ValidationRequired = true}},
-                {"urlName", new ContentPropertyInfo{Label = TextService.Localize("general/url", UserCulture) + " " + TextService.Localize("general/name", UserCulture)}},
-                {"writerName", new ContentPropertyInfo{Label = TextService.Localize("content/updatedBy", UserCulture)}},
-                {"creatorName", new ContentPropertyInfo{Label = TextService.Localize("content/createBy", UserCulture)}},
-                {"writerId", new ContentPropertyInfo{Label = "Writer Id"}},
-                {"creatorId", new ContentPropertyInfo{Label = "Creator Id"}},
-                {"path", new ContentPropertyInfo{Label = TextService.Localize("general/path", UserCulture)}},
-                {"createDate", new ContentPropertyInfo{Label = TextService.Localize("content/createDate", UserCulture)}},
-                {"updateDate", new ContentPropertyInfo{Label = TextService.Localize("content/updateDate", UserCulture)}},
-                {"level", new ContentPropertyInfo{Label = "Level"}},
-                {"url", new ContentPropertyInfo{Label = TextService.Localize("general/url", UserCulture)}},
-                {"ItemType", new ContentPropertyInfo{Label = TextService.Localize("general/type", UserCulture)}}
-            };
-        }
-
-        private CultureInfo _userCulture;
-        protected CultureInfo UserCulture => _userCulture ?? (_userCulture = Security.CurrentUser.GetUserCulture(TextService));
-
-        private ILocalizedTextService TextService => Services.TextService;
     }
 }

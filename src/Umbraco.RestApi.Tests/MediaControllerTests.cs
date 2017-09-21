@@ -25,8 +25,7 @@ using Task = System.Threading.Tasks.Task;
 
 namespace Umbraco.RestApi.Tests
 {
-    [TestFixture]
-    public class MediaControllerTests
+    public abstract class ControllerTests
     {
         [OneTimeSetUp]
         public void FixtureSetUp()
@@ -44,6 +43,41 @@ namespace Umbraco.RestApi.Tests
             typeof(PropertyEditorResolver).CallStaticMethod("Reset", true);
             UmbracoRestApiOptionsInstance.Options = new UmbracoRestApiOptions();
         }
+
+        protected async Task Get_Root_With_OPTIONS(TestStartup startup, string segment)
+        {
+            using (var server = TestServer.Create(startup.Configuration))
+            {
+
+                var request = new HttpRequestMessage
+                {
+                    RequestUri = new Uri($"http://testserver/umbraco/rest/v1/{segment}"),
+                    Method = HttpMethod.Options,
+                };
+
+                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/hal+json"));
+                request.Headers.Add("Access-Control-Request-Headers", "accept, authorization");
+                request.Headers.Add("Access-Control-Request-Method", "GET");
+                request.Headers.Add("Origin", "http://localhost:12061");
+                request.Headers.Add("Referer", "http://localhost:12061/browser.html");
+
+                Console.WriteLine(request);
+                var result = await server.HttpClient.SendAsync(request);
+                Console.WriteLine(result);
+
+                var json = await ((StreamContent)result.Content).ReadAsStringAsync();
+                Console.Write(JsonConvert.SerializeObject(JsonConvert.DeserializeObject(json), Formatting.Indented));
+
+                Assert.AreEqual(HttpStatusCode.OK, result.StatusCode);
+            }
+        }
+
+    }
+
+    [TestFixture]
+    public class MediaControllerTests : ControllerTests
+    {
+        
 
         [Test]
         public async Task Get_Root_With_OPTIONS()
@@ -63,30 +97,7 @@ namespace Umbraco.RestApi.Tests
                     mockMediaService.Setup(x => x.GetChildren(456)).Returns(new[] { ModelMocks.SimpleMockedMedia(321, 456) });
                 });
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
-            {
-
-                var request = new HttpRequestMessage()
-                {
-                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}", RouteConstants.MediaSegment)),
-                    Method = HttpMethod.Options,
-                };
-
-                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/hal+json"));
-                request.Headers.Add("Access-Control-Request-Headers", "accept, authorization");
-                request.Headers.Add("Access-Control-Request-Method", "GET");
-                request.Headers.Add("Origin", "http://localhost:12061");
-                request.Headers.Add("Referer", "http://localhost:12061/browser.html");
-
-                Console.WriteLine(request);
-                var result = await server.HttpClient.SendAsync(request);
-                Console.WriteLine(result);
-
-                var json = await ((StreamContent)result.Content).ReadAsStringAsync();
-                Console.Write(JsonConvert.SerializeObject(JsonConvert.DeserializeObject(json), Formatting.Indented));
-
-                Assert.AreEqual(HttpStatusCode.OK, result.StatusCode);
-            }
+            await Get_Root_With_OPTIONS(startup, RouteConstants.MediaSegment);
         }
 
         [Test]
@@ -224,7 +235,7 @@ namespace Umbraco.RestApi.Tests
 
                 Assert.AreEqual("/umbraco/rest/v1/media/123", djson["_links"]["self"]["href"].Value<string>());
                 Assert.AreEqual("/umbraco/rest/v1/media/456", djson["_links"]["parent"]["href"].Value<string>());
-                Assert.AreEqual("/umbraco/rest/v1/media/123/children{?pageIndex,pageSize}", djson["_links"]["children"]["href"].Value<string>());
+                Assert.AreEqual("/umbraco/rest/v1/media/123/children{?page,pageSize}", djson["_links"]["children"]["href"].Value<string>());
                 Assert.AreEqual("/umbraco/rest/v1/media", djson["_links"]["root"]["href"].Value<string>());
 
                 var properties = djson["properties"].ToObject<IDictionary<string, object>>();
@@ -316,7 +327,7 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
-        public async Task Get_Children_Is_With_Params_Result()
+        public async Task Get_Children_Is_200_With_Params_Result()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
@@ -341,7 +352,7 @@ namespace Umbraco.RestApi.Tests
             {
                 var request = new HttpRequestMessage()
                 {
-                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}/123/children?page=1&size=2", RouteConstants.MediaSegment)),
+                    RequestUri = new Uri($"http://testserver/umbraco/rest/v1/{RouteConstants.MediaSegment}/123/children?page=2&size=2"),
                     Method = HttpMethod.Get,
                 };
 
@@ -359,7 +370,7 @@ namespace Umbraco.RestApi.Tests
                 var djson = JsonConvert.DeserializeObject<JObject>(json);
 
                 Assert.AreEqual(6, djson["totalResults"].Value<int>());
-                Assert.AreEqual(1, djson["pageIndex"].Value<int>());
+                Assert.AreEqual(2, djson["page"].Value<int>());
                 Assert.AreEqual(2, djson["pageSize"].Value<int>());
                 Assert.IsNotNull(djson["_links"]["next"]);
                 Assert.IsNotNull(djson["_links"]["prev"]);

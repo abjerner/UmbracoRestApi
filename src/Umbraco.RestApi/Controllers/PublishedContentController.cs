@@ -75,10 +75,10 @@ namespace Umbraco.RestApi.Controllers
 
             var resolved = (string.IsNullOrEmpty(query.Query)) ? content.Children().ToArray() : content.Children(query.Query.Split(',')).ToArray();
             var total = resolved.Length;
-            var pages = decimal.Round(total / query.PageSize, 0);
+            var pages = (total + query.PageSize - 1) / query.PageSize;
 
-            var items = AutoMapper.Mapper.Map<IEnumerable<PublishedContentRepresentation>>(resolved.Skip(GetSkipSize(query.Page - 1, query.PageSize)).Take(query.PageSize)).ToList();
-            var result = new PublishedContentPagedListRepresentation(items, total, (int)pages, (int)query.Page - 1, query.PageSize, LinkTemplates.PublishedContent.PagedChildren, new { id = id });
+            var items = AutoMapper.Mapper.Map<IEnumerable<PublishedContentRepresentation>>(resolved.Skip(ContentControllerHelper.GetSkipSize(query.Page - 1, query.PageSize)).Take(query.PageSize)).ToList();
+            var result = new PublishedContentPagedListRepresentation(items, total, pages, query.Page - 1, query.PageSize, LinkTemplates.PublishedContent.PagedChildren, new { id = id });
 
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
@@ -96,10 +96,9 @@ namespace Umbraco.RestApi.Controllers
             var resolved = (string.IsNullOrEmpty(query.Query)) ? content.Descendants().ToArray() : content.Descendants(query.Query).ToArray();
 
             var total = resolved.Length;
-            var pages = decimal.Round(total / query.PageSize, 0);
-
-            var items = AutoMapper.Mapper.Map<IEnumerable<PublishedContentRepresentation>>(resolved.Skip(GetSkipSize(query.Page - 1, query.PageSize)).Take(query.PageSize)).ToList();
-            var result = new PublishedContentPagedListRepresentation(items, total, (int)pages, (int)query.Page - 1, query.PageSize, LinkTemplates.PublishedContent.PagedDescendants, new { id = id });
+            var pages = (total + query.PageSize - 1) / query.PageSize;
+            var items = AutoMapper.Mapper.Map<IEnumerable<PublishedContentRepresentation>>(resolved.Skip(ContentControllerHelper.GetSkipSize(query.Page - 1, query.PageSize)).Take(query.PageSize)).ToList();
+            var result = new PublishedContentPagedListRepresentation(items, total, pages, query.Page - 1, query.PageSize, LinkTemplates.PublishedContent.PagedDescendants, new { id = id });
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
@@ -115,10 +114,10 @@ namespace Umbraco.RestApi.Controllers
             var resolved = (string.IsNullOrEmpty(query.Query)) ? content.Ancestors().ToArray() : content.Ancestors(query.Query).ToArray();
 
             var total = resolved.Length;
-            var pages = decimal.Round(total / query.PageSize, 0);
+            var pages = (total + query.PageSize - 1) / query.PageSize;
 
-            var items = AutoMapper.Mapper.Map<IEnumerable<PublishedContentRepresentation>>(resolved.Skip(GetSkipSize(query.Page - 1, query.PageSize)).Take(query.PageSize)).ToList();
-            var result = new PublishedContentPagedListRepresentation(items, total, (int)pages, (int)query.Page - 1, query.PageSize, LinkTemplates.PublishedContent.PagedAncestors, new { id = id });
+            var items = AutoMapper.Mapper.Map<IEnumerable<PublishedContentRepresentation>>(resolved.Skip(ContentControllerHelper.GetSkipSize(query.Page - 1, query.PageSize)).Take(query.PageSize)).ToList();
+            var result = new PublishedContentPagedListRepresentation(items, total, pages, query.Page - 1, query.PageSize, LinkTemplates.PublishedContent.PagedAncestors, new { id = id });
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
@@ -152,7 +151,7 @@ namespace Umbraco.RestApi.Controllers
 
             var paged = result.Skip((int)skip).Take(take);
             var items = AutoMapper.Mapper.Map<IEnumerable<PublishedContentRepresentation>>(paged).ToList();
-            var representation = new PublishedContentPagedListRepresentation(items, result.Length, 1, (int)query.Page - 1, query.PageSize, LinkTemplates.PublishedContent.Query, new { query = query.Query, pageSize = query.PageSize });
+            var representation = new PublishedContentPagedListRepresentation(items, result.Length, 1, query.Page - 1, query.PageSize, LinkTemplates.PublishedContent.Query, new { query = query.Query, pageSize = query.PageSize });
 
             return Request.CreateResponse(HttpStatusCode.OK, representation);
         }
@@ -171,10 +170,10 @@ namespace Umbraco.RestApi.Controllers
             // but then we have to write our own model mappers and don't have time for that right now.
 
             var result = Umbraco.ContentQuery.TypedSearch(SearchProvider.CreateSearchCriteria().RawQuery(query.Query), _searchProvider).ToArray();
-            var paged = result.Skip(GetSkipSize(query.Page - 1, query.PageSize)).Take(query.PageSize);
+            var paged = result.Skip(ContentControllerHelper.GetSkipSize(query.Page - 1, query.PageSize)).Take(query.PageSize);
 
             var items = AutoMapper.Mapper.Map<IEnumerable<PublishedContentRepresentation>>(paged).ToList();
-            var representation = new PublishedContentPagedListRepresentation(items, result.Length, 1, (int)query.Page - 1, query.PageSize, LinkTemplates.PublishedContent.Search, new { query = query.Query, pageSize = query.PageSize });
+            var representation = new PublishedContentPagedListRepresentation(items, result.Length, 1, query.Page - 1, query.PageSize, LinkTemplates.PublishedContent.Search, new { query = query.Query, pageSize = query.PageSize });
 
             return Request.CreateResponse(HttpStatusCode.OK, representation);
         }
@@ -198,10 +197,10 @@ namespace Umbraco.RestApi.Controllers
             var content = Umbraco.TagQuery.GetContentByTag(tag, group).ToArray();
             var skip = (page * size);
             var total = content.Length;
-            var pages = decimal.Round(total / size, 0);
+            var pages = (total + size - 1) / size;
 
             var items = AutoMapper.Mapper.Map<IEnumerable<PublishedContentRepresentation>>(content.Skip(skip).Take(size)).ToList();
-            var representation = new PublishedContentPagedListRepresentation(items, total, (int)pages, page, size, LinkTemplates.PublishedContent.Search, new
+            var representation = new PublishedContentPagedListRepresentation(items, total, pages, page, size, LinkTemplates.PublishedContent.Search, new
             {
                 tag = tag,
                 group = group,

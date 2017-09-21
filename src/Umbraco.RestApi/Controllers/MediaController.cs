@@ -17,11 +17,13 @@ using System.Threading.Tasks;
 using System.Web;
 using Umbraco.Core.Configuration;
 using Umbraco.Core.Configuration.UmbracoSettings;
+using Umbraco.Web.WebApi;
 
 namespace Umbraco.RestApi.Controllers
 {
+    [UmbracoAuthorize]
     [UmbracoRoutePrefix("rest/v1/media")]
-    public class MediaController : UmbracoHalController
+    public class MediaController : UmbracoHalController, ITraversableController<MediaRepresentation>
     {
         
         /// <summary>
@@ -88,9 +90,11 @@ namespace Umbraco.RestApi.Controllers
             var found = Services.MediaService.GetById(id);
             if (found == null) throw new HttpResponseException(HttpStatusCode.NotFound);
 
+            var helper = new ContentControllerHelper(Services.TextService);
+
             var result = new ContentMetadataRepresentation(LinkTemplates.Media.MetaData, LinkTemplates.Media.Self, id)
             {
-                Fields = GetDefaultFieldMetaData(),
+                Fields = helper.GetDefaultFieldMetaData(Security.CurrentUser),
                 Properties = Mapper.Map<IDictionary<string, ContentPropertyInfo>>(found),
                 CreateTemplate = Mapper.Map<ContentCreationTemplate>(found)
             };
@@ -105,14 +109,10 @@ namespace Umbraco.RestApi.Controllers
             PagedQuery query)
         {
             var items = Services.MediaService.GetPagedChildren(id, query.Page - 1, query.PageSize, out var total, filter: query.Query);
-            var pages = decimal.Round(total / query.PageSize, 0);
+            var pages = ContentControllerHelper.GetTotalPages(total, query.PageSize);
             var mapped = Mapper.Map<IEnumerable<MediaRepresentation>>(items).ToList();
 
-            var result = new MediaPagedListRepresentation(mapped, 
-                                                            (int)total, 
-                                                            (int)pages, 
-                                                            (int)query.Page - 1, 
-                                                            query.PageSize, LinkTemplates.Media.PagedChildren, new { id = id });
+            var result = new MediaPagedListRepresentation(mapped, total, pages, query.Page, query.PageSize, LinkTemplates.Media.PagedChildren, new { id = id });
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
@@ -124,10 +124,10 @@ namespace Umbraco.RestApi.Controllers
             PagedQuery query)
         {
             var items = Services.MediaService.GetPagedDescendants(id, query.Page - 1, query.PageSize, out var total, filter: query.Query);
-            var pages = decimal.Round(total / query.PageSize, 0);
+            var pages = (total + query.PageSize - 1) / query.PageSize;
             var mapped = Mapper.Map<IEnumerable<MediaRepresentation>>(items).ToList();
             
-            var result = new MediaPagedListRepresentation(mapped, (int)total, (int)pages, (int)query.Page - 1, query.PageSize, LinkTemplates.Media.PagedDescendants, new { id = id });
+            var result = new MediaPagedListRepresentation(mapped, total, pages, query.Page - 1, query.PageSize, LinkTemplates.Media.PagedDescendants, new { id = id });
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
@@ -139,11 +139,11 @@ namespace Umbraco.RestApi.Controllers
         {
             var items = Services.MediaService.GetAncestors(id).ToArray();
             var total = items.Length;
-            var pages = decimal.Round(total / query.PageSize, 0);
-            var paged = items.Skip(GetSkipSize(query.Page - 1, query.PageSize)).Take(query.PageSize);
+            var pages = (total + query.PageSize - 1) / query.PageSize;
+            var paged = items.Skip(ContentControllerHelper.GetSkipSize(query.Page - 1, query.PageSize)).Take(query.PageSize);
             var mapped = Mapper.Map<IEnumerable<MediaRepresentation>>(paged).ToList();
 
-            var result = new MediaPagedListRepresentation(mapped, total, (int)pages, (int)query.Page - 1, query.PageSize, LinkTemplates.Media.PagedAncestors, new { id = id });
+            var result = new MediaPagedListRepresentation(mapped, total, pages, query.Page - 1, query.PageSize, LinkTemplates.Media.PagedAncestors, new { id = id });
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
@@ -164,8 +164,8 @@ namespace Umbraco.RestApi.Controllers
                     query.PageSize);
 
             //paging
-            var paged = result.Skip( GetSkipSize(query.Page - 1, query.PageSize)).ToArray();
-            var pages = decimal.Round(result.TotalItemCount / query.PageSize, 0);
+            var paged = result.Skip(ContentControllerHelper.GetSkipSize(query.Page - 1, query.PageSize)).ToArray();
+            var pages = (result.TotalItemCount + query.PageSize - 1) / query.PageSize;
 
             var foundContent = Enumerable.Empty<IMedia>();
             
@@ -179,7 +179,7 @@ namespace Umbraco.RestApi.Controllers
             var items = Mapper.Map<IEnumerable<MediaRepresentation>>(foundContent).ToList();
 
             //return as paged list of media items
-            var representation = new MediaPagedListRepresentation(items, result.TotalItemCount, (int)pages, (int)query.Page - 1, query.PageSize, LinkTemplates.Media.Search, new { query = query.Query, pageSize = query.PageSize });
+            var representation = new MediaPagedListRepresentation(items, result.TotalItemCount, pages, query.Page - 1, query.PageSize, LinkTemplates.Media.Search, new { query = query.Query, pageSize = query.PageSize });
 
             return Request.CreateResponse(HttpStatusCode.OK, representation);
         }
