@@ -292,6 +292,7 @@
     <Compile Include="AutoMapperTests.cs" />
     <Compile Include="CamelCaseTests.cs" />
     <Compile Include="ContentControllerTests.cs" />
+    <Compile Include="ControllerTests.cs" />
     <Compile Include="CorsTest.cs" />
     <Compile Include="MediaControllerTests.cs" />
     <Compile Include="MembersControllerTests.cs" />
@@ -333,7 +334,7 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\NUnit3TestAdapter.3.8.0\build\net35\NUnit3TestAdapter.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\NUnit3TestAdapter.3.8.0\build\net35\NUnit3TestAdapter.props'))" />
-  </Target>  
+  </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

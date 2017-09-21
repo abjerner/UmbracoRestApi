@@ -31,7 +31,7 @@ namespace Umbraco.RestApi
         {
             public static string BaseUrl => $"~/{RouteConstants.GetRestRootPath(ApiVersion)}/{RouteConstants.MembersSegment}";
 
-            public static Link Root => new Link("root", $"{BaseUrl}{{?page,size,orderBy,direction,memberTypeAlias,filter}}");
+            public static Link Root => new Link("root", $"{BaseUrl}{{?page,size,query,orderBy,direction,memberTypeAlias}}");
 
             public static Link Self => new Link("member", BuildSelfUrl(BaseUrl));
             public static Link MetaData => new Link("meta", BuildMetadataUrl(BaseUrl));

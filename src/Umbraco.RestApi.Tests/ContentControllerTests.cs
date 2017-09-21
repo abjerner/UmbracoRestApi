@@ -1,13 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Globalization;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Web.Http;
 using Examine;
 using Examine.SearchCriteria;
 using Microsoft.Owin.Testing;
@@ -16,7 +13,6 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using Umbraco.Core;
-using Umbraco.Core.Configuration;
 using Umbraco.Core.Models;
 using Umbraco.Core.Persistence.DatabaseModelDefinitions;
 using Umbraco.Core.PropertyEditors;
@@ -142,29 +138,7 @@ namespace Umbraco.RestApi.Tests
                          .Returns((string input, CultureInfo culture, IDictionary<string, string> tokens) => input);
                  });
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
-            {
-                var request = new HttpRequestMessage()
-                {
-                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}/123/meta", RouteConstants.ContentSegment)),
-                    Method = HttpMethod.Get,
-                };
-
-                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/hal+json"));
-
-                Console.WriteLine(request);
-                var result = await server.HttpClient.SendAsync(request);
-                Console.WriteLine(result);
-
-                var json = await ((StreamContent)result.Content).ReadAsStringAsync();
-                Console.Write(JsonConvert.SerializeObject(JsonConvert.DeserializeObject(json), Formatting.Indented));
-
-                Assert.AreEqual(HttpStatusCode.OK, result.StatusCode);
-
-                //TODO: Assert values!
-
-               
-            }
+            await Get_Metadata_Result(startup, RouteConstants.ContentSegment);
         }
 
         [Test]
@@ -172,36 +146,29 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (testServices) =>
-                {
-                    var mockContentService = Mock.Get(testServices.ServiceContext.ContentService);
+                (testServices) => { });
 
-                    mockContentService.Setup(x => x.GetById(It.IsAny<int>())).Returns(() => ModelMocks.SimpleMockedContent());
+            await Get_Children_Is_200_Response(startup, RouteConstants.ContentSegment);
+        }
 
-                    mockContentService.Setup(x => x.GetChildren(It.IsAny<int>())).Returns(new List<IContent>(new[] { ModelMocks.SimpleMockedContent(789) }));
+        [Test]
+        public async Task Get_Descendants_Is_200_Response()
+        {
+            var startup = new TestStartup(
+                //This will be invoked before the controller is created so we can modify these mocked services
+                (testServices) => { });
 
-                    mockContentService.Setup(x => x.HasChildren(It.IsAny<int>())).Returns(true);
-                });
+            await base.Get_Descendants_Is_200_Response(startup, RouteConstants.ContentSegment);
+        }
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
-            {
-                var request = new HttpRequestMessage()
-                {
-                    RequestUri = new Uri($"http://testserver/umbraco/rest/v1/{RouteConstants.ContentSegment}/123/children"),
-                    Method = HttpMethod.Get,
-                };
+        [Test]
+        public async Task Get_Ancestors_Is_200_Response()
+        {
+            var startup = new TestStartup(
+                //This will be invoked before the controller is created so we can modify these mocked services
+                (testServices) => { });
 
-                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/hal+json"));
-
-                Console.WriteLine(request);
-                var result = await server.HttpClient.SendAsync(request);
-                Console.WriteLine(result);
-
-                var json = await ((StreamContent)result.Content).ReadAsStringAsync();
-                Console.Write(JsonConvert.SerializeObject(JsonConvert.DeserializeObject(json), Formatting.Indented));
-
-                Assert.AreEqual(HttpStatusCode.OK, result.StatusCode);
-            }
+            await base.Get_Ancestors_Is_200_Response(startup, RouteConstants.ContentSegment);
         }
 
         [Test]

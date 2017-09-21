@@ -25,25 +25,8 @@ using Task = System.Threading.Tasks.Task;
 namespace Umbraco.RestApi.Tests
 {
     [TestFixture]
-    public class MembersControllerTests
+    public class MembersControllerTests : ControllerTests
     {
-        [OneTimeSetUp]
-        public void FixtureSetUp()
-        {
-            ConfigurationManager.AppSettings.Set("umbracoPath", "~/umbraco");
-            ConfigurationManager.AppSettings.Set("umbracoConfigurationStatus", UmbracoVersion.Current.ToString(3));
-            var mockSettings = MockUmbracoSettings.GenerateMockSettings();
-            UmbracoConfig.For.CallMethod("SetUmbracoSettings", mockSettings);
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            //Hack - because Reset is internal
-            typeof(PropertyEditorResolver).CallStaticMethod("Reset", true);
-        }
-
-
         [Test]
         public async Task Get_Root_With_OPTIONS()
         {
@@ -54,24 +37,7 @@ namespace Umbraco.RestApi.Tests
                     var mockMemberService = Mock.Get(testServices.ServiceContext.MemberService);
                 });
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
-            {
-                var request = new HttpRequestMessage()
-                {
-                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}", RouteConstants.MembersSegment)),
-                    Method = HttpMethod.Options,
-                };
-
-                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/hal+json"));
-                request.Headers.Add("Access-Control-Request-Headers", "accept, authorization");
-                request.Headers.Add("Access-Control-Request-Method", "GET");
-                request.Headers.Add("Origin", "http://localhost:12061");
-                request.Headers.Add("Referer", "http://localhost:12061/browser.html");
-
-                Console.WriteLine(request);
-                var result = await server.HttpClient.SendAsync(request);
-                Assert.AreEqual(HttpStatusCode.OK, result.StatusCode);
-            }
+            await Get_Root_With_OPTIONS(startup, RouteConstants.MembersSegment);
         }
 
         [Test]
@@ -95,7 +61,7 @@ namespace Umbraco.RestApi.Tests
 
                 var request = new HttpRequestMessage()
                 {
-                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}", RouteConstants.MembersSegment)),
+                    RequestUri = new Uri($"http://testserver/umbraco/rest/v1/{RouteConstants.MembersSegment}"),
                     Method = HttpMethod.Get,
                 };
                 request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/hal+json"));
@@ -112,7 +78,7 @@ namespace Umbraco.RestApi.Tests
 
                 var djson = JsonConvert.DeserializeObject<JObject>(json);
 
-                Assert.AreEqual("/umbraco/rest/v1/members{?page,size,orderBy,direction,memberTypeAlias,filter}", djson["_links"]["root"]["href"].Value<string>());
+                Assert.AreEqual("/umbraco/rest/v1/members{?page,size,query,orderBy,direction,memberTypeAlias}", djson["_links"]["root"]["href"].Value<string>());
                 Assert.AreEqual(0, djson["totalResults"].Value<int>());
               
             }
@@ -147,25 +113,7 @@ namespace Umbraco.RestApi.Tests
                         });
                 });
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
-            {
-                var request = new HttpRequestMessage()
-                {
-                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}/search?query=parentID:\\-1", RouteConstants.MembersSegment)),
-                    Method = HttpMethod.Get,
-                };
-
-                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/hal+json"));
-
-                Console.WriteLine(request);
-                var result = await server.HttpClient.SendAsync(request);
-                Console.WriteLine(result);
-
-                var json = await ((StreamContent)result.Content).ReadAsStringAsync();
-                Console.Write(JsonConvert.SerializeObject(JsonConvert.DeserializeObject(json), Formatting.Indented));
-
-                Assert.AreEqual(HttpStatusCode.OK, result.StatusCode);
-            }
+            await Search_200_Result(startup, RouteConstants.MembersSegment);
         }
 
         [Test]
@@ -183,7 +131,7 @@ namespace Umbraco.RestApi.Tests
             {
                 var request = new HttpRequestMessage()
                 {
-                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}/123", RouteConstants.MembersSegment)),
+                    RequestUri = new Uri($"http://testserver/umbraco/rest/v1/{RouteConstants.MembersSegment}/123"),
                     Method = HttpMethod.Get,
                 };
 
@@ -201,7 +149,7 @@ namespace Umbraco.RestApi.Tests
                 var djson = JsonConvert.DeserializeObject<JObject>(json);
 
                 Assert.AreEqual("/umbraco/rest/v1/members/123", djson["_links"]["self"]["href"].Value<string>());
-                Assert.AreEqual("/umbraco/rest/v1/members{?page,size,orderBy,direction,memberTypeAlias,filter}", djson["_links"]["root"]["href"].Value<string>());
+                Assert.AreEqual("/umbraco/rest/v1/members{?page,size,query,orderBy,direction,memberTypeAlias}", djson["_links"]["root"]["href"].Value<string>());
 
                 var properties = djson["properties"].ToObject<IDictionary<string, object>>();
                 Assert.AreEqual(2, properties.Count());
@@ -210,6 +158,7 @@ namespace Umbraco.RestApi.Tests
             }
         }
 
+        //TODO: Implement IMetadataController on members controller
         [Ignore("This is not implemented yet")]
         [Test]
         public async Task Get_Metadata_Result()

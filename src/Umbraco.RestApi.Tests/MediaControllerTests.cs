@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Globalization;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Web.Http;
 using Examine;
 using Examine.SearchCriteria;
 using Microsoft.Owin.Testing;
@@ -15,7 +12,6 @@ using Moq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
-using Umbraco.Core.Configuration;
 using Umbraco.Core.Models;
 using Umbraco.Core.Persistence.DatabaseModelDefinitions;
 using Umbraco.Core.PropertyEditors;
@@ -25,148 +21,9 @@ using Task = System.Threading.Tasks.Task;
 
 namespace Umbraco.RestApi.Tests
 {
-    public abstract class ControllerTests
-    {
-        [OneTimeSetUp]
-        public void FixtureSetUp()
-        {
-            ConfigurationManager.AppSettings.Set("umbracoPath", "~/umbraco");
-            ConfigurationManager.AppSettings.Set("umbracoConfigurationStatus", UmbracoVersion.Current.ToString(3));
-            var mockSettings = MockUmbracoSettings.GenerateMockSettings();
-            UmbracoConfig.For.CallMethod("SetUmbracoSettings", mockSettings);
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            //Hack - because Reset is internal
-            typeof(PropertyEditorResolver).CallStaticMethod("Reset", true);
-            UmbracoRestApiOptionsInstance.Options = new UmbracoRestApiOptions();
-        }
-
-        protected async Task Get_Root_With_OPTIONS(TestStartup startup, string segment)
-        {
-            using (var server = TestServer.Create(startup.Configuration))
-            {
-
-                var request = new HttpRequestMessage
-                {
-                    RequestUri = new Uri($"http://testserver/umbraco/rest/v1/{segment}"),
-                    Method = HttpMethod.Options,
-                };
-
-                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/hal+json"));
-                request.Headers.Add("Access-Control-Request-Headers", "accept, authorization");
-                request.Headers.Add("Access-Control-Request-Method", "GET");
-                request.Headers.Add("Origin", "http://localhost:12061");
-                request.Headers.Add("Referer", "http://localhost:12061/browser.html");
-
-                Console.WriteLine(request);
-                var result = await server.HttpClient.SendAsync(request);
-                Console.WriteLine(result);
-
-                var json = await ((StreamContent)result.Content).ReadAsStringAsync();
-                Console.Write(JsonConvert.SerializeObject(JsonConvert.DeserializeObject(json), Formatting.Indented));
-
-                Assert.AreEqual(HttpStatusCode.OK, result.StatusCode);
-            }
-        }
-
-        protected async Task Get_Root_Result(TestStartup startup, string segment)
-        {
-            using (var server = TestServer.Create(startup.Configuration))
-            {
-
-                var request = new HttpRequestMessage()
-                {
-                    RequestUri = new Uri($"http://testserver/umbraco/rest/v1/{segment}"),
-                    Method = HttpMethod.Get,
-                };
-                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/hal+json"));
-                Console.WriteLine(request);
-                var result = await server.HttpClient.SendAsync(request);
-                Console.WriteLine(result);
-
-                var json = await ((StreamContent)result.Content).ReadAsStringAsync();
-                Console.Write(JsonConvert.SerializeObject(JsonConvert.DeserializeObject(json), Formatting.Indented));
-
-                Assert.AreEqual(HttpStatusCode.OK, result.StatusCode);
-
-                var asdf = GlobalConfiguration.Configuration;
-
-                var djson = JsonConvert.DeserializeObject<JObject>(json);
-
-                Assert.AreEqual($"/umbraco/rest/v1/{segment}", djson["_links"]["root"]["href"].Value<string>());
-                Assert.AreEqual(2, djson["_links"]["content"].Count());
-                Assert.AreEqual(2, djson["_embedded"]["content"].Count());
-            }
-        }
-
-        protected async Task Search_200_Result(TestStartup startup, string segment)
-        {
-            using (var server = TestServer.Create(startup.Configuration))
-            {
-                var request = new HttpRequestMessage()
-                {
-                    RequestUri = new Uri($"http://testserver/umbraco/rest/v1/{segment}/search?query=parentID:\\-1"),
-                    Method = HttpMethod.Get,
-                };
-
-                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/hal+json"));
-
-                Console.WriteLine(request);
-                var result = await server.HttpClient.SendAsync(request);
-                Console.WriteLine(result);
-
-                var json = await ((StreamContent)result.Content).ReadAsStringAsync();
-                Console.Write(JsonConvert.SerializeObject(JsonConvert.DeserializeObject(json), Formatting.Indented));
-
-                Assert.AreEqual(HttpStatusCode.OK, result.StatusCode);
-            }
-        }
-
-        protected async Task Get_Id_Result(TestStartup startup, string segment)
-        {
-            using (var server = TestServer.Create(startup.Configuration))
-            {
-                var request = new HttpRequestMessage()
-                {
-                    RequestUri = new Uri($"http://testserver/umbraco/rest/v1/{segment}/123"),
-                    Method = HttpMethod.Get,
-                };
-
-                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/hal+json"));
-
-                Console.WriteLine(request);
-                var result = await server.HttpClient.SendAsync(request);
-                Console.WriteLine(result);
-
-                var json = await ((StreamContent)result.Content).ReadAsStringAsync();
-                Console.Write(JsonConvert.SerializeObject(JsonConvert.DeserializeObject(json), Formatting.Indented));
-
-                Assert.AreEqual(HttpStatusCode.OK, result.StatusCode);
-
-                var djson = JsonConvert.DeserializeObject<JObject>(json);
-
-                Assert.AreEqual($"/umbraco/rest/v1/{segment}/123", djson["_links"]["self"]["href"].Value<string>());
-                Assert.AreEqual($"/umbraco/rest/v1/{segment}/456", djson["_links"]["parent"]["href"].Value<string>());
-                Assert.AreEqual($"/umbraco/rest/v1/{segment}/123/children{{?page,size,query}}", djson["_links"]["children"]["href"].Value<string>());
-                Assert.AreEqual($"/umbraco/rest/v1/{segment}", djson["_links"]["root"]["href"].Value<string>());
-
-                var properties = djson["properties"].ToObject<IDictionary<string, object>>();
-                Assert.AreEqual(2, properties.Count);
-                Assert.IsTrue(properties.ContainsKey("TestProperty1"));
-                Assert.IsTrue(properties.ContainsKey("testProperty2"));
-            }
-        }
-
-    }
-
     [TestFixture]
     public class MediaControllerTests : ControllerTests
     {
-        
-
         [Test]
         public async Task Get_Root_With_OPTIONS()
         {
@@ -279,29 +136,7 @@ namespace Umbraco.RestApi.Tests
                          .Returns((string input, CultureInfo culture, IDictionary<string, string> tokens) => input);
                  });
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
-            {
-                var request = new HttpRequestMessage()
-                {
-                    RequestUri = new Uri($"http://testserver/umbraco/rest/v1/{RouteConstants.MediaSegment}/123/meta"),
-                    Method = HttpMethod.Get,
-                };
-
-                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/hal+json"));
-
-                Console.WriteLine(request);
-                var result = await server.HttpClient.SendAsync(request);
-                Console.WriteLine(result);
-
-                var json = await ((StreamContent)result.Content).ReadAsStringAsync();
-                Console.Write(JsonConvert.SerializeObject(JsonConvert.DeserializeObject(json), Formatting.Indented));
-
-                Assert.AreEqual(HttpStatusCode.OK, result.StatusCode);
-
-                //TODO: Assert values!
-
-
-            }
+            await Get_Metadata_Result(startup, RouteConstants.MediaSegment);
         }
 
         [Test]
@@ -309,36 +144,29 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (testServices) =>
-                {
-                    var mockMediaService = Mock.Get(testServices.ServiceContext.MediaService);
+                (testServices) => { });
 
-                    mockMediaService.Setup(x => x.GetById(It.IsAny<int>())).Returns(() => ModelMocks.SimpleMockedMedia());
+            await Get_Children_Is_200_Response(startup, RouteConstants.MediaSegment);
+        }
 
-                    mockMediaService.Setup(x => x.GetChildren(It.IsAny<int>())).Returns(new List<IMedia>(new[] { ModelMocks.SimpleMockedMedia(789) }));
+        [Test]
+        public async Task Get_Descendants_Is_200_Response()
+        {
+            var startup = new TestStartup(
+                //This will be invoked before the controller is created so we can modify these mocked services
+                (testServices) => { });
 
-                    mockMediaService.Setup(x => x.HasChildren(It.IsAny<int>())).Returns(true);
-                });
+            await base.Get_Descendants_Is_200_Response(startup, RouteConstants.MediaSegment);
+        }
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
-            {
-                var request = new HttpRequestMessage()
-                {
-                    RequestUri = new Uri($"http://testserver/umbraco/rest/v1/{RouteConstants.MediaSegment}/123/children"),
-                    Method = HttpMethod.Get,
-                };
+        [Test]
+        public async Task Get_Ancestors_Is_200_Response()
+        {
+            var startup = new TestStartup(
+                //This will be invoked before the controller is created so we can modify these mocked services
+                (testServices) => { });
 
-                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/hal+json"));
-
-                Console.WriteLine(request);
-                var result = await server.HttpClient.SendAsync(request);
-                Console.WriteLine(result);
-
-                var json = await ((StreamContent)result.Content).ReadAsStringAsync();
-                Console.Write(JsonConvert.SerializeObject(JsonConvert.DeserializeObject(json), Formatting.Indented));
-
-                Assert.AreEqual(HttpStatusCode.OK, result.StatusCode);
-            }
+            await base.Get_Ancestors_Is_200_Response(startup, RouteConstants.MediaSegment);
         }
 
         [Test]
