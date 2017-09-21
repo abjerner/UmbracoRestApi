@@ -9,12 +9,15 @@ using Umbraco.Core.Models;
 using Umbraco.RestApi.Models;
 using Umbraco.RestApi.Routing;
 using Umbraco.Web;
+using Umbraco.Web.WebApi;
 using WebApi.Hal;
 
 namespace Umbraco.RestApi.Controllers
 {
+    //TODO: How to authorize this? https://github.com/umbraco/UmbracoRestApi/issues/24
+    [UmbracoAuthorize]
     [UmbracoRoutePrefix("rest/v1/relations")]
-    public class RelationsController : UmbracoHalController
+    public class RelationsController : UmbracoHalController, ICrudController<RelationRepresentation>, IRootController
     {
         /// <summary>
         /// Default ctor

@@ -241,10 +241,11 @@
   <ItemGroup>
     <Compile Include="Controllers\ContentController.cs" />
     <Compile Include="Controllers\ContentControllerHelper.cs" />
+    <Compile Include="Controllers\ICrudController.cs" />
     <Compile Include="Controllers\IMetadataController.cs" />
     <Compile Include="Controllers\IRootController.cs" />
     <Compile Include="Controllers\ITraversableController.cs" />
-    <Compile Include="Controllers\IUmbracoController.cs" />
+    <Compile Include="Controllers\ISearchController.cs" />
     <Compile Include="Controllers\MediaController.cs" />
     <Compile Include="Controllers\MembersController.cs" />
     <Compile Include="Controllers\PagedRequestModelBinder.cs" />

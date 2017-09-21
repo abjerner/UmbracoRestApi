@@ -19,7 +19,7 @@ namespace Umbraco.RestApi.Controllers
 {
     [UmbracoAuthorize]
     [UmbracoRoutePrefix("rest/v1/members")]
-    public class MembersController : UmbracoHalController, IUmbracoController<MemberRepresentation>
+    public class MembersController : UmbracoHalController, ICrudController<MemberRepresentation>, ISearchController
     {
         public MembersController()
         {
