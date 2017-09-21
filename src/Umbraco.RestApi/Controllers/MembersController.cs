@@ -32,31 +32,6 @@ namespace Umbraco.RestApi.Controllers
 
         private BaseSearchProvider _searchProvider;
         protected BaseSearchProvider SearchProvider => _searchProvider ?? (_searchProvider = ExamineManager.Instance.SearchProviderCollection["InternalMemberSearcher"]);
-
-        //TODO: Remove this
-        [HttpPost]
-        [CustomRoute("login")]
-        public HttpResponseMessage Login(MemberLogin login)
-        {
-            try
-            {
-                if (Members.Login(login.Username, login.Password))
-                {
-                    // TODO: There must be a better way ?
-                    var member = Services.MemberService.GetByUsername(login.Username);
-                    var rep = Mapper.Map<MemberRepresentation>(member);
-                    return Request.CreateResponse(HttpStatusCode.OK, rep);
-                }
-                else
-                {
-                    return Request.CreateResponse(HttpStatusCode.Unauthorized);
-                }
-            }
-            catch (ModelValidationException exception)
-            {
-                return Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors);
-            }
-        }
         
         [HttpGet]
         [CustomRoute("")]

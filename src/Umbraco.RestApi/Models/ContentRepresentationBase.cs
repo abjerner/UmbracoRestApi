@@ -12,24 +12,15 @@ namespace Umbraco.RestApi.Models
     /// </summary>
     public abstract class ContentRepresentationBase : EntityRepresentation
     {
-        protected ContentRepresentationBase()
-        {
-
-        }
-
         public DateTimeOffset CreateDate { get; set; }
         public DateTimeOffset UpdateDate { get; set; }
-
-        //public PublishedItemType ItemType { get; set; }
-
+     
         [Required]
         [Display(Name = "contentTypeAlias")]
         public string ContentTypeAlias { get; set; }
 
         [JsonConverter(typeof(ExplicitlyCasedDictionaryKeyJsonConverter<object>))]
         public IDictionary<string, object> Properties { get; set; }
-
-
     }
 
 }
