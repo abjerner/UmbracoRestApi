@@ -12,23 +12,15 @@ namespace Umbraco.RestApi.Models
         [Required]
         [Display(Name = "email")]
         public string Email { get; set; }
-
-        public override string Rel
-        {
-            get { return LinkTemplates.Members.Self.Rel; }
-            set { }
-        }
-
-        public override string Href
-        {
-            get { return LinkTemplates.Members.Self.CreateLink(new { id = Id }).Href; }
-            set { }
-        }
-
+        
         protected override void CreateHypermedia()
         {
-            base.CreateHypermedia();            
-            
+            base.CreateHypermedia();
+
+            //required link to self
+            Href = LinkTemplates.Members.Self.CreateLink(new { id = Id }).Href;
+            Rel = LinkTemplates.Members.Self.Rel;
+
             Links.Add(LinkTemplates.Members.Root);
             Links.Add(LinkTemplates.Members.MetaData.CreateLink(new { id = Id }));
         }

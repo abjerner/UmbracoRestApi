@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using ClientDependency.Core;
 using Moq;
 using Umbraco.Core.Models;
 using Umbraco.Core.PropertyEditors;
@@ -143,16 +144,21 @@ namespace Umbraco.RestApi.Tests.TestHelpers
 
         public static IRelationType SimpleMockedRelationType()
         {
-            var ct = Mock.Of<IRelationType>();
+            var ct = Mock.Of<IRelationType>(
+                type => type.ChildObjectType == Umbraco.Core.Constants.ObjectTypes.DocumentGuid && 
+                type.ParentObjectType == Umbraco.Core.Constants.ObjectTypes.DocumentGuid &&
+                type.Alias == "testType");
             return ct;
         }
 
-        public static IRelation SimpleMockedRelation(int id, int child, int parent)
+        public static IRelation SimpleMockedRelation(int id, int child, int parent, IRelationType relType)
         {
             var r = Mock.Of<IRelation>(content =>
                     content.ChildId == child &&
                     content.ParentId == parent &&
-                    content.Id == id);
+                    content.Id == id &&
+                    content.RelationType == relType && 
+                    content.CreateDate == DateTime.Now);
 
             return r;
         }

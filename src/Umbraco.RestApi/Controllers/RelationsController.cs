@@ -117,15 +117,37 @@ namespace Umbraco.RestApi.Controllers
                 : Request.CreateResponse(HttpStatusCode.OK, CreateRepresentation(result));
         }
 
+        /// <summary>
+        /// Creates a relation
+        /// </summary>
+        /// <param name="relation"></param>
+        /// <returns></returns>
         [HttpPost]
         [CustomRoute("")]
-        public HttpResponseMessage Post(RelationRepresentation representation)
+        public HttpResponseMessage Post(RelationRepresentation relation)
         {
+            if (relation == null) throw new ArgumentNullException(nameof(relation));
+
             try
             {
-                var relation = Mapper.Map<IRelation>(representation);
-                Services.RelationService.Save(relation);
-                return Request.CreateResponse(HttpStatusCode.OK, CreateRepresentation(relation));
+                //we cannot continue here if the mandatory items are empty (i.e. name, etc...)
+                if (!ModelState.IsValid)
+                {
+                    throw ValidationException(ModelState, relation, LinkTemplates.Relations.Root);
+                }
+
+                var created = Mapper.Map<IRelation>(relation);
+
+                //during the mapping it will try to lookup the relation type so we need to validate that it exists
+                if (created.RelationType == null)
+                {
+                    ModelState.AddModelError("relation.relationTypeAlias", "No relation type found with alias " + relation.RelationTypeAlias);
+                    throw ValidationException(ModelState, relation, LinkTemplates.Relations.Root);
+                }
+                
+                Services.RelationService.Save(created);
+                
+                return Request.CreateResponse(HttpStatusCode.Created, CreateRepresentation(created));
             }
             catch (ModelValidationException exception)
             {
@@ -135,7 +157,7 @@ namespace Umbraco.RestApi.Controllers
 
         [HttpPut]
         [CustomRoute("{id}")]
-        public HttpResponseMessage Put(int id, RelationRepresentation rel)
+        public HttpResponseMessage Put(int id, RelationRepresentation relation)
         {
             try
             {
@@ -143,7 +165,15 @@ namespace Umbraco.RestApi.Controllers
                 if (found == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                Mapper.Map(rel, found);
+                Mapper.Map(relation, found);
+
+                //during the mapping it will try to lookup the relation type so we need to validate that it exists
+                if (found.RelationType == null)
+                {
+                    ModelState.AddModelError("relation.relationTypeAlias", "No relation type found with alias " + relation.RelationTypeAlias);
+                    throw ValidationException(ModelState, relation, LinkTemplates.Relations.Root);
+                }
+
                 Services.RelationService.Save(found);
 
                 return Request.CreateResponse(HttpStatusCode.OK, CreateRepresentation(found));
@@ -169,6 +199,8 @@ namespace Umbraco.RestApi.Controllers
 
         private RelationRepresentation CreateRepresentation(IRelation relation)
         {
+            if (relation == null) throw new ArgumentNullException(nameof(relation));
+
             var parentLinkTemplate = GetLinkTemplate(relation.RelationType.ParentObjectType);
             var childLinkTemplate = GetLinkTemplate(relation.RelationType.ChildObjectType);
 
@@ -180,20 +212,15 @@ namespace Umbraco.RestApi.Controllers
         {
             switch (nodeObjectType.ToString().ToUpper())
             {
-                case Core.Constants.ObjectTypes.ContentItem:
+                case Core.Constants.ObjectTypes.Document:
                     return LinkTemplates.PublishedContent.Self;
-
                 case Core.Constants.ObjectTypes.Media:
                     return LinkTemplates.Media.Self;
-
                 case Core.Constants.ObjectTypes.Member:
                     return LinkTemplates.Members.Self;
-
                 default:
-                    break;
-            }
-
-            return null;
+                    throw new ArgumentOutOfRangeException();
+            }            
         }
         
     }

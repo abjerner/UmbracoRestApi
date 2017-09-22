@@ -2,9 +2,6 @@
 {
     public class PublishedContentRepresentation : ContentRepresentationBase
     {
-        protected PublishedContentRepresentation()
-        {}
-       
         public string WriterName { get; set; }
         public string CreatorName { get; set; }
         public int WriterId { get; set; }
@@ -13,21 +10,13 @@
         public string UrlName { get; set; }
         public string Url { get; set; }
         
-        public override string Rel
-        {
-            get { return LinkTemplates.PublishedContent.Self.Rel; }
-            set { }
-        }
-
-        public override string Href
-        {
-            get { return LinkTemplates.PublishedContent.Self.CreateLink(new { id = Id }).Href; }
-            set { }
-        }
-
         protected override void CreateHypermedia()
         {
             base.CreateHypermedia();
+
+            //required link to self
+            Href = LinkTemplates.PublishedContent.Self.CreateLink(new { id = Id }).Href;
+            Rel = LinkTemplates.PublishedContent.Self.Rel;
 
             Links.Add(LinkTemplates.PublishedContent.Root);
 

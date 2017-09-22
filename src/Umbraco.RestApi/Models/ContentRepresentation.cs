@@ -15,22 +15,14 @@ namespace Umbraco.RestApi.Models
         [Required]
         [Display(Name = "published")]
         public bool Published { get; set; }
-
-        public override string Rel
-        {
-            get { return LinkTemplates.Content.Self.Rel; }
-            set { }
-        }
-
-        public override string Href
-        {
-            get { return LinkTemplates.Content.Self.CreateLink(new { id = Id }).Href; }
-            set { }
-        }
-
+        
         protected override void CreateHypermedia()
         {
             base.CreateHypermedia();
+
+            //required link to self
+            Href = LinkTemplates.Content.Self.CreateLink(new { id = Id }).Href;
+            Rel = LinkTemplates.Content.Self.Rel;
 
             Links.Add(LinkTemplates.Content.Root);
 

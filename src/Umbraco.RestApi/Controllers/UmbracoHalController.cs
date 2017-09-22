@@ -56,6 +56,8 @@ namespace Umbraco.RestApi.Controllers
             {
                 foreach (var error in ms.Value.Errors)
                 {
+                    //TODO: We could try to work around this but i think it's such a small thing that it's not worth spending the time fixing right now
+
                     ////hack - because webapi doesn't seem to support an easy way to change the model metadata for a class, we have to manually
                     //// go get the 'display' name from the metadata for the property and use that for the logref otherwise we end up with the c#
                     //// property name (i.e. contentTypeAlias vs ContentTypeAlias). I'm sure there's some webapi way to achieve 

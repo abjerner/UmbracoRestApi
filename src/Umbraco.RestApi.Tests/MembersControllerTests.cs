@@ -161,7 +161,7 @@ namespace Umbraco.RestApi.Tests
         //TODO: Implement IMetadataController on members controller
         [Ignore("This is not implemented yet")]
         [Test]
-        public async Task Get_Metadata_Result()
+        public async Task Get_Metadata_Is_200()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
@@ -287,7 +287,7 @@ namespace Umbraco.RestApi.Tests
             {
                 var request = new HttpRequestMessage()
                 {
-                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}", RouteConstants.MembersSegment)),
+                    RequestUri = new Uri($"http://testserver/umbraco/rest/v1/{RouteConstants.MembersSegment}"),
                     Method = HttpMethod.Post,
                 };
 

@@ -117,11 +117,20 @@ namespace Umbraco.RestApi.Tests
                      mockMediaService.Setup(x => x.HasChildren(It.IsAny<int>())).Returns(true);
                  });
 
-            await Get_Id_Result(startup, RouteConstants.MediaSegment);
+            var djson = await Get_Id_Result(startup, RouteConstants.MediaSegment);
+            Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.MediaSegment}/123", djson["_links"]["self"]["href"].Value<string>());
+            Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.MediaSegment}/456", djson["_links"]["parent"]["href"].Value<string>());
+            Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.MediaSegment}/123/children{{?page,size,query}}", djson["_links"]["children"]["href"].Value<string>());
+            Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.MediaSegment}", djson["_links"]["root"]["href"].Value<string>());
+
+            var properties = djson["properties"].ToObject<IDictionary<string, object>>();
+            Assert.AreEqual(2, properties.Count);
+            Assert.IsTrue(properties.ContainsKey("TestProperty1"));
+            Assert.IsTrue(properties.ContainsKey("testProperty2"));
         }
 
         [Test]
-        public async Task Get_Metadata_Result()
+        public async Task Get_Metadata_Is_200()
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
@@ -139,7 +148,7 @@ namespace Umbraco.RestApi.Tests
                          .Returns((string input, CultureInfo culture, IDictionary<string, string> tokens) => input);
                  });
 
-            await Get_Metadata_Result(startup, RouteConstants.MediaSegment);
+            await Get_Metadata_Is_200(startup, RouteConstants.MediaSegment);
         }
 
         [Test]

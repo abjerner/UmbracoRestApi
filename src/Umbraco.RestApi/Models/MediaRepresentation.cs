@@ -2,21 +2,13 @@
 {
     public class MediaRepresentation : ContentRepresentationBase
     {
-        public override string Rel
-        {
-            get { return LinkTemplates.Media.Self.Rel; }
-            set { }
-        }
-
-        public override string Href
-        {
-            get { return LinkTemplates.Media.Self.CreateLink(new { id = Id }).Href; }
-            set { }
-        }
-
         protected override void CreateHypermedia()
         {
             base.CreateHypermedia();
+
+            //required link to self
+            Href = LinkTemplates.Media.Self.CreateLink(new { id = Id }).Href;
+            Rel = LinkTemplates.Media.Self.Rel;
 
             Links.Add(LinkTemplates.Media.Root);
 

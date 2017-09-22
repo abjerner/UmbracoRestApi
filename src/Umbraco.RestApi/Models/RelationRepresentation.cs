@@ -1,4 +1,6 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNet.Identity;
 using Umbraco.Core.Models;
 using WebApi.Hal;
 
@@ -21,22 +23,29 @@ namespace Umbraco.RestApi.Models
 
         public int Id { get; set; }
 
+        [Range(1, int.MaxValue, ErrorMessage = "childId must be greater than 0")]
         public int ChildId { get; set; }
+
+        [Range(1, int.MaxValue, ErrorMessage = "parentId must be greater than 0")]
         public int ParentId { get; set; }
 
         public string Comment { get; set; }
         public DateTime CreateDate { get; set; }
-        public string RelationTypeAlias { get; set; }
 
+        [Required]
+        [Display(Name = "relationTypeAlias")]
+        public string RelationTypeAlias { get; set; }
         
         protected override void CreateHypermedia()
         {
             base.CreateHypermedia();
 
-            //link to self
+            //required link to self
             Href = LinkTemplates.Relations.Self.CreateLink(new { id = Id }).Href;
             Rel = LinkTemplates.Relations.Self.Rel;
-            
+
+            Links.Add(LinkTemplates.Relations.Root);
+            Links.Add(LinkTemplates.Relations.RelationType.CreateLink(new {alias = RelationTypeAlias}));
 
             if(_parentLink != null)
             {

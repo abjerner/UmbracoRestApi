@@ -119,11 +119,20 @@ namespace Umbraco.RestApi.Tests
                      mockContentService.Setup(x => x.HasChildren(It.IsAny<int>())).Returns(true);
                  });
 
-            await Get_Id_Result(startup, RouteConstants.ContentSegment);
+            var djson = await Get_Id_Result(startup, RouteConstants.ContentSegment);
+            Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.ContentSegment}/123", djson["_links"]["self"]["href"].Value<string>());
+            Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.ContentSegment}/456", djson["_links"]["parent"]["href"].Value<string>());
+            Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.ContentSegment}/123/children{{?page,size,query}}", djson["_links"]["children"]["href"].Value<string>());
+            Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.ContentSegment}", djson["_links"]["root"]["href"].Value<string>());
+
+            var properties = djson["properties"].ToObject<IDictionary<string, object>>();
+            Assert.AreEqual(2, properties.Count);
+            Assert.IsTrue(properties.ContainsKey("TestProperty1"));
+            Assert.IsTrue(properties.ContainsKey("testProperty2"));
         }
 
         [Test]
-        public async Task Get_Metadata_Result()
+        public async Task Get_Metadata_Is_200()
         {
             var startup = new TestStartup(
                  //This will be invoked before the controller is created so we can modify these mocked services
@@ -141,7 +150,7 @@ namespace Umbraco.RestApi.Tests
                          .Returns((string input, CultureInfo culture, IDictionary<string, string> tokens) => input);
                  });
 
-            await Get_Metadata_Result(startup, RouteConstants.ContentSegment);
+            await Get_Metadata_Is_200(startup, RouteConstants.ContentSegment);
         }
 
         [Test]

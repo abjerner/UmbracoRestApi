@@ -6,18 +6,6 @@ namespace Umbraco.RestApi.Models
 {
     public class RelationTypeRepresentation : Representation
     {
-        public override string Rel
-        {
-            get { return LinkTemplates.Relations.RelationType.Rel; }
-            set { }
-        }
-
-        public override string Href
-        {
-            get { return LinkTemplates.Relations.RelationType.CreateLink(new { alias = Alias }).Href; }
-            set { }
-        }
-
         [Required]
         [Display(Name = "name")]
         public string Name { get; set; }
@@ -39,6 +27,11 @@ namespace Umbraco.RestApi.Models
         protected override void CreateHypermedia()
         {
             base.CreateHypermedia();
+
+            //required link to self
+            Href = LinkTemplates.Relations.RelationType.CreateLink(new { alias = Alias }).Href;
+            Rel = LinkTemplates.Relations.RelationType.Rel;
+
             Links.Add(LinkTemplates.Media.Root);
         }
     }

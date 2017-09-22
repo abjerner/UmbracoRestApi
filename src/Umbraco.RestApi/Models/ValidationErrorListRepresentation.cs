@@ -28,7 +28,7 @@ namespace Umbraco.RestApi.Models
         public string Message { get; set; }        
         public string LogRef { get; set; }        
         public int HttpStatus { get; set; }
-
+        
         public override string Rel
         {
             get

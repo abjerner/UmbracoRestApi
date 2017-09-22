@@ -305,6 +305,7 @@
     <Compile Include="TestHelpers\MemberServiceMocks.cs" />
     <Compile Include="TestHelpers\MockUmbracoSettings.cs" />
     <Compile Include="TestHelpers\ModelMocks.cs" />
+    <Compile Include="TestHelpers\RelationServiceMocks.cs" />
     <Compile Include="TestHelpers\ServiceMocks.cs" />
     <Compile Include="TestHelpers\TestControllerActivator.cs" />
     <Compile Include="TestHelpers\TestStartup.cs" />
