@@ -12,6 +12,7 @@ using Moq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
+using Umbraco.Core;
 using Umbraco.Core.Configuration;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
@@ -23,28 +24,10 @@ using Umbraco.Core.Models.EntityBase;
 using Task = System.Threading.Tasks.Task;
 
 namespace Umbraco.RestApi.Tests
-{
-    [Ignore("These tests have been copy/pasted, they need a mock setup in order to work")]
+{    
     [TestFixture]
-    public class RelationsControllerTests
+    public class RelationsControllerTests : ControllerTests
     {
-        [OneTimeSetUp]
-        public void FixtureSetUp()
-        {
-            ConfigurationManager.AppSettings.Set("umbracoPath", "~/umbraco");
-            ConfigurationManager.AppSettings.Set("umbracoConfigurationStatus", UmbracoVersion.Current.ToString(3));
-            var mockSettings = MockUmbracoSettings.GenerateMockSettings();
-            UmbracoConfig.For.CallMethod("SetUmbracoSettings", mockSettings);
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            //Hack - because Reset is internal
-            typeof(PropertyEditorResolver).CallStaticMethod("Reset", true);
-        }
-
-
         [Test]
         public async Task Get_Root_With_OPTIONS()
         {
@@ -55,24 +38,7 @@ namespace Umbraco.RestApi.Tests
                     var mockRelationService = Mock.Get(testServices.ServiceContext.RelationService);
                 });
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
-            {
-                var request = new HttpRequestMessage()
-                {
-                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}", RouteConstants.RelationsSegment)),
-                    Method = HttpMethod.Options,
-                };
-
-                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/hal+json"));
-                request.Headers.Add("Access-Control-Request-Headers", "accept, authorization");
-                request.Headers.Add("Access-Control-Request-Method", "GET");
-                request.Headers.Add("Origin", "http://localhost:12061");
-                request.Headers.Add("Referer", "http://localhost:12061/browser.html");
-
-                Console.WriteLine(request);
-                var result = await server.HttpClient.SendAsync(request);
-                Assert.AreEqual(HttpStatusCode.OK, result.StatusCode);
-            }
+            await Get_Root_With_OPTIONS(startup, RouteConstants.RelationsSegment);
         }
 
         [Test]
@@ -83,34 +49,29 @@ namespace Umbraco.RestApi.Tests
                 (testServices) =>
                 {
                     var mockRelationService = Mock.Get(testServices.ServiceContext.RelationService);
+                    mockRelationService.Setup(x => x.GetAllRelationTypes(It.IsAny<int[]>()))
+                        .Returns(new[]
+                        {
+                            new RelationType(Constants.ObjectTypes.DocumentGuid, Constants.ObjectTypes.DocumentGuid, "test1", "Test1")
+                            {
+                                Id = 123,
+                                Key = Guid.NewGuid(),
+                                CreateDate = DateTime.Now,
+                                UpdateDate = DateTime.Now
+                            },
+                            new RelationType(Constants.ObjectTypes.MediaGuid, Constants.ObjectTypes.MediaGuid, "test2", "Test2")
+                            {
+                                Id = 456,
+                                Key = Guid.NewGuid(),
+                                CreateDate = DateTime.Now,
+                                UpdateDate = DateTime.Now                                
+                            },
+                        });
                 });
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
-            {
-
-                var request = new HttpRequestMessage()
-                {
-                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}",  RouteConstants.RelationsSegment)),
-                    Method = HttpMethod.Get,
-                };
-                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/hal+json"));
-                Console.WriteLine(request);
-                var result = await server.HttpClient.SendAsync(request);
-                Console.WriteLine(result);
-
-                var json = await ((StreamContent)result.Content).ReadAsStringAsync();
-                Console.Write(JsonConvert.SerializeObject(JsonConvert.DeserializeObject(json), Formatting.Indented));
-
-                Assert.AreEqual(HttpStatusCode.OK, result.StatusCode);
-
-                var asdf = GlobalConfiguration.Configuration;
-
-                var djson = JsonConvert.DeserializeObject<JObject>(json);
-
-                Assert.AreEqual("/umbraco/rest/v1/relations", djson["_links"]["root"]["href"].Value<string>());
-                Assert.AreEqual(0, djson["totalResults"].Value<int>());
-
-            }
+            var djson = await Get_Root_Result(startup, RouteConstants.RelationsSegment);
+            Assert.AreEqual(2, djson["_links"]["relationtype"].Count());
+            Assert.AreEqual(2, djson["_embedded"]["relationtype"].Count());
         }
 
 

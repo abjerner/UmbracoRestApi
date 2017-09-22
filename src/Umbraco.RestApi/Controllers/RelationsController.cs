@@ -24,7 +24,6 @@ namespace Umbraco.RestApi.Controllers
         /// </summary>
         public RelationsController()
         {
-
         }
 
         /// <summary>
@@ -38,22 +37,40 @@ namespace Umbraco.RestApi.Controllers
             : base(umbracoContext, umbracoHelper)
         { }
 
+        /// <summary>
+        /// The root request for relations returns all relation types
+        /// </summary>
+        /// <returns></returns>
         [HttpGet]
         [CustomRoute("")]
         public HttpResponseMessage Get()
         {   
             var relationTypes = Services.RelationService.GetAllRelationTypes();
-            var mapped = Mapper.Map<IEnumerable<RelationTypeRepresentation>>(relationTypes).ToList();
+            var result = Mapper.Map<IEnumerable<RelationTypeRepresentation>>(relationTypes).ToList();
+            var representation = new RelationTypeListRepresentation(result);
 
-            var result = new RelationTypeListRepresentation(mapped);
-            return Request.CreateResponse(HttpStatusCode.OK, result);
+            return Request.CreateResponse(HttpStatusCode.OK, representation);
         }
-        
+
+        [HttpGet]
+        [CustomRoute("relationtype/{alias}")]
+        public HttpResponseMessage GetRelationType(string alias)
+        {
+            var relType = Services.RelationService.GetRelationTypeByAlias(alias);
+
+            if (relType == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            var mapped = Mapper.Map<RelationTypeRepresentation>(relType);
+            
+            return Request.CreateResponse(HttpStatusCode.OK, mapped);
+        }
+
         [HttpGet]
         [CustomRoute("children/{id}")]
         public HttpResponseMessage GetByParent(int id, string relationType = null)
         {
-            var parent = Services.EntityService.Get(id);
+            var parent = Services.EntityService.Get(id);            
 
             if (parent == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);

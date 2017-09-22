@@ -211,16 +211,7 @@ namespace Umbraco.RestApi.Tests
                    MemberServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
-            {
-                var request = new HttpRequestMessage()
-                {
-                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}", RouteConstants.MembersSegment)),
-                    Method = HttpMethod.Post,
-                };
-
-                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/hal+json"));
-                request.Content = new StringContent(@"{
+            await base.Post_Is_201_Response(startup, RouteConstants.MembersSegment, new StringContent(@"{
   ""contentTypeAlias"": ""testType"",
   ""name"": ""John Johnson"",
   ""email"" : ""john@johnson.com"",
@@ -229,17 +220,8 @@ namespace Umbraco.RestApi.Tests
     ""TestProperty1"": ""property value1"",
     ""testProperty2"": ""property value2""
   }
-}", Encoding.UTF8, "application/json");
-
-                Console.WriteLine(request);
-                var result = await server.HttpClient.SendAsync(request);
-                Console.WriteLine(result);
-
-                var json = await ((StreamContent)result.Content).ReadAsStringAsync();
-                Console.Write(JsonConvert.SerializeObject(JsonConvert.DeserializeObject(json), Formatting.Indented));
-
-                Assert.AreEqual(HttpStatusCode.Created, result.StatusCode);
-            }
+}", Encoding.UTF8, "application/json"));
+            
         }
 
         [Test]

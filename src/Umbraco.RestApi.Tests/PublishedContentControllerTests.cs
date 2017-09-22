@@ -19,6 +19,9 @@ using Task = System.Threading.Tasks.Task;
 
 namespace Umbraco.RestApi.Tests
 {
+
+    //TODO: Make this inherit from ControllerTests to streamline all tests and use the underlying base class logic
+
     [TestFixture]
     public class PublishedContentControllerTests
     {
@@ -232,93 +235,6 @@ namespace Umbraco.RestApi.Tests
                 Assert.AreEqual(2, djson["_embedded"]["content"].Count()); 
             }
         }
-
-        [Test]
-        //public async Task Post_Is_501_Response()
-        public async Task Post_Is_405_Response()
-        {
-            var startup = new TestStartup((testServices) => { });
-
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
-            {
-                var request = new HttpRequestMessage()
-                {
-                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}/{1}", RouteConstants.ContentSegment, RouteConstants.PublishedSegment)),
-                    Method = HttpMethod.Post,
-                };
-
-                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/hal+json"));
-
-                Console.WriteLine(request);
-                var result = await server.HttpClient.SendAsync(request);
-                Console.WriteLine(result);
-
-                var json = await ((StreamContent)result.Content).ReadAsStringAsync();
-                Console.Write(JsonConvert.SerializeObject(JsonConvert.DeserializeObject(json), Formatting.Indented));
-
-                //NOTE: MethodNotAllowed because we cannot post for published content
-                Assert.AreEqual(HttpStatusCode.MethodNotAllowed, result.StatusCode);
-            }
-        }
-
-        [Test]
-        //public async Task Put_Is_501_Response()
-        public async Task Put_Is_405_Response()
-        {
-            var startup = new TestStartup((testServices) => { });
-
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
-            {
-                var request = new HttpRequestMessage()
-                {
-                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}/{1}/123", RouteConstants.ContentSegment, RouteConstants.PublishedSegment)),
-                    Method = HttpMethod.Put,
-                };
-
-                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/hal+json"));
-
-                Console.WriteLine(request);
-                var result = await server.HttpClient.SendAsync(request);
-                Console.WriteLine(result);
-
-                var json = await ((StreamContent)result.Content).ReadAsStringAsync();
-                Console.Write(JsonConvert.SerializeObject(JsonConvert.DeserializeObject(json), Formatting.Indented));
-
-                //NOTE: MethodNotAllowed because we cannot post for published content
-                Assert.AreEqual(HttpStatusCode.MethodNotAllowed, result.StatusCode);
-            }
-        }
-
-        [Test]
-        //public async Task Delete_Is_501_Response()
-        public async Task Delete_Is_405_Response()
-        {
-            var startup = new TestStartup((testServices) => { });
-
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
-            {
-                var request = new HttpRequestMessage()
-                {
-                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}/{1}/123", RouteConstants.ContentSegment, RouteConstants.PublishedSegment)),
-                    Method = HttpMethod.Delete,
-                };
-
-                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/hal+json"));
-
-                Console.WriteLine(request);
-                var result = await server.HttpClient.SendAsync(request);
-                Console.WriteLine(result);
-
-                var json = await ((StreamContent)result.Content).ReadAsStringAsync();
-                Console.Write(JsonConvert.SerializeObject(JsonConvert.DeserializeObject(json), Formatting.Indented));
-
-                //NOTE: MethodNotAllowed because we cannot post for published content
-                Assert.AreEqual(HttpStatusCode.MethodNotAllowed, result.StatusCode);
-
-            }
-        }
-
-        
 
     }
 }

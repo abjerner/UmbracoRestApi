@@ -6,9 +6,16 @@ namespace Umbraco.RestApi.Models
 {
     public class RelationTypeRepresentation : Representation
     {
-        protected RelationTypeRepresentation()
+        public override string Rel
         {
+            get { return LinkTemplates.Relations.RelationType.Rel; }
+            set { }
+        }
 
+        public override string Href
+        {
+            get { return LinkTemplates.Relations.RelationType.CreateLink(new { alias = Alias }).Href; }
+            set { }
         }
 
         [Required]
@@ -28,5 +35,11 @@ namespace Umbraco.RestApi.Models
         //TODO: relations can be between more than these types
         [Display(Name = "childEntityType")]
         public PublishedItemType ChildEntityType { get; set; }
+
+        protected override void CreateHypermedia()
+        {
+            base.CreateHypermedia();
+            Links.Add(LinkTemplates.Media.Root);
+        }
     }
 }

@@ -69,8 +69,6 @@ namespace Umbraco.RestApi.Controllers
             return Request.CreateResponse(HttpStatusCode.OK, representation);
         }
 
-
-
         [HttpGet]
         [CustomRoute("{id}")]
         public HttpResponseMessage Get(int id)

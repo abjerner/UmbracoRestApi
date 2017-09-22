@@ -14,7 +14,7 @@ namespace Umbraco.RestApi.Models
 
         protected override void CreateHypermedia()
         {
-            Href = LinkTemplates.PublishedContent.Root.Href;
+            Href = LinkTemplates.Relations.Root.Href;
             Links.Add(new Link("self", Href));
 
             Links.Add(LinkTemplates.Relations.Root);

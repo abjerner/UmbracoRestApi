@@ -2,10 +2,6 @@
 {
     public class MediaRepresentation : ContentRepresentationBase
     {
-        public MediaRepresentation()
-        {
-        }
-
         public override string Rel
         {
             get { return LinkTemplates.Media.Self.Rel; }

@@ -17,14 +17,16 @@ namespace Umbraco.RestApi
 
         public static class Relations
         {
-            public static string BaseUrl => $"~/{RouteConstants.GetRestRootPath(ApiVersion)}/{RouteConstants.RelationsSegment}/{RouteConstants.PublishedSegment}";
+            public static string BaseUrl => $"~/{RouteConstants.GetRestRootPath(ApiVersion)}/{RouteConstants.RelationsSegment}";
 
             public static Link Root => new Link("root", BaseUrl);
 
             public static Link Self => new Link("relation", BuildSelfUrl(BaseUrl));
 
-            public static Link Children => new Link("relatedChildren", $"{BaseUrl}//children/{{id}}{{?relationType}}");
-            public static Link Parents => new Link("relatedParents", $"{BaseUrl}//parents/{{id}}{{?relationType}}");
+            public static Link Children => new Link("relatedChildren", $"{BaseUrl}/children/{{id}}{{?relationType}}");
+            public static Link Parents => new Link("relatedParents", $"{BaseUrl}/parents/{{id}}{{?relationType}}");
+
+            public static Link RelationType => new Link("relationType", $"{BaseUrl}/relationtype/{{alias}}");
         }
 
         public static class Members

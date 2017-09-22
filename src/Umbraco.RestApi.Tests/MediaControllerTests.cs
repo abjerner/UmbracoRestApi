@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -63,7 +64,9 @@ namespace Umbraco.RestApi.Tests
                     mockMediaService.Setup(x => x.GetChildren(456)).Returns(new[] { ModelMocks.SimpleMockedMedia(321, 456) });
                 });
 
-            await Get_Root_Result(startup, RouteConstants.MediaSegment);
+            var djson = await Get_Root_Result(startup, RouteConstants.MediaSegment);
+            Assert.AreEqual(2, djson["_links"]["content"].Count());
+            Assert.AreEqual(2, djson["_embedded"]["content"].Count());
         }
 
         [Test]
@@ -231,16 +234,7 @@ namespace Umbraco.RestApi.Tests
                     MediaServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
-            {
-                var request = new HttpRequestMessage()
-                {
-                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}", RouteConstants.MediaSegment)),
-                    Method = HttpMethod.Post,
-                };
-
-                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/hal+json"));
-                request.Content = new StringContent(@"{
+            await base.Post_Is_201_Response(startup, RouteConstants.MediaSegment, new StringContent(@"{
   ""contentTypeAlias"": ""testType"",
   ""parentId"": 456,
   ""templateId"": 9,
@@ -249,17 +243,7 @@ namespace Umbraco.RestApi.Tests
     ""TestProperty1"": ""property value1"",
     ""testProperty2"": ""property value2""
   }
-}", Encoding.UTF8, "application/json");
-
-                Console.WriteLine(request);
-                var result = await server.HttpClient.SendAsync(request);
-                Console.WriteLine(result);
-
-                var json = await ((StreamContent)result.Content).ReadAsStringAsync();
-                Console.Write(JsonConvert.SerializeObject(JsonConvert.DeserializeObject(json), Formatting.Indented));
-
-                Assert.AreEqual(HttpStatusCode.Created, result.StatusCode);
-            }
+}", Encoding.UTF8, "application/json"));
         }
 
         [Test]
@@ -420,16 +404,7 @@ namespace Umbraco.RestApi.Tests
                     MediaServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
-            {
-                var request = new HttpRequestMessage()
-                {
-                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}/123", RouteConstants.MediaSegment)),
-                    Method = HttpMethod.Put,
-                };
-
-                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/hal+json"));
-                request.Content = new StringContent(@"{
+            await base.Put_Is_200_Response(startup, RouteConstants.MediaSegment, new StringContent(@"{
   ""contentTypeAlias"": ""testType"",
   ""parentId"": 456,
   ""templateId"": 9,
@@ -438,17 +413,8 @@ namespace Umbraco.RestApi.Tests
     ""TestProperty1"": ""property value1"",
     ""testProperty2"": ""property value2""
   }
-}", Encoding.UTF8, "application/json");
-
-                Console.WriteLine(request);
-                var result = await server.HttpClient.SendAsync(request);
-                Console.WriteLine(result);
-
-                var json = await ((StreamContent)result.Content).ReadAsStringAsync();
-                Console.Write(JsonConvert.SerializeObject(JsonConvert.DeserializeObject(json), Formatting.Indented));
-
-                Assert.AreEqual(HttpStatusCode.OK, result.StatusCode);
-            }
+}", Encoding.UTF8, "application/json"));
+            
         }
 
     }
