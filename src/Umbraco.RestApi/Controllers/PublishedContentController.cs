@@ -7,14 +7,17 @@ using System.Web.Http;
 using System.Web.Http.ModelBinding;
 using Examine;
 using Examine.Providers;
+using Microsoft.Owin.Security.Authorization.WebApi;
 using Umbraco.Core;
 using Umbraco.Core.Models;
 using Umbraco.RestApi.Models;
 using Umbraco.RestApi.Routing;
+using Umbraco.RestApi.Security;
 using Umbraco.Web;
 
 namespace Umbraco.RestApi.Controllers
 {
+    [ResourceAuthorize(Policy = AuthorizationPolicies.PublishedContentRead)]
     [UmbracoRoutePrefix("rest/v1/content/published")]
     public class PublishedContentController : UmbracoHalController
     {
@@ -155,9 +158,7 @@ namespace Umbraco.RestApi.Controllers
 
             return Request.CreateResponse(HttpStatusCode.OK, representation);
         }
-
-        //NOTE: We cannot accept POST here for now unless we modify the routing structure since there's only one POST per
-        // controller currently (with the way we've routed).
+        
         [HttpGet]
         [CustomRoute("search")]
         public HttpResponseMessage Search(

@@ -1,22 +1,79 @@
 ﻿using System;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
+using Microsoft.Owin.Security.Authorization;
+using Microsoft.Owin.Security.Authorization.Infrastructure;
 using Owin;
 using umbraco;
+using umbraco.BusinessLogic.Actions;
 using Umbraco.Core;
 using Umbraco.Core.Configuration;
 using Umbraco.Core.Models.Identity;
 using Umbraco.Core.Security;
+using Umbraco.Core.Services;
+using Umbraco.RestApi.Security;
 using Umbraco.Web.Security.Identity;
 
 namespace Umbraco.RestApi
 {
     public static class AppBuilderExtensions
     {
-        public static void ConfigureUmbracoRestApi(this IAppBuilder app, UmbracoRestApiOptions options)
+        public static void ConfigureUmbracoRestApi(this IAppBuilder app, UmbracoRestApiOptions options, ApplicationContext applicationContext)
         {
             if (options == null) throw new ArgumentNullException("options");
             UmbracoRestApiOptionsInstance.Options = options;
+
+            app.ConfigureUmbracoRestApiAuthorizationPolicies(applicationContext);
+        }
+
+        /// <summary>
+        /// Authorization for the rest API uses authorization schemes, see https://docs.microsoft.com/en-us/aspnet/core/security/authorization/policies
+        /// </summary>
+        /// <param name="app"></param>
+        /// <param name="applicationContext"></param>
+        /// <remarks>
+        /// This is a .NET Core approach to authorization but we have a package that has backported all of this for us for .NET 452
+        /// </remarks>
+        public static void ConfigureUmbracoRestApiAuthorizationPolicies(this IAppBuilder app, ApplicationContext applicationContext)
+        {
+            app.UseAuthorization(options =>
+            {
+                options.AddPolicy(
+                    AuthorizationPolicies.PublishedContentRead,
+                    policy =>
+                    {
+                        //to read published content the logged in user must have either of these claim types and value
+                        policy.Requirements.Add(new ClaimsAuthorizationRequirement(AuthorizationPolicies.RestApiClaimType, null));
+                        //OR
+                        policy.Requirements.Add(new ClaimsAuthorizationRequirement(Core.Constants.Security.SessionIdClaimType, null));
+                    });
+
+                options.AddPolicy(
+                    AuthorizationPolicies.ContentRead,
+                    policy =>
+                    {
+                        //policy.RequireAssertion(context => true);
+                        policy.Requirements.Add(new UmbracoSectionAccessRequirement(Core.Constants.Applications.Content));
+                        policy.Requirements.Add(new ContentPermissionRequirement(ActionBrowse.Instance.Letter.ToString()));
+                    });
+                
+                options.AddPolicy(
+                    AuthorizationPolicies.MediaRead,
+                    policy => policy.Requirements.Add(new UmbracoSectionAccessRequirement(Core.Constants.Applications.Media)));
+
+                options.AddPolicy(
+                    AuthorizationPolicies.MemberRead,
+                    policy => policy.Requirements.Add(new UmbracoSectionAccessRequirement(Core.Constants.Applications.Members)));
+
+                var handlers = new IAuthorizationHandler[]
+                {
+                    new UmbracoSectionAccessHandler(), 
+                    new ContentPermissionHandler(applicationContext.Services)
+                };
+                options.Dependencies.Service = new DefaultAuthorizationService(new DefaultAuthorizationPolicyProvider(options), handlers);
+
+                app.CreatePerOwinContext(() => new AuthorizationServiceWrapper(options.Dependencies.Service));
+            });
         }
 
         /// <summary>
@@ -54,6 +111,21 @@ namespace Umbraco.RestApi
             app.UseCookieAuthentication(authOptions);
 
             return app;
+        }
+        
+    }
+
+    internal class AuthorizationServiceWrapper : IDisposable
+    {
+        public IAuthorizationService AuthorizationService { get; }
+
+        public AuthorizationServiceWrapper(IAuthorizationService authorizationService)
+        {
+            AuthorizationService = authorizationService;
+        }
+
+        public void Dispose()
+        {
         }
     }
 }

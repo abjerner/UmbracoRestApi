@@ -53,7 +53,7 @@ namespace Umbraco.RestApi.Tests
                 startup.Configuration(builder);
 
                 //default options
-                builder.ConfigureUmbracoRestApi(new UmbracoRestApiOptions());
+                builder.ConfigureUmbracoRestApi(new UmbracoRestApiOptions(), startup.ApplicationContext);
             }))
             {
                 var request = new HttpRequestMessage()
@@ -105,7 +105,7 @@ namespace Umbraco.RestApi.Tests
                         AllowAnyOrigin = true,
                         SupportsCredentials = true
                     }
-                });
+                }, startup.ApplicationContext);
             }))
             {
                 var request = new HttpRequestMessage()

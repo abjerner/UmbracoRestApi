@@ -2,15 +2,20 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
+using System.Net.Http;
+using System.Security.Claims;
 using System.Text.RegularExpressions;
 using System.Web.Http;
+using System.Web.Http.Controllers;
 using System.Web.Http.ModelBinding;
+using Microsoft.Owin.Security.Authorization;
 using Umbraco.Core.Models;
 using Umbraco.Core.Services;
 using Umbraco.RestApi.Models;
 using Umbraco.Web;
 using Umbraco.Web.WebApi;
 using WebApi.Hal;
+using Microsoft.AspNet.Identity.Owin;
 
 namespace Umbraco.RestApi.Controllers
 {
@@ -19,6 +24,7 @@ namespace Umbraco.RestApi.Controllers
     [HalFormatterConfiguration]
     public abstract class UmbracoHalController : UmbracoApiControllerBase
     {
+        private IAuthorizationService _authorizationService;
 
         protected UmbracoHalController()
         {
@@ -29,6 +35,18 @@ namespace Umbraco.RestApi.Controllers
             UmbracoHelper umbracoHelper)
             : base(umbracoContext, umbracoHelper)
         {
+        }
+
+        protected IAuthorizationService AuthorizationService => _authorizationService ?? (_authorizationService = Request.GetOwinContext().Get<AuthorizationServiceWrapper>().AuthorizationService);
+
+        protected ClaimsPrincipal ClaimsPrincipal
+        {
+            get
+            {
+                if (!(User is ClaimsPrincipal claimsPrincipal))
+                    throw new InvalidOperationException("The current principal must be of type " + typeof(ClaimsPrincipal));
+                return claimsPrincipal;
+            }
         }
 
         protected int CurrentVersionRequest => int.Parse(Regex.Match(Request.RequestUri.AbsolutePath, "/v(\\d+)/", RegexOptions.Compiled).Groups[1].Value);

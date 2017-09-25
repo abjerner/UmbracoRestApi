@@ -5,6 +5,8 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
+using System.Web.Http.Controllers;
+using System.Web.Http.Filters;
 using AutoMapper;
 using Examine;
 using Examine.Providers;
@@ -14,14 +16,17 @@ using Umbraco.RestApi.Models;
 using Umbraco.RestApi.Routing;
 using Umbraco.Web;
 using System.Web.Http.ModelBinding;
+using Microsoft.Owin.Security.Authorization.WebApi;
+using umbraco.BusinessLogic.Actions;
 using Umbraco.Core.Publishing;
 using Umbraco.Web.Models.ContentEditing;
 using Umbraco.Core.Services;
+using Umbraco.RestApi.Security;
 using Umbraco.Web.WebApi;
 
 namespace Umbraco.RestApi.Controllers
 {
-    [UmbracoAuthorize]
+    [Authorize]
     [UmbracoRoutePrefix("rest/v1/content")]
     public class ContentController : UmbracoHalController, ITraversableController<ContentRepresentation>
     {
@@ -50,12 +55,14 @@ namespace Umbraco.RestApi.Controllers
         //this is the default language culture for umbraco translation files
         private static readonly CultureInfo DefaultCulture = CultureInfo.GetCultureInfo("en-US");
         private BaseSearchProvider _searchProvider;
-        protected BaseSearchProvider SearchProvider => _searchProvider ?? (_searchProvider = ExamineManager.Instance.SearchProviderCollection["InternalSearcher"]);        
-
+        protected BaseSearchProvider SearchProvider => _searchProvider ?? (_searchProvider = ExamineManager.Instance.SearchProviderCollection["InternalSearcher"]);
+        
         [HttpGet]
         [CustomRoute("")]
         public virtual HttpResponseMessage Get()
         {
+            //TODO: Fix this https://github.com/DavidParks8/Owin-Authorization/issues/55 (non root access users)
+
             var rootContent = Services.ContentService.GetRootContent();
             var result = Mapper.Map<IEnumerable<ContentRepresentation>>(rootContent).ToList();
             var representation = new ContentListRepresenation(result);
@@ -67,6 +74,8 @@ namespace Umbraco.RestApi.Controllers
         [CustomRoute("{id}")]
         public HttpResponseMessage Get(int id)
         {
+            AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.ContentRead);
+
             var content = Services.ContentService.GetById(id);
             var result = Mapper.Map<ContentRepresentation>(content);
 
@@ -79,6 +88,8 @@ namespace Umbraco.RestApi.Controllers
         [CustomRoute("{id}/meta")]
         public HttpResponseMessage GetMetadata(int id)
         {
+            AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.ContentRead);
+
             var found = Services.ContentService.GetById(id);
             if (found == null) throw new HttpResponseException(HttpStatusCode.NotFound);
 
@@ -100,6 +111,8 @@ namespace Umbraco.RestApi.Controllers
             [ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query)
         {
+            AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.ContentRead);
+
             var items = Services.ContentService.GetPagedChildren(id, query.Page - 1, query.PageSize, out var total, filter:query.Query);
             var pages = ContentControllerHelper.GetTotalPages(total, query.PageSize);
             var mapped = Mapper.Map<IEnumerable<ContentRepresentation>>(items).ToList();
@@ -108,13 +121,14 @@ namespace Umbraco.RestApi.Controllers
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
-
         [HttpGet]
         [CustomRoute("{id}/descendants/")]
         public HttpResponseMessage GetDescendants(int id,
             [ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query)
         {
+            AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.ContentRead);
+
             var items = Services.ContentService.GetPagedDescendants(id, query.Page - 1, query.PageSize, out var total, filter: query.Query);
             var pages = ContentControllerHelper.GetTotalPages(total, query.PageSize);
             var mapped = Mapper.Map<IEnumerable<ContentRepresentation>>(items).ToList();
@@ -129,6 +143,8 @@ namespace Umbraco.RestApi.Controllers
            [ModelBinder(typeof(PagedQueryModelBinder))]
            PagedRequest query)
         {
+            AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.ContentRead);
+
             var items = Services.ContentService.GetAncestors(id).ToArray();
             var total = items.Length;
             var pages = (total + query.PageSize - 1) / query.PageSize;
@@ -138,14 +154,13 @@ namespace Umbraco.RestApi.Controllers
             var result = new ContentPagedListRepresentation(mapped, total, pages, query.Page - 1, query.PageSize, LinkTemplates.Content.PagedAncestors, new { id = id });
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
-        
+
         [HttpGet]
         [CustomRoute("search")]
         public HttpResponseMessage Search(
             [ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query)
         {
-
             if (query.Query.IsNullOrWhiteSpace()) throw new HttpResponseException(HttpStatusCode.NotFound);
 
             //Query prepping - ensure that we only search for content items...
@@ -180,7 +195,6 @@ namespace Umbraco.RestApi.Controllers
 
 
         // Content CRUD:
-
 
         [HttpPost]
         [CustomRoute("")]

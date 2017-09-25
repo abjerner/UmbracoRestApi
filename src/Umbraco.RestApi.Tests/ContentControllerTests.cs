@@ -178,7 +178,12 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (testServices) => { });
+                (testServices) =>
+                {
+                    Mock.Get(testServices.ServiceContext.ContentService)
+                        .Setup(x => x.GetById(123))
+                        .Returns(ModelMocks.SimpleMockedContent());
+                });
 
             await base.Get_Ancestors_Is_200_Response(startup, RouteConstants.ContentSegment);
         }
@@ -204,7 +209,7 @@ namespace Umbraco.RestApi.Tests
 
                     mockContentService.Setup(x => x.HasChildren(It.IsAny<int>())).Returns(true);
                 });
-
+            
             using (var server = TestServer.Create(builder => startup.Configuration(builder)))
             {
                 var request = new HttpRequestMessage()

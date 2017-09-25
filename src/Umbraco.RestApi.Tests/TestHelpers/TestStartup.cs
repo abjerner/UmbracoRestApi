@@ -4,8 +4,15 @@ using System.Web.Http;
 using System.Web.Http.Dispatcher;
 using AutoMapper;
 using Examine.Providers;
+using Microsoft.Owin.Security.Authorization.Infrastructure;
+using Moq;
 using Owin;
+using Semver;
+using Umbraco.Core;
 using Umbraco.Core.Configuration.UmbracoSettings;
+using Umbraco.Core.Logging;
+using Umbraco.Core.Models;
+using Umbraco.Core.Profiling;
 using Umbraco.Core.Services;
 using Umbraco.RestApi.Models;
 using Umbraco.RestApi.Models.Mapping;
@@ -43,10 +50,28 @@ namespace Umbraco.RestApi.Tests.TestHelpers
     public class TestStartup
     {
         private readonly Action<TestServices> _activator;
+        public ApplicationContext ApplicationContext { get; }
 
         public TestStartup(Action<TestServices> activator)
         {
             _activator = activator;
+
+            var serviceContext = ServiceMocks.GetServiceContext();
+            var mockedMigrationService = Mock.Get(serviceContext.MigrationEntryService);
+
+            //set it up to return anything so that the app ctx is 'Configured'
+            mockedMigrationService.Setup(x => x.FindEntry(It.IsAny<string>(), It.IsAny<SemVersion>())).Returns(Mock.Of<IMigrationEntry>());
+
+            var dbCtx = ServiceMocks.GetDatabaseContext();
+
+            //new app context
+            ApplicationContext = ApplicationContext.EnsureContext(
+                dbCtx,
+                //pass in mocked services
+                serviceContext,
+                CacheHelper.CreateDisabledCacheHelper(),
+                new ProfilingLogger(Mock.Of<ILogger>(), Mock.Of<IProfiler>()),
+                true);
         }
 
         private void Activator(TestServices testServices)
@@ -87,7 +112,7 @@ namespace Umbraco.RestApi.Tests.TestHelpers
             
 
             httpConfig.Services.Replace(typeof(IAssembliesResolver), new SpecificAssemblyResolver(new[] { typeof(UmbracoRestStartup).Assembly }));
-            httpConfig.Services.Replace(typeof(IHttpControllerActivator), new TestControllerActivator(Activator));
+            httpConfig.Services.Replace(typeof(IHttpControllerActivator), new TestControllerActivator(ApplicationContext, Activator));
             httpConfig.Services.Replace(typeof(IHttpControllerSelector), new NamespaceHttpControllerSelector(httpConfig));
 
             //auth everything
@@ -96,6 +121,8 @@ namespace Umbraco.RestApi.Tests.TestHelpers
             //Create routes
 
             UmbracoRestStartup.CreateRoutes(httpConfig);
+
+            app.ConfigureUmbracoRestApiAuthorizationPolicies(ApplicationContext);
 
             app.UseWebApi(httpConfig);
         }

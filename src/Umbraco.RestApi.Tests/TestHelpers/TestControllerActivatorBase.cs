@@ -28,6 +28,13 @@ namespace Umbraco.RestApi.Tests.TestHelpers
 {
     public abstract class TestControllerActivatorBase : DefaultHttpControllerActivator, IHttpControllerActivator
     {
+        public ApplicationContext ApplicationContext { get; }
+
+        protected TestControllerActivatorBase(ApplicationContext applicationContext)
+        {
+            ApplicationContext = applicationContext;
+        }
+
         IHttpController IHttpControllerActivator.Create(HttpRequestMessage request, HttpControllerDescriptor controllerDescriptor, Type controllerType)
         {
             if (typeof(UmbracoApiControllerBase).IsAssignableFrom(controllerType))
@@ -35,24 +42,7 @@ namespace Umbraco.RestApi.Tests.TestHelpers
                 var owinContext = request.GetOwinContext();
 
                 var mockedTypedContentQuery = Mock.Of<ITypedPublishedContentQuery>();
-
-                var serviceContext = ServiceMocks.GetServiceContext();
-                var mockedMigrationService = Mock.Get(serviceContext.MigrationEntryService);
-
-                //set it up to return anything so that the app ctx is 'Configured'
-                mockedMigrationService.Setup(x => x.FindEntry(It.IsAny<string>(), It.IsAny<SemVersion>())).Returns(Mock.Of<IMigrationEntry>());                
                 
-                var dbCtx = ServiceMocks.GetDatabaseContext();
-
-                //new app context
-                var appCtx = ApplicationContext.EnsureContext(
-                    dbCtx,
-                    //pass in mocked services
-                    serviceContext,
-                    CacheHelper.CreateDisabledCacheHelper(),
-                    new ProfilingLogger(Mock.Of<ILogger>(), Mock.Of<IProfiler>()),
-                    true);
-
                 //httpcontext with an auth'd user
                 var httpContext = Mock.Of<HttpContextBase>(http => http.User == owinContext.Authentication.User);
                 //chuck it into the props since this is what MS does when hosted
@@ -63,17 +53,19 @@ namespace Umbraco.RestApi.Tests.TestHelpers
                 var webSecurity = new Mock<WebSecurity>(null, null);
 
                 //mock CurrentUser
-                webSecurity.Setup(x => x.CurrentUser)
-                    .Returns(Mock.Of<IUser>(u => u.IsApproved == true
-                                                 && u.IsLockedOut == false
-                                                 && u.AllowedSections == backofficeIdentity.AllowedApplications
-                                                 && u.Email == "admin@admin.com"
-                                                 && u.Id == (int)backofficeIdentity.Id
-                                                 && u.Language == "en"
-                                                 && u.Name == backofficeIdentity.RealName
-                                                 && u.StartContentIds == backofficeIdentity.StartContentNodes
-                                                 && u.StartMediaIds == backofficeIdentity.StartMediaNodes
-                                                 && u.Username == backofficeIdentity.Username));
+                var admin = Mock.Of<IUser>(u => u.IsApproved == true
+                                                && u.IsLockedOut == false
+                                                && u.AllowedSections == backofficeIdentity.AllowedApplications
+                                                && u.Email == "admin@admin.com"
+                                                && u.Id == (int) backofficeIdentity.Id
+                                                && u.Language == "en"
+                                                && u.Name == backofficeIdentity.RealName
+                                                && u.StartContentIds == backofficeIdentity.StartContentNodes
+                                                && u.StartMediaIds == backofficeIdentity.StartMediaNodes
+                                                && u.Username == backofficeIdentity.Username);
+                webSecurity.Setup(x => x.CurrentUser).Returns(admin);
+                var mockedUserService = Mock.Get(ApplicationContext.Services.UserService);
+                mockedUserService.Setup(x => x.GetUserById(0)).Returns(admin);
 
                 //mock Validate
                 webSecurity.Setup(x => x.ValidateCurrentUser())
@@ -82,7 +74,7 @@ namespace Umbraco.RestApi.Tests.TestHelpers
                 var umbCtx = UmbracoContext.EnsureContext(
                     //set the user of the HttpContext
                     httpContext,
-                    appCtx,
+                    ApplicationContext,
                     webSecurity.Object,
                     Mock.Of<IUmbracoSettingsSection>(section => section.WebRouting == Mock.Of<IWebRoutingSection>(routingSection => routingSection.UrlProviderMode == UrlProviderMode.Auto.ToString())),
                     Enumerable.Empty<IUrlProvider>(),
@@ -121,7 +113,7 @@ namespace Umbraco.RestApi.Tests.TestHelpers
                 container.Register<IContentSection>(factory => mockSettings.Content);
                 container.Register(controllerType);
 
-                var testServices = new TestServices(request, umbHelper.UmbracoContext, mockedTypedContentQuery, serviceContext, searchProvider, mockSettings);
+                var testServices = new TestServices(request, umbHelper.UmbracoContext, mockedTypedContentQuery, ApplicationContext.Services, searchProvider, mockSettings);
 
                 return CreateController(container, controllerType, umbHelper, testServices);
             }
