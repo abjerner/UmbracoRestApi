@@ -38,7 +38,7 @@ namespace Umbraco.RestApi.Tests
                     var mockRelationService = Mock.Get(testServices.ServiceContext.RelationService);
                 });
 
-            await Get_Root_With_OPTIONS(startup, RouteConstants.RelationsSegment);
+            await Get_Root_With_OPTIONS(startup.UseDefaultTestSetup, RouteConstants.RelationsSegment);
         }
 
         [Test]
@@ -57,7 +57,7 @@ namespace Umbraco.RestApi.Tests
                         });
                 });
 
-            var djson = await Get_Root_Result(startup, RouteConstants.RelationsSegment);
+            var djson = await Get_Root_Result(startup.UseDefaultTestSetup, RouteConstants.RelationsSegment);
             Assert.AreEqual(2, djson["_links"]["relationtype"].Count());
             Assert.AreEqual(2, djson["_embedded"]["relationtype"].Count());
         }
@@ -73,7 +73,7 @@ namespace Umbraco.RestApi.Tests
                     mockRelationService.Setup(x => x.GetById(It.IsAny<int>())).Returns(() => ModelMocks.SimpleMockedRelation(123, 4567, 8910, ModelMocks.SimpleMockedRelationType()));
                 });
 
-            var djson = await Get_Id_Result(startup, RouteConstants.RelationsSegment);
+            var djson = await Get_Id_Result(startup.UseDefaultTestSetup, RouteConstants.RelationsSegment);
             Assert.AreEqual("/umbraco/rest/v1/relations/123", djson["_links"]["self"]["href"].Value<string>());
             Assert.AreEqual("/umbraco/rest/v1/relations", djson["_links"]["root"]["href"].Value<string>());
             Assert.AreEqual("/umbraco/rest/v1/relations/relationtype/testType", djson["_links"]["relationtype"]["href"].Value<string>());
@@ -90,7 +90,7 @@ namespace Umbraco.RestApi.Tests
                     RelationServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
-            await base.Post_Is_201_Response(startup, RouteConstants.RelationsSegment, new StringContent(@"{
+            await base.Post_Is_201_Response(startup.UseDefaultTestSetup, RouteConstants.RelationsSegment, new StringContent(@"{
   ""relationTypeAlias"": ""testType"",
   ""parentId"": 8910,
   ""childId"" : 567,
@@ -108,7 +108,7 @@ namespace Umbraco.RestApi.Tests
                     RelationServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
+            using (var server = TestServer.Create(builder => startup.UseDefaultTestSetup(builder)))
             {
                 var request = new HttpRequestMessage()
                 {
@@ -151,7 +151,7 @@ namespace Umbraco.RestApi.Tests
                     RelationServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
-            await base.Put_Is_200_Response(startup, RouteConstants.RelationsSegment, new StringContent(@"{
+            await base.Put_Is_200_Response(startup.UseDefaultTestSetup, RouteConstants.RelationsSegment, new StringContent(@"{
   ""relationTypeAlias"": ""testType"",
   ""parentId"": 1235,
   ""childId"" : 1234,

@@ -1,4 +1,6 @@
-﻿using System.Web.Cors;
+﻿using System;
+using System.Web.Cors;
+using Microsoft.Owin.Security.Authorization;
 
 namespace Umbraco.RestApi
 {
@@ -21,5 +23,10 @@ namespace Umbraco.RestApi
         }
 
         public CorsPolicy CorsPolicy { get; set; }
+
+        /// <summary>
+        /// If set this can be used to customize the Authorization policies applied to each controller/action
+        /// </summary>
+        public Func<string, AuthorizationPolicy, Action<AuthorizationPolicyBuilder>> CustomAuthorizationPolicyCallback { get; set; }
     }
 }

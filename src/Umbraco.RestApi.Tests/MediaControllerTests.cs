@@ -43,7 +43,7 @@ namespace Umbraco.RestApi.Tests
                     mockMediaService.Setup(x => x.GetChildren(456)).Returns(new[] { ModelMocks.SimpleMockedMedia(321, 456) });
                 });
 
-            await Get_Root_With_OPTIONS(startup, RouteConstants.MediaSegment);
+            await Get_Root_With_OPTIONS(startup.UseDefaultTestSetup, RouteConstants.MediaSegment);
         }
 
         [Test]
@@ -64,7 +64,7 @@ namespace Umbraco.RestApi.Tests
                     mockMediaService.Setup(x => x.GetChildren(456)).Returns(new[] { ModelMocks.SimpleMockedMedia(321, 456) });
                 });
 
-            var djson = await Get_Root_Result(startup, RouteConstants.MediaSegment);
+            var djson = await Get_Root_Result(startup.UseDefaultTestSetup, RouteConstants.MediaSegment);
             Assert.AreEqual(2, djson["_links"]["content"].Count());
             Assert.AreEqual(2, djson["_embedded"]["content"].Count());
         }
@@ -98,7 +98,7 @@ namespace Umbraco.RestApi.Tests
                         });
                 });
 
-            await Search_200_Result(startup, RouteConstants.MediaSegment);
+            await Search_200_Result(startup.UseDefaultTestSetup, RouteConstants.MediaSegment);
         }
 
         [Test]
@@ -117,7 +117,7 @@ namespace Umbraco.RestApi.Tests
                      mockMediaService.Setup(x => x.HasChildren(It.IsAny<int>())).Returns(true);
                  });
 
-            var djson = await Get_Id_Result(startup, RouteConstants.MediaSegment);
+            var djson = await Get_Id_Result(startup.UseDefaultTestSetup, RouteConstants.MediaSegment);
             Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.MediaSegment}/123", djson["_links"]["self"]["href"].Value<string>());
             Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.MediaSegment}/456", djson["_links"]["parent"]["href"].Value<string>());
             Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.MediaSegment}/123/children{{?page,size,query}}", djson["_links"]["children"]["href"].Value<string>());
@@ -148,7 +148,7 @@ namespace Umbraco.RestApi.Tests
                          .Returns((string input, CultureInfo culture, IDictionary<string, string> tokens) => input);
                  });
 
-            await Get_Metadata_Is_200(startup, RouteConstants.MediaSegment);
+            await Get_Metadata_Is_200(startup.UseDefaultTestSetup, RouteConstants.MediaSegment);
         }
 
         [Test]
@@ -158,7 +158,7 @@ namespace Umbraco.RestApi.Tests
                 //This will be invoked before the controller is created so we can modify these mocked services
                 (testServices) => { });
 
-            await Get_Children_Is_200_Response(startup, RouteConstants.MediaSegment);
+            await Get_Children_Is_200_Response(startup.UseDefaultTestSetup, RouteConstants.MediaSegment);
         }
 
         [Test]
@@ -168,7 +168,7 @@ namespace Umbraco.RestApi.Tests
                 //This will be invoked before the controller is created so we can modify these mocked services
                 (testServices) => { });
 
-            await base.Get_Descendants_Is_200_Response(startup, RouteConstants.MediaSegment);
+            await base.Get_Descendants_Is_200_Response(startup.UseDefaultTestSetup, RouteConstants.MediaSegment);
         }
 
         [Test]
@@ -178,7 +178,7 @@ namespace Umbraco.RestApi.Tests
                 //This will be invoked before the controller is created so we can modify these mocked services
                 (testServices) => { });
 
-            await base.Get_Ancestors_Is_200_Response(startup, RouteConstants.MediaSegment);
+            await base.Get_Ancestors_Is_200_Response(startup.UseDefaultTestSetup, RouteConstants.MediaSegment);
         }
 
         [Test]
@@ -203,7 +203,7 @@ namespace Umbraco.RestApi.Tests
                     mockMediaService.Setup(x => x.HasChildren(It.IsAny<int>())).Returns(true);
                 });
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
+            using (var server = TestServer.Create(builder => startup.UseDefaultTestSetup(builder)))
             {
                 var request = new HttpRequestMessage()
                 {
@@ -243,7 +243,7 @@ namespace Umbraco.RestApi.Tests
                     MediaServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
-            await base.Post_Is_201_Response(startup, RouteConstants.MediaSegment, new StringContent(@"{
+            await base.Post_Is_201_Response(startup.UseDefaultTestSetup, RouteConstants.MediaSegment, new StringContent(@"{
   ""contentTypeAlias"": ""testType"",
   ""parentId"": 456,
   ""templateId"": 9,
@@ -265,7 +265,7 @@ namespace Umbraco.RestApi.Tests
                     MediaServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
+            using (var server = TestServer.Create(builder => startup.UseDefaultTestSetup(builder)))
             {
                 var request = new HttpRequestMessage()
                 {
@@ -314,7 +314,7 @@ namespace Umbraco.RestApi.Tests
                     MediaServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
+            using (var server = TestServer.Create(builder => startup.UseDefaultTestSetup(builder)))
             {
                 var request = new HttpRequestMessage()
                 {
@@ -365,7 +365,7 @@ namespace Umbraco.RestApi.Tests
                     mockPropertyEditor.Setup(x => x.GetByAlias("testEditor")).Returns(new ModelMocks.SimplePropertyEditor());
                 });
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
+            using (var server = TestServer.Create(builder => startup.UseDefaultTestSetup(builder)))
             {
                 var request = new HttpRequestMessage()
                 {
@@ -413,7 +413,7 @@ namespace Umbraco.RestApi.Tests
                     MediaServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
-            await base.Put_Is_200_Response(startup, RouteConstants.MediaSegment, new StringContent(@"{
+            await base.Put_Is_200_Response(startup.UseDefaultTestSetup, RouteConstants.MediaSegment, new StringContent(@"{
   ""contentTypeAlias"": ""testType"",
   ""parentId"": 456,
   ""templateId"": 9,

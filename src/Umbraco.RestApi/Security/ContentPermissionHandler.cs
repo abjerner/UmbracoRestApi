@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Security.Principal;
 using Microsoft.Owin.Security.Authorization;
@@ -33,6 +34,13 @@ namespace Umbraco.RestApi.Security
                 return Task.FromResult(0);
             }
 
+            //if there is nothing to check against then return true
+            if (resource.NodeIds == null)
+            {
+                context.Succeed(requirement);
+                return Task.FromResult(0);
+            }
+
             foreach (var nodeId in resource.NodeIds)
             {
                 IContent content = null;
@@ -46,11 +54,10 @@ namespace Umbraco.RestApi.Security
                     }
                 }
 
-                var allowed = CheckPermissions(user, nodeId, new[]
-                {
-                    //currently permissions are a single letter
-                    requirement.Permission[0]
-                }, content);
+                var allowed = CheckPermissions(user, nodeId, 
+                    //currently permissions are only one letter hence the [0] array accessor
+                    requirement.Permissions.Select(x => x[0]).ToArray(), 
+                    content);
 
                 if (allowed)
                     context.Succeed(requirement);

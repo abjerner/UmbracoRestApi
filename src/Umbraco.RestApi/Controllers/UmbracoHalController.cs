@@ -46,7 +46,23 @@ namespace Umbraco.RestApi.Controllers
         /// Authorization via Attributes only provides so much information, if more granular authorization is required then it needs to be done
         /// in inline code using the <see cref="IAuthorizationService"/>
         /// </remarks>
-        protected IAuthorizationService AuthorizationService => _authorizationService ?? (_authorizationService = Request.GetOwinContext().Get<AuthorizationServiceWrapper>().AuthorizationService);
+        protected IAuthorizationService AuthorizationService
+        {
+            get
+            {
+                if (_authorizationService == null)
+                {
+                    var authService = Request.GetOwinContext().Get<AuthorizationServiceWrapper>();
+                    if (authService == null)
+                    {
+                        throw new InvalidOperationException("No " + typeof(IAuthorizationService) + " was found in the OwinContext, ensure ConfigureUmbracoRestApiAuthorizationPolicies has been executed");
+                    }
+                    else
+                        _authorizationService = authService.AuthorizationService;
+                }
+                return _authorizationService;
+            }   
+        }
 
         /// <summary>
         /// Exposes the <see cref="ClaimsPrincipal"/> for the request

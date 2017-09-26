@@ -192,7 +192,7 @@ namespace Umbraco.RestApi.Controllers
         [CustomRoute("")]
         public Task<HttpResponseMessage> Post(MediaRepresentation content)
         {
-            if (content == null) Request.CreateResponse(HttpStatusCode.NotFound);
+            if (content == null) return Task.FromResult(Request.CreateResponse(HttpStatusCode.NotFound));
 
             try
             {
@@ -236,7 +236,7 @@ namespace Umbraco.RestApi.Controllers
         [CustomRoute("{id}")]
         public Task<HttpResponseMessage> Put(int id, MediaRepresentation content)
         {
-            if (content == null) Request.CreateResponse(HttpStatusCode.NotFound);
+            if (content == null) return Task.FromResult(Request.CreateResponse(HttpStatusCode.NotFound));
 
             try
             {

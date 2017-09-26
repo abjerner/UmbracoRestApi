@@ -12,6 +12,7 @@ using Microsoft.Owin.Testing;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
+using Owin;
 using Umbraco.Core.Configuration;
 using Umbraco.Core.PropertyEditors;
 using Umbraco.RestApi.Routing;
@@ -38,9 +39,9 @@ namespace Umbraco.RestApi.Tests
             UmbracoRestApiOptionsInstance.Options = new UmbracoRestApiOptions();
         }
 
-        protected async Task<JObject> GetResult(TestStartup startup, Uri uri, HttpStatusCode expectedResult)
+        protected async Task<JObject> GetResult(Action<IAppBuilder> appBuilder, Uri uri, HttpStatusCode expectedResult)
         {
-            using (var server = TestServer.Create(startup.Configuration))
+            using (var server = TestServer.Create(appBuilder))
             {
                 var request = new HttpRequestMessage()
                 {
@@ -65,9 +66,9 @@ namespace Umbraco.RestApi.Tests
             }
         }
 
-        protected async Task Get_Root_With_OPTIONS(TestStartup startup, string segment)
+        protected async Task Get_Root_With_OPTIONS(Action<IAppBuilder> appBuilder, string segment)
         {
-            using (var server = TestServer.Create(startup.Configuration))
+            using (var server = TestServer.Create(appBuilder))
             {
 
                 var request = new HttpRequestMessage
@@ -93,27 +94,27 @@ namespace Umbraco.RestApi.Tests
             }
         }
 
-        protected async Task<JObject> Get_Root_Result(TestStartup startup, string segment)
+        protected async Task<JObject> Get_Root_Result(Action<IAppBuilder> appBuilder, string segment)
         {
-            var djson = await GetResult(startup, new Uri($"http://testserver/umbraco/rest/v1/{segment}"), HttpStatusCode.OK);
+            var djson = await GetResult(appBuilder, new Uri($"http://testserver/umbraco/rest/v1/{segment}"), HttpStatusCode.OK);
             Assert.AreEqual($"/umbraco/rest/v1/{segment}", djson["_links"]["root"]["href"].Value<string>());
             return djson;
         }
         
-        protected async Task<JObject> Get_Id_Result(TestStartup startup, string segment)
+        protected async Task<JObject> Get_Id_Result(Action<IAppBuilder> appBuilder, string segment)
         {
-            return await GetResult(startup, new Uri($"http://testserver/umbraco/rest/v1/{segment}/123"), HttpStatusCode.OK);
+            return await GetResult(appBuilder, new Uri($"http://testserver/umbraco/rest/v1/{segment}/123"), HttpStatusCode.OK);
         }
 
-        protected async Task<JObject> Get_Metadata_Is_200(TestStartup startup, string segment)
+        protected async Task<JObject> Get_Metadata_Is_200(Action<IAppBuilder> appBuilder, string segment)
         {
-            var djson = await GetResult(startup, new Uri($"http://testserver/umbraco/rest/v1/{segment}/123/meta"), HttpStatusCode.OK);
+            var djson = await GetResult(appBuilder, new Uri($"http://testserver/umbraco/rest/v1/{segment}/123/meta"), HttpStatusCode.OK);
             return djson;
         }
 
-        protected async Task Post_Is_201_Response(TestStartup startup, string segment, StringContent content)
+        protected async Task Post_Is_201_Response(Action<IAppBuilder> appBuilder, string segment, StringContent content)
         {
-            using (var server = TestServer.Create(startup.Configuration))
+            using (var server = TestServer.Create(appBuilder))
             {
                 var request = new HttpRequestMessage()
                 {
@@ -135,9 +136,9 @@ namespace Umbraco.RestApi.Tests
             }
         }
         
-        protected async Task Put_Is_200_Response(TestStartup startup, string segment, StringContent content)
+        protected async Task Put_Is_200_Response(Action<IAppBuilder> appBuilder, string segment, StringContent content)
         {
-            using (var server = TestServer.Create(startup.Configuration))
+            using (var server = TestServer.Create(appBuilder))
             {
                 var request = new HttpRequestMessage()
                 {
@@ -159,9 +160,9 @@ namespace Umbraco.RestApi.Tests
             }
         }
 
-        protected async Task Search_200_Result(TestStartup startup, string segment)
+        protected async Task Search_200_Result(Action<IAppBuilder> appBuilder, string segment)
         {
-            using (var server = TestServer.Create(startup.Configuration))
+            using (var server = TestServer.Create(appBuilder))
             {
                 var request = new HttpRequestMessage()
                 {
@@ -182,9 +183,9 @@ namespace Umbraco.RestApi.Tests
             }
         }
 
-        protected async Task Get_Children_Is_200_Response(TestStartup startup, string segment)
+        protected async Task Get_Children_Is_200_Response(Action<IAppBuilder> appBuilder, string segment)
         {
-            using (var server = TestServer.Create(startup.Configuration))
+            using (var server = TestServer.Create(appBuilder))
             {
                 var request = new HttpRequestMessage()
                 {
@@ -205,9 +206,9 @@ namespace Umbraco.RestApi.Tests
             }
         }
         
-        protected async Task Get_Descendants_Is_200_Response(TestStartup startup, string segment)
+        protected async Task Get_Descendants_Is_200_Response(Action<IAppBuilder> appBuilder, string segment)
         {
-            using (var server = TestServer.Create(startup.Configuration))
+            using (var server = TestServer.Create(appBuilder))
             {
                 var request = new HttpRequestMessage()
                 {
@@ -228,9 +229,9 @@ namespace Umbraco.RestApi.Tests
             }
         }
 
-        protected async Task Get_Ancestors_Is_200_Response(TestStartup startup, string segment)
+        protected async Task Get_Ancestors_Is_200_Response(Action<IAppBuilder> appBuilder, string segment)
         {
-            using (var server = TestServer.Create(startup.Configuration))
+            using (var server = TestServer.Create(appBuilder))
             {
                 var request = new HttpRequestMessage()
                 {

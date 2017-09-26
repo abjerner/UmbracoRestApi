@@ -7,11 +7,11 @@ namespace Umbraco.RestApi.Security
     /// </summary>
     public class ContentPermissionRequirement : IAuthorizationRequirement
     {
-        public string Permission { get; }
+        public string[] Permissions { get; }
 
-        public ContentPermissionRequirement(string permission)
+        public ContentPermissionRequirement(params string[] permissions)
         {
-            Permission = permission;
+            Permissions = permissions;
         }
     }
 }

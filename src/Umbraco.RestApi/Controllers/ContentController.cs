@@ -189,10 +189,15 @@ namespace Umbraco.RestApi.Controllers
 
         [HttpGet]
         [CustomRoute("search")]
-        public Task<HttpResponseMessage> Search(
+        public async Task<HttpResponseMessage> Search(
             [ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query)
         {
+            if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, ContentResourceAccess.Empty(), AuthorizationPolicies.ContentRead))
+                return Request.CreateResponse(HttpStatusCode.Unauthorized);
+
+            //TODO: Authorize this! how? Same as core, i guess we just filter the results
+
             if (query.Query.IsNullOrWhiteSpace()) throw new HttpResponseException(HttpStatusCode.NotFound);
 
             //Query prepping - ensure that we only search for content items...
@@ -224,16 +229,19 @@ namespace Umbraco.RestApi.Controllers
             //TODO: Enable this
             //FilterAllowedOutgoingContent(result);
 
-            return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, representation));
+            return Request.CreateResponse(HttpStatusCode.OK, representation);
         }
 
         // Content CRUD:
 
         [HttpPost]
         [CustomRoute("")]
-        public Task<HttpResponseMessage> Post(ContentRepresentation content)
+        public async Task<HttpResponseMessage> Post(ContentRepresentation content)
         {
-            if (content == null) Request.CreateResponse(HttpStatusCode.NotFound);
+            if (content == null) return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(content.ParentId), AuthorizationPolicies.ContentCreate))
+                return Request.CreateResponse(HttpStatusCode.Unauthorized);
 
             try
             {
@@ -265,11 +273,11 @@ namespace Umbraco.RestApi.Controllers
                 Mapper.Map(content, created);
                 Services.ContentService.Save(created);
 
-                return Task.FromResult(Request.CreateResponse(HttpStatusCode.Created, Mapper.Map<ContentRepresentation>(created)));
+                return Request.CreateResponse(HttpStatusCode.Created, Mapper.Map<ContentRepresentation>(created));
             }
             catch (ModelValidationException exception)
             {
-                return Task.FromResult(Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors));
+                return Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors);
             }
         }
 
@@ -284,9 +292,13 @@ namespace Umbraco.RestApi.Controllers
         /// </remarks>
         [HttpPut]
         [CustomRoute("{id}")]
-        public Task<HttpResponseMessage> Put(int id, ContentRepresentation content)
+        public async Task<HttpResponseMessage> Put(int id, ContentRepresentation content)
         {
-            if (content == null) Request.CreateResponse(HttpStatusCode.NotFound);
+            if (content == null) return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            //TODO: Since this Id is based on a route parameter it should be possible to authz this with an attribute
+            if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.ContentUpdate))
+                return Request.CreateResponse(HttpStatusCode.Unauthorized);
 
             try
             {
@@ -321,24 +333,28 @@ namespace Umbraco.RestApi.Controllers
                 }
 
                 var rep = Mapper.Map<ContentRepresentation>(found);
-                return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, rep));
+                return Request.CreateResponse(HttpStatusCode.OK, rep);
             }
             catch (ModelValidationException exception)
             {
-                return Task.FromResult(Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors));
+                return Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors);
             }
         }
 
         [HttpDelete]
         [CustomRoute("{id}")]
-        public Task<HttpResponseMessage> Delete(int id)
+        public async Task<HttpResponseMessage> Delete(int id)
         {
+            //TODO: Since this Id is based on a route parameter it should be possible to authz this with an attribute
+            if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.ContentDelete))
+                return Request.CreateResponse(HttpStatusCode.Unauthorized);
+
             var found = Services.ContentService.GetById(id);
             if (found == null)
-                return Task.FromResult(Request.CreateResponse(HttpStatusCode.NotFound));
+                return Request.CreateResponse(HttpStatusCode.NotFound);
 
             Services.ContentService.Delete(found);
-            return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK));
+            return Request.CreateResponse(HttpStatusCode.OK);
         }
 
         private void FilterAllowedOutgoingContent(SimpleListRepresentation<ContentRepresentation> rep)

@@ -8,7 +8,17 @@ namespace Umbraco.RestApi.Security
     public class ContentResourceAccess
     {
         public int[] NodeIds { get; }
-        
+
+        private ContentResourceAccess()
+        {
+        }
+
+        private static readonly ContentResourceAccess EmptyInstance = new ContentResourceAccess();
+        public static ContentResourceAccess Empty()
+        {
+            return EmptyInstance;
+        }
+
         public ContentResourceAccess(int[] nodeIds)
         {
             NodeIds = nodeIds;

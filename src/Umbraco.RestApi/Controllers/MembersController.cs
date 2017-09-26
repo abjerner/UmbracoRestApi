@@ -110,7 +110,7 @@ namespace Umbraco.RestApi.Controllers
         [CustomRoute("")]
         public Task<HttpResponseMessage> Post(MemberRepresentation content)
         {
-            if (content == null) Request.CreateResponse(HttpStatusCode.NotFound);
+            if (content == null) return Task.FromResult(Request.CreateResponse(HttpStatusCode.NotFound));
 
             try
             {
@@ -154,10 +154,13 @@ namespace Umbraco.RestApi.Controllers
         [CustomRoute("{id}")]
         public Task<HttpResponseMessage> Put(int id, MemberRepresentation content)
         {
+            if (content == null) return Task.FromResult(Request.CreateResponse(HttpStatusCode.NotFound));
+
             try
             {
                 var found = Services.MemberService.GetById(id);
-                if (found == null) throw new HttpResponseException(HttpStatusCode.NotFound);
+                if (found == null)
+                    return Task.FromResult(Request.CreateResponse(HttpStatusCode.NotFound));
 
                 //Validate properties
                 var validator = new ContentPropertyValidator<IMember>(ModelState, Services.DataTypeService);

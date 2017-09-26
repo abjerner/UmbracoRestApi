@@ -11,6 +11,10 @@ namespace Umbraco.RestApi.Security
         public const string PublishedContentRead = "PublishedContentRead";
         public const string MemberRead = "MemberRead";
         public const string MediaRead = "MediaRead";
+
         public const string ContentRead = "ContentRead";
+        public const string ContentCreate = "ContentCreate";
+        public const string ContentUpdate = "ContentUpdate";
+        public const string ContentDelete = "ContentDelete";
     }
 }

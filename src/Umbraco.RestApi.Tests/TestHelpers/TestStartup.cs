@@ -22,13 +22,11 @@ namespace Umbraco.RestApi.Tests.TestHelpers
     public class TestStartup
     {
         private readonly Action<TestServices> _serviceActivator;
-        private readonly Action<IAppBuilder, ApplicationContext> _configBuilder;
         public ApplicationContext ApplicationContext { get; }
 
-        public TestStartup(Action<TestServices> serviceActivator, Action<IAppBuilder, ApplicationContext> configBuilder = null)
+        public TestStartup(Action<TestServices> serviceActivator)
         {
             _serviceActivator = serviceActivator;
-            _configBuilder = configBuilder;
 
             var serviceContext = ServiceMocks.GetServiceContext();
             var mockedMigrationService = Mock.Get(serviceContext.MigrationEntryService);
@@ -71,13 +69,13 @@ namespace Umbraco.RestApi.Tests.TestHelpers
             });
         }
 
-        public void Configuration(IAppBuilder app)
+        public HttpConfiguration UseTestWebApiConfiguration(IAppBuilder app)
         {
             var httpConfig = new HttpConfiguration();
 
             //this is here to ensure that multiple calls to this don't cause errors
             //httpConfig.MapHttpAttributeRoutes();
-            
+
             httpConfig.IncludeErrorDetailPolicy = IncludeErrorDetailPolicy.Always;
 
             //TODO: enable this if strange things happen and you need to debug server errors
@@ -87,20 +85,24 @@ namespace Umbraco.RestApi.Tests.TestHelpers
             httpConfig.Services.Replace(typeof(IHttpControllerActivator), new TestControllerActivator(ApplicationContext, Activator));
             httpConfig.Services.Replace(typeof(IHttpControllerSelector), new NamespaceHttpControllerSelector(httpConfig));
 
-            if (_configBuilder == null)
-            {
-                //auth everything
-                app.AuthenticateEverything();
-                app.ConfigureUmbracoRestApiAuthorizationPolicies(ApplicationContext);
-            }
-            else
-            {
-                //custom builder specified so will leave it up to the caller to configure the authz
-                _configBuilder(app, ApplicationContext);
-            }
-
             //Create routes
-            UmbracoRestStartup.CreateRoutes(httpConfig);            
+            UmbracoRestStartup.CreateRoutes(httpConfig);
+
+            return httpConfig;
+        }
+
+        /// <summary>
+        /// Configure the default settings for testing
+        /// </summary>
+        /// <param name="app"></param>
+        public void UseDefaultTestSetup(IAppBuilder app)
+        {
+            var httpConfig = UseTestWebApiConfiguration(app);
+
+            //authenticate everything
+            app.AuthenticateEverything();
+            
+            app.UseUmbracoRestApi(ApplicationContext);
 
             app.UseWebApi(httpConfig);
         }
