@@ -33,27 +33,33 @@ namespace Umbraco.RestApi.Security
                 return Task.FromResult(0);
             }
 
-            IContent content = null;
-            if (resource.NodeId != Constants.System.Root && resource.NodeId != Constants.System.RecycleBinContent)
+            foreach (var nodeId in resource.NodeIds)
             {
-                content = _services.ContentService.GetById(resource.NodeId);
-                if (content == null)
+                IContent content = null;
+                if (nodeId != Constants.System.Root && nodeId != Constants.System.RecycleBinContent)
+                {
+                    content = _services.ContentService.GetById(nodeId);
+                    if (content == null)
+                    {
+                        context.Fail();
+                        return Task.FromResult(0);
+                    }
+                }
+
+                var allowed = CheckPermissions(user, nodeId, new[]
+                {
+                    //currently permissions are a single letter
+                    requirement.Permission[0]
+                }, content);
+
+                if (allowed)
+                    context.Succeed(requirement);
+                else
                 {
                     context.Fail();
-                    return Task.FromResult(0);
+                    break;
                 }
             }
-
-            var allowed = CheckPermissions(user, resource.NodeId, new[]
-            {
-                //currently permissions are a single letter
-                requirement.Permission[0]
-            }, content);
-
-            if (allowed)
-                context.Succeed(requirement);
-            else
-                context.Fail();
 
             return Task.FromResult(0);
         }

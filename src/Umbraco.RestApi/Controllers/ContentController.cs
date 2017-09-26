@@ -69,12 +69,15 @@ namespace Umbraco.RestApi.Controllers
         /// <returns></returns>
         [HttpGet]
         [CustomRoute("")]
-        public virtual Task<HttpResponseMessage> Get()
+        public virtual async Task<HttpResponseMessage> Get()
         {
             var startContentIdsAsInt = ClaimsPrincipal.GetContentStartNodeIds();
-            if (startContentIdsAsInt == null)
-                return Task.FromResult(Request.CreateResponse(HttpStatusCode.Unauthorized));
-            
+            if (startContentIdsAsInt == null || startContentIdsAsInt.Length == 0)
+                return Request.CreateResponse(HttpStatusCode.Unauthorized);
+
+            if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(startContentIdsAsInt), AuthorizationPolicies.ContentRead))
+                return Request.CreateResponse(HttpStatusCode.Unauthorized);
+
             var rootContent = startContentIdsAsInt.Contains(Constants.System.Root)
                 ? Services.ContentService.GetRootContent()
                 : Services.ContentService.GetByIds(startContentIdsAsInt);
@@ -82,7 +85,7 @@ namespace Umbraco.RestApi.Controllers
             var result = Mapper.Map<IEnumerable<ContentRepresentation>>(rootContent).ToList();
             var representation = new ContentListRepresenation(result);
 
-            return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, representation));
+            return Request.CreateResponse(HttpStatusCode.OK, representation);
         }
 
         [HttpGet]
@@ -340,6 +343,8 @@ namespace Umbraco.RestApi.Controllers
 
         private void FilterAllowedOutgoingContent(SimpleListRepresentation<ContentRepresentation> rep)
         {
+            if (rep == null || rep.ResourceList == null) return;
+
             var user = ClaimsPrincipal.GetUserFromClaims(Services.UserService);
             if (user == null)
                 throw new HttpResponseException(HttpStatusCode.Unauthorized);

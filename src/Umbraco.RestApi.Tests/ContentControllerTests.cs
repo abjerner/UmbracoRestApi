@@ -59,6 +59,8 @@ namespace Umbraco.RestApi.Tests
                 //This will be invoked before the controller is created so we can modify these mocked services,
                 (testServices) =>
                 {
+                    MockServicesForAuthorizationSuccess(testServices, 123, 456);
+
                     var mockContentService = Mock.Get(testServices.ServiceContext.ContentService);
                     mockContentService.Setup(x => x.GetRootContent()).Returns(new[]
                     {
@@ -78,16 +80,19 @@ namespace Umbraco.RestApi.Tests
         [Test]
         public async Task Get_Root_Result_With_Custom_Start_Nodes()
         {
-            var customStartNode = ModelMocks.SimpleMockedContent(123, 456);
+            //represents the node(s) that the user will receive as their root based on their custom start node
+            var rootNodes = ModelMocks.SimpleMockedContent(123, 456);
 
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services,
                 (testServices) =>
                 {
+                    MockServicesForAuthorizationSuccess(testServices, 456);
+
                     var mockContentService = Mock.Get(testServices.ServiceContext.ContentService);
                     mockContentService.Setup(x => x.GetByIds(It.IsAny<int[]>())).Returns(new[]
                     {
-                        customStartNode
+                        rootNodes
                     });
 
                     mockContentService.Setup(x => x.GetChildren(123)).Returns(new[] { ModelMocks.SimpleMockedContent(789, 123) });
@@ -117,7 +122,7 @@ namespace Umbraco.RestApi.Tests
             Assert.AreEqual(1, djson["_links"]["content"].Count());
             Assert.AreEqual("/umbraco/rest/v1/content/123", djson["_links"]["content"]["href"].Value<string>());
             Assert.AreEqual(1, djson["_embedded"]["content"].Count());
-            Assert.AreEqual(customStartNode.Id, djson["_embedded"]["content"].First["id"].Value<int>());
+            Assert.AreEqual(rootNodes.Id, djson["_embedded"]["content"].First["id"].Value<int>());
         }
 
         [Test]
@@ -562,16 +567,32 @@ namespace Umbraco.RestApi.Tests
         /// Sets up the services to return the correct data based on the Authorization logic for the non-published content controller
         /// </summary>
         /// <param name="testServices"></param>
-        /// <param name="contentId"></param>
+        /// <param name="contentIds"></param>
         /// <remarks>
         /// Much of this is based on the call to Umbraco Core's ContentController.CheckPermissions which performs quite a few checks.
         /// Ideally we'd move this authorization logic to an interface so we can mock it instead.
         /// </remarks>
-        private void MockServicesForAuthorizationSuccess(TestServices testServices, int contentId)
+        private void MockServicesForAuthorizationSuccess(TestServices testServices, params int[] contentIds)
         {
-            Mock.Get(testServices.ServiceContext.ContentService)
-                .Setup(x => x.GetById(contentId))
-                .Returns(ModelMocks.SimpleMockedContent());
+            foreach (var contentId in contentIds)
+            {
+                Mock.Get(testServices.ServiceContext.ContentService)
+                    .Setup(x => x.GetById(contentId))
+                    .Returns(ModelMocks.SimpleMockedContent(contentId));
+
+                Mock.Get(testServices.ServiceContext.UserService)
+                    .Setup(x => x.GetPermissionsForPath(It.IsAny<IUser>(), It.IsAny<string>()))
+                    .Returns(() =>
+                        new EntityPermissionSet(contentId, new EntityPermissionCollection(new[] { new EntityPermission(1, contentId, new[] { ActionBrowse.Instance.Letter.ToString() }) })));
+
+                Mock.Get(testServices.ServiceContext.UserService)
+                    .Setup(x => x.GetPermissions(It.IsAny<IUser>(), new[] { contentId }))
+                    .Returns(() =>
+                        new EntityPermissionCollection(new[]
+                        {
+                            new EntityPermission(1, contentId, new[] {ActionBrowse.Instance.Letter.ToString()})
+                        }));
+            }
 
             Mock.Get(testServices.ServiceContext.EntityService)
                 .Setup(x => x.GetAllPaths(UmbracoObjectTypes.Document, It.IsAny<int[]>()))
@@ -583,11 +604,7 @@ namespace Umbraco.RestApi.Tests
                         Path = i == Constants.System.Root ? "-1" : string.Concat("-1,", i)
                     });
                 });
-
-            Mock.Get(testServices.ServiceContext.UserService)
-                .Setup(x => x.GetPermissionsForPath(It.IsAny<IUser>(), It.IsAny<string>()))
-                .Returns(() =>
-                    new EntityPermissionSet(contentId, new EntityPermissionCollection(new[] { new EntityPermission(1, contentId, new[] { ActionBrowse.Instance.Letter.ToString() }) })));
+                       
         }
 
     }

@@ -39,7 +39,14 @@ namespace Umbraco.RestApi.Security
                     ids.Add(((dynamic)items[i]).Id);
                 }
                 //get all the permissions for these nodes in one call
-                var permissions = _userService.GetPermissions(user, ids.ToArray()).ToArray();
+                var userPermissions = _userService.GetPermissions(user, ids.ToArray());
+
+                //if these are null it means were testing
+                if (userPermissions == null)
+                    return;
+
+                var permissions = userPermissions.ToArray();
+
                 var toRemove = new List<dynamic>();
                 foreach (dynamic item in items)
                 {

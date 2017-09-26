@@ -7,15 +7,16 @@ namespace Umbraco.RestApi.Security
     /// </summary>
     public class ContentResourceAccess
     {
-        public int NodeId { get; }
-
-        /// <summary>
-        /// Used to check fo access to virtual content such as root or recycle bin
-        /// </summary>
-        /// <param name="nodeId"></param>
+        public int[] NodeIds { get; }
+        
+        public ContentResourceAccess(int[] nodeIds)
+        {
+            NodeIds = nodeIds;
+        }
+        
         public ContentResourceAccess(int nodeId)
         {
-            NodeId = nodeId;
+            NodeIds = new []{nodeId};
         }        
     }
 }
