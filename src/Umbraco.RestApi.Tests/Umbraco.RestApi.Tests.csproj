@@ -303,6 +303,7 @@
     <Compile Include="MediaControllerTests.cs" />
     <Compile Include="MembersControllerTests.cs" />
     <Compile Include="RelationsControllerTests.cs" />
+    <Compile Include="TestHelpers\AuthenticateEverythingAuthenticationOptions.cs" />
     <Compile Include="TestHelpers\AuthenticateEverythingExtensions.cs" />
     <Compile Include="TestHelpers\AuthenticateEverythingMiddleware.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -314,6 +315,7 @@
     <Compile Include="TestHelpers\RelationServiceMocks.cs" />
     <Compile Include="TestHelpers\ServiceMocks.cs" />
     <Compile Include="TestHelpers\TestControllerActivator.cs" />
+    <Compile Include="TestHelpers\TestServices.cs" />
     <Compile Include="TestHelpers\TestStartup.cs" />
     <Compile Include="TestHelpers\ProviderUtilities.cs" />
     <Compile Include="PublishedContentControllerTests.cs" />

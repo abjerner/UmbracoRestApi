@@ -21,6 +21,7 @@ using Umbraco.Core.Models.Membership;
 using Umbraco.Core.Persistence.DatabaseModelDefinitions;
 using Umbraco.Core.PropertyEditors;
 using Umbraco.Core.Publishing;
+using Umbraco.Core.Security;
 using Umbraco.RestApi.Routing;
 using Umbraco.RestApi.Tests.TestHelpers;
 using Task = System.Threading.Tasks.Task;
@@ -72,6 +73,51 @@ namespace Umbraco.RestApi.Tests
             var djson = await Get_Root_Result(startup, RouteConstants.ContentSegment);
             Assert.AreEqual(2, djson["_links"]["content"].Count());
             Assert.AreEqual(2, djson["_embedded"]["content"].Count());
+        }
+
+        [Test]
+        public async Task Get_Root_Result_With_Custom_Start_Nodes()
+        {
+            var customStartNode = ModelMocks.SimpleMockedContent(123, 456);
+
+            var startup = new TestStartup(
+                //This will be invoked before the controller is created so we can modify these mocked services,
+                (testServices) =>
+                {
+                    var mockContentService = Mock.Get(testServices.ServiceContext.ContentService);
+                    mockContentService.Setup(x => x.GetByIds(It.IsAny<int[]>())).Returns(new[]
+                    {
+                        customStartNode
+                    });
+
+                    mockContentService.Setup(x => x.GetChildren(123)).Returns(new[] { ModelMocks.SimpleMockedContent(789, 123) });
+                    mockContentService.Setup(x => x.GetChildren(456)).Returns(new[] { ModelMocks.SimpleMockedContent(321, 456) });
+                }, (app, appCtx) =>
+                {
+                    //we are doing a custom authz for this call
+
+                    var identity = new UmbracoBackOfficeIdentity(
+                        new UserData(Guid.NewGuid().ToString())
+                        {
+                            Id = 0,
+                            Roles = new[] { "admin" },
+                            AllowedApplications = new[] { "content", "media", "members" },
+                            Culture = "en-US",
+                            RealName = "Admin",
+                            StartContentNodes = new[] { 456 },
+                            StartMediaNodes = new[] { -1 },
+                            Username = "admin"
+                        });
+
+                    app.AuthenticateEverything(new AuthenticateEverythingAuthenticationOptions(identity));
+                    app.ConfigureUmbracoRestApiAuthorizationPolicies(appCtx);
+                });
+
+            var djson = await Get_Root_Result(startup, RouteConstants.ContentSegment);
+            Assert.AreEqual(1, djson["_links"]["content"].Count());
+            Assert.AreEqual("/umbraco/rest/v1/content/123", djson["_links"]["content"]["href"].Value<string>());
+            Assert.AreEqual(1, djson["_embedded"]["content"].Count());
+            Assert.AreEqual(customStartNode.Id, djson["_embedded"]["content"].First["id"].Value<int>());
         }
 
         [Test]

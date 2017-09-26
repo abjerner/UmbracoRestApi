@@ -9,6 +9,10 @@ namespace Umbraco.RestApi.Security
 {
     internal static class AuthorizationExtensions
     {
+        /// <summary>
+        /// A policy check for all endpoints to require either the RestApiClaimType or Umbraco's SessionIdClaimType with the Umbraco issuer
+        /// </summary>
+        /// <param name="policy"></param>
         public static void RequireSessionIdOrRestApiClaim(this AuthorizationPolicyBuilder policy)
         {
             policy.RequireAssertion(context =>
@@ -19,6 +23,11 @@ namespace Umbraco.RestApi.Security
                         || (c.Type == Core.Constants.Security.SessionIdClaimType && c.Issuer == UmbracoBackOfficeIdentity.Issuer)));
         }
 
+        /// <summary>
+        /// Returns the users calculated start node ids from it's claims
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
         public static int[] GetContentStartNodeIds(this ClaimsPrincipal user)
         {
             var startContentId = user.FindFirst(Constants.Security.StartContentNodeIdClaimType);
