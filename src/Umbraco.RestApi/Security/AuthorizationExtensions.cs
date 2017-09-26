@@ -1,14 +1,39 @@
 ﻿using System;
 using System.Security.Claims;
+using System.Web.Http.Filters;
 using Microsoft.Owin.Security.Authorization;
 using Newtonsoft.Json;
 using Umbraco.Core;
+using Umbraco.Core.Models.Membership;
 using Umbraco.Core.Security;
+using Umbraco.Core.Services;
 
 namespace Umbraco.RestApi.Security
 {
     internal static class AuthorizationExtensions
     {
+        /// <summary>
+        /// Looks up the IUser instance based on the id specified in claims
+        /// </summary>
+        /// <param name="principal"></param>
+        /// <param name="userService"></param>
+        /// <returns></returns>
+        public static IUser GetUserFromClaims(this ClaimsPrincipal principal, IUserService userService)
+        {
+            var idClaim = principal.FindFirst(c => c.Type == ClaimTypes.NameIdentifier && c.Issuer == UmbracoBackOfficeIdentity.Issuer);
+            if (idClaim == null)
+            {
+                return null;
+            }
+            var id = idClaim.Value.TryConvertTo<int>();
+            if (!id)
+            {
+                return null;
+            }
+            var user = userService.GetUserById(id.Result);
+            return user;
+        }
+
         /// <summary>
         /// A policy check for all endpoints to require either the RestApiClaimType or Umbraco's SessionIdClaimType with the Umbraco issuer
         /// </summary>

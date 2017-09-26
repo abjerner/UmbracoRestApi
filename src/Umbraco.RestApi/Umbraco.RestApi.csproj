@@ -306,6 +306,7 @@
     <Compile Include="Security\ContentPermissionHandler.cs" />
     <Compile Include="Security\ContentPermissionRequirement.cs" />
     <Compile Include="Security\ContentResourceAccess.cs" />
+    <Compile Include="Security\FilterAllowedOutgoingContent.cs" />
     <Compile Include="Security\UmbracoSectionAccessHandler.cs" />
     <Compile Include="Security\UmbracoSectionAccessRequirement.cs" />
     <Compile Include="SpecificAssemblyResolver.cs" />

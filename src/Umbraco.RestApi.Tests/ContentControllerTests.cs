@@ -220,6 +220,45 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
+        public async Task Get_Children_With_Filter_By_Permissions()
+        {
+            var startup = new TestStartup(
+                //This will be invoked before the controller is created so we can modify these mocked services
+                (testServices) =>
+                {
+                    MockServicesForAuthorizationSuccess(testServices, 456);
+
+                    long totalRecs;
+                    Mock.Get(testServices.ServiceContext.ContentService)
+                        .Setup(x => x.GetPagedChildren(456, It.IsAny<long>(), It.IsAny<int>(), out totalRecs, It.IsAny<string>(), It.IsAny<Direction>(), It.IsAny<string>()))
+                        .Returns(new []
+                        {
+                            ModelMocks.SimpleMockedContent(10),
+                            ModelMocks.SimpleMockedContent(11),
+                            ModelMocks.SimpleMockedContent(12),
+                            ModelMocks.SimpleMockedContent(13),
+                        });
+                                        
+                    Mock.Get(testServices.ServiceContext.UserService)
+                        .Setup(x => x.GetPermissions(It.IsAny<IUser>(), It.IsAny<int[]>()))
+                        .Returns(() =>
+                            new EntityPermissionCollection(new[]
+                            {
+                                new EntityPermission(1, 10, new[] {ActionBrowse.Instance.Letter.ToString()}),
+                                new EntityPermission(1, 11, new[] {ActionSort.Instance.Letter.ToString()}),
+                                new EntityPermission(1, 12, new[] {ActionBrowse.Instance.Letter.ToString()}),
+                                new EntityPermission(1, 13, new[] { ActionSort.Instance.Letter.ToString()}),
+                            }));
+                });
+
+            var djson = await GetResult(startup, new Uri($"http://testserver/umbraco/rest/v1/{RouteConstants.ContentSegment}/456/children"), HttpStatusCode.OK);
+            Assert.AreEqual(2, djson["_links"]["content"].Count());            
+            Assert.AreEqual(2, djson["_embedded"]["content"].Count());
+            Assert.AreEqual(10, djson["_embedded"]["content"].First["id"].Value<int>());
+            Assert.AreEqual(12, djson["_embedded"]["content"].Last["id"].Value<int>());
+        }
+
+        [Test]
         public async Task Get_Descendants_Is_200_Response()
         {
             var startup = new TestStartup(

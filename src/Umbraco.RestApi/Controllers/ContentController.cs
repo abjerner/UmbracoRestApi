@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -20,11 +21,13 @@ using System.Web.Http.ModelBinding;
 using Microsoft.Owin.Security.Authorization.WebApi;
 using Newtonsoft.Json;
 using umbraco.BusinessLogic.Actions;
+using Umbraco.Core.Models.Membership;
 using Umbraco.Core.Publishing;
 using Umbraco.Web.Models.ContentEditing;
 using Umbraco.Core.Services;
 using Umbraco.RestApi.Security;
 using Umbraco.Web.WebApi;
+using WebApi.Hal;
 using Task = System.Threading.Tasks.Task;
 
 namespace Umbraco.RestApi.Controllers
@@ -133,6 +136,9 @@ namespace Umbraco.RestApi.Controllers
             var mapped = Mapper.Map<IEnumerable<ContentRepresentation>>(items).ToList();
 
             var result = new ContentPagedListRepresentation(mapped, total, pages, query.Page, query.PageSize, LinkTemplates.Content.PagedChildren, new { id = id });
+
+            FilterAllowedOutgoingContent(result);
+
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
@@ -150,6 +156,9 @@ namespace Umbraco.RestApi.Controllers
             var mapped = Mapper.Map<IEnumerable<ContentRepresentation>>(items).ToList();
 
             var result = new ContentPagedListRepresentation(mapped, total, pages, query.Page - 1, query.PageSize, LinkTemplates.Content.PagedDescendants, new { id = id });
+
+            FilterAllowedOutgoingContent(result);
+
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
@@ -169,6 +178,9 @@ namespace Umbraco.RestApi.Controllers
             var mapped = Mapper.Map<IEnumerable<ContentRepresentation>>(paged).ToList();
 
             var result = new ContentPagedListRepresentation(mapped, total, pages, query.Page - 1, query.PageSize, LinkTemplates.Content.PagedAncestors, new { id = id });
+
+            FilterAllowedOutgoingContent(result);
+
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
@@ -206,10 +218,11 @@ namespace Umbraco.RestApi.Controllers
             //return as paged list of media items
             var representation = new ContentPagedListRepresentation(items, result.TotalItemCount, pages, query.Page - 1, query.PageSize, LinkTemplates.Content.Search, new { query = query.Query, pageSize = query.PageSize });
 
+            //TODO: Enable this
+            //FilterAllowedOutgoingContent(result);
+
             return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, representation));
         }
-
-
 
         // Content CRUD:
 
@@ -325,6 +338,15 @@ namespace Umbraco.RestApi.Controllers
             return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK));
         }
 
+        private void FilterAllowedOutgoingContent(SimpleListRepresentation<ContentRepresentation> rep)
+        {
+            var user = ClaimsPrincipal.GetUserFromClaims(Services.UserService);
+            if (user == null)
+                throw new HttpResponseException(HttpStatusCode.Unauthorized);
+            
+            var helper = new FilterAllowedOutgoingContent(Services.UserService, ActionBrowse.Instance.Letter.ToString());
+            helper.FilterBasedOnPermissions((IList)rep.ResourceList, user);
+        }
 
         private void SetModelStateForPublishStatus(PublishStatus status)
         {

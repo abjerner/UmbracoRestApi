@@ -26,20 +26,8 @@ namespace Umbraco.RestApi.Security
 
         protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, ContentPermissionRequirement requirement, ContentResourceAccess resource)
         {
-            var idClaim = context.User.FindFirst(c => c.Type == ClaimTypes.NameIdentifier && c.Issuer == UmbracoBackOfficeIdentity.Issuer);
-            if (idClaim == null)
-            {
-                context.Fail();
-                return Task.FromResult(0);
-            }
-            var id = idClaim.Value.TryConvertTo<int>();
-            if (!id)
-            {
-                context.Fail();
-                return Task.FromResult(0);
-            }
-            var user = _services.UserService.GetUserById(id.Result);
-            if (user == null)                
+            var user = context.User.GetUserFromClaims(_services.UserService);
+            if (user == null)
             {
                 context.Fail();
                 return Task.FromResult(0);
