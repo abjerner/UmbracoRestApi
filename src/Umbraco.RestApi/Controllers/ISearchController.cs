@@ -1,4 +1,5 @@
 ﻿using System.Net.Http;
+using System.Threading.Tasks;
 using Umbraco.RestApi.Models;
 
 namespace Umbraco.RestApi.Controllers
@@ -6,8 +7,8 @@ namespace Umbraco.RestApi.Controllers
     /// <summary>
     /// This is used to ensure consistency between controllers which allows for better testing
     /// </summary>
-    internal interface ISearchController
+    public interface ISearchController
     {
-        HttpResponseMessage Search(PagedQuery query);
+        Task<HttpResponseMessage> Search(PagedQuery query);
     }
 }

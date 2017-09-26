@@ -18,6 +18,7 @@ using System.Web;
 using Umbraco.Core.Configuration;
 using Umbraco.Core.Configuration.UmbracoSettings;
 using Umbraco.Web.WebApi;
+using Task = System.Threading.Tasks.Task;
 
 namespace Umbraco.RestApi.Controllers
 {
@@ -60,30 +61,30 @@ namespace Umbraco.RestApi.Controllers
 
         [HttpGet]
         [CustomRoute("")]
-        public virtual HttpResponseMessage Get()
+        public virtual Task<HttpResponseMessage> Get()
         {
             var rootMedia = Services.MediaService.GetRootMedia();
             var result = Mapper.Map<IEnumerable<MediaRepresentation>>(rootMedia).ToList();
             var representation = new MediaListRepresenation(result);
 
-            return Request.CreateResponse(HttpStatusCode.OK, representation);
+            return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, representation));
         }
 
         [HttpGet]
         [CustomRoute("{id}")]
-        public HttpResponseMessage Get(int id)
+        public Task<HttpResponseMessage> Get(int id)
         {
             var content = Services.MediaService.GetById(id);
             var result = Mapper.Map<MediaRepresentation>(content);
 
-            return result == null
+            return Task.FromResult(result == null
                 ? Request.CreateResponse(HttpStatusCode.NotFound)
-                : Request.CreateResponse(HttpStatusCode.OK, result);
+                : Request.CreateResponse(HttpStatusCode.OK, result));
         }
 
         [HttpGet]
         [CustomRoute("{id}/meta")]
-        public HttpResponseMessage GetMetadata(int id)
+        public Task<HttpResponseMessage> GetMetadata(int id)
         {
             var found = Services.MediaService.GetById(id);
             if (found == null) throw new HttpResponseException(HttpStatusCode.NotFound);
@@ -97,12 +98,12 @@ namespace Umbraco.RestApi.Controllers
                 CreateTemplate = Mapper.Map<ContentCreationTemplate>(found)
             };
 
-            return Request.CreateResponse(HttpStatusCode.OK, result);
+            return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, result));
         }
 
         [HttpGet]
         [CustomRoute("{id}/children")]
-        public HttpResponseMessage GetChildren(int id,
+        public Task<HttpResponseMessage> GetChildren(int id,
             [ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query)
         {
@@ -111,13 +112,13 @@ namespace Umbraco.RestApi.Controllers
             var mapped = Mapper.Map<IEnumerable<MediaRepresentation>>(items).ToList();
 
             var result = new MediaPagedListRepresentation(mapped, total, pages, query.Page, query.PageSize, LinkTemplates.Media.PagedChildren, new { id = id });
-            return Request.CreateResponse(HttpStatusCode.OK, result);
+            return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, result));
         }
 
 
         [HttpGet]
         [CustomRoute("{id}/descendants/")]
-        public HttpResponseMessage GetDescendants(int id,
+        public Task<HttpResponseMessage> GetDescendants(int id,
             [ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query)
         {
@@ -126,12 +127,12 @@ namespace Umbraco.RestApi.Controllers
             var mapped = Mapper.Map<IEnumerable<MediaRepresentation>>(items).ToList();
             
             var result = new MediaPagedListRepresentation(mapped, total, pages, query.Page - 1, query.PageSize, LinkTemplates.Media.PagedDescendants, new { id = id });
-            return Request.CreateResponse(HttpStatusCode.OK, result);
+            return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, result));
         }
 
         [HttpGet]
         [CustomRoute("{id}/ancestors/")]
-        public HttpResponseMessage GetAncestors(int id,
+        public Task<HttpResponseMessage> GetAncestors(int id,
             [ModelBinder(typeof(PagedQueryModelBinder))]
             PagedRequest query)
         {
@@ -142,12 +143,12 @@ namespace Umbraco.RestApi.Controllers
             var mapped = Mapper.Map<IEnumerable<MediaRepresentation>>(paged).ToList();
 
             var result = new MediaPagedListRepresentation(mapped, total, pages, query.Page - 1, query.PageSize, LinkTemplates.Media.PagedAncestors, new { id = id });
-            return Request.CreateResponse(HttpStatusCode.OK, result);
+            return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, result));
         }
 
         [HttpGet]
         [CustomRoute("search")]
-        public HttpResponseMessage Search(
+        public Task<HttpResponseMessage> Search(
             [ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query)
         {
@@ -179,7 +180,7 @@ namespace Umbraco.RestApi.Controllers
             //return as paged list of media items
             var representation = new MediaPagedListRepresentation(items, result.TotalItemCount, pages, query.Page - 1, query.PageSize, LinkTemplates.Media.Search, new { query = query.Query, pageSize = query.PageSize });
 
-            return Request.CreateResponse(HttpStatusCode.OK, representation);
+            return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, representation));
         }
 
 
@@ -189,7 +190,7 @@ namespace Umbraco.RestApi.Controllers
 
         [HttpPost]
         [CustomRoute("")]
-        public HttpResponseMessage Post(MediaRepresentation content)
+        public Task<HttpResponseMessage> Post(MediaRepresentation content)
         {
             if (content == null) Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -222,18 +223,18 @@ namespace Umbraco.RestApi.Controllers
 
                 Mapper.Map(content, created);
                 Services.MediaService.Save(created);
-                
-                return Request.CreateResponse(HttpStatusCode.Created, Mapper.Map<MediaRepresentation>(created) );
+
+                return Task.FromResult(Request.CreateResponse(HttpStatusCode.Created, Mapper.Map<MediaRepresentation>(created)));
             }
             catch (ModelValidationException exception)
             {
-                return Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors);
+                return Task.FromResult(Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors));
             }
         }
 
         [HttpPut]
         [CustomRoute("{id}")]
-        public HttpResponseMessage Put(int id, MediaRepresentation content)
+        public Task<HttpResponseMessage> Put(int id, MediaRepresentation content)
         {
             if (content == null) Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -241,30 +242,30 @@ namespace Umbraco.RestApi.Controllers
             {
                 var found = Services.MediaService.GetById(id);
                 if (found == null)
-                    return Request.CreateResponse(HttpStatusCode.NotFound);
+                    return Task.FromResult(Request.CreateResponse(HttpStatusCode.NotFound));
 
                 Mapper.Map(content, found);
                 Services.MediaService.Save(found, Security.GetUserId());
 
                 var rep = Mapper.Map<MediaRepresentation>(found);
-                return Request.CreateResponse(HttpStatusCode.OK, rep);
+                return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, rep));
             }
             catch (ModelValidationException exception)
             {
-                return Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors);
+                return Task.FromResult(Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors));
             }
         }
 
         [HttpDelete]
         [CustomRoute("{id}")]
-        public virtual HttpResponseMessage Delete(int id)
+        public virtual Task<HttpResponseMessage> Delete(int id)
         {
             var found = Services.MediaService.GetById(id);
             if (found == null)
-                return Request.CreateResponse(HttpStatusCode.NotFound);
+                return Task.FromResult(Request.CreateResponse(HttpStatusCode.NotFound));
 
             Services.MediaService.Delete(found);
-            return Request.CreateResponse(HttpStatusCode.OK);
+            return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK));
         }
 
 

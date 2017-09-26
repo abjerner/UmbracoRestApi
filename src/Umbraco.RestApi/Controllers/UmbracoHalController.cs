@@ -28,6 +28,7 @@ namespace Umbraco.RestApi.Controllers
 
         protected UmbracoHalController()
         {
+            
         }
 
         protected UmbracoHalController(
@@ -37,8 +38,25 @@ namespace Umbraco.RestApi.Controllers
         {
         }
 
+        /// <summary>
+        /// Expose the <see cref="IAuthorizationService"/> from the OwinContext in order to authorize 'Documents'
+        /// </summary>
+        /// <remarks>
+        /// This is required for any authorization that requires a resource such as a Context (i.e. Content item, etc...)
+        /// Authorization via Attributes only provides so much information, if more granular authorization is required then it needs to be done
+        /// in inline code using the <see cref="IAuthorizationService"/>
+        /// </remarks>
         protected IAuthorizationService AuthorizationService => _authorizationService ?? (_authorizationService = Request.GetOwinContext().Get<AuthorizationServiceWrapper>().AuthorizationService);
 
+        /// <summary>
+        /// Exposes the <see cref="ClaimsPrincipal"/> for the request
+        /// </summary>
+        /// <remarks>
+        /// This is the current user assigned to the request
+        /// </remarks>
+        /// <exception cref="InvalidOperationException">
+        /// An exception is thrown if it is not an instance of <see cref="ClaimsPrincipal"/>
+        /// </exception>
         protected ClaimsPrincipal ClaimsPrincipal
         {
             get
@@ -49,6 +67,9 @@ namespace Umbraco.RestApi.Controllers
             }
         }
 
+        /// <summary>
+        /// Returns the current API version from the request
+        /// </summary>
         protected int CurrentVersionRequest => int.Parse(Regex.Match(Request.RequestUri.AbsolutePath, "/v(\\d+)/", RegexOptions.Compiled).Groups[1].Value);
         
         /// <summary>

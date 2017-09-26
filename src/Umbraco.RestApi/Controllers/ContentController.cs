@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.Http.Controllers;
 using System.Web.Http.Filters;
@@ -17,12 +18,14 @@ using Umbraco.RestApi.Routing;
 using Umbraco.Web;
 using System.Web.Http.ModelBinding;
 using Microsoft.Owin.Security.Authorization.WebApi;
+using Newtonsoft.Json;
 using umbraco.BusinessLogic.Actions;
 using Umbraco.Core.Publishing;
 using Umbraco.Web.Models.ContentEditing;
 using Umbraco.Core.Services;
 using Umbraco.RestApi.Security;
 using Umbraco.Web.WebApi;
+using Task = System.Threading.Tasks.Task;
 
 namespace Umbraco.RestApi.Controllers
 {
@@ -57,24 +60,34 @@ namespace Umbraco.RestApi.Controllers
         private BaseSearchProvider _searchProvider;
         protected BaseSearchProvider SearchProvider => _searchProvider ?? (_searchProvider = ExamineManager.Instance.SearchProviderCollection["InternalSearcher"]);
         
+        /// <summary>
+        /// Returns the root level content for the authorized user
+        /// </summary>
+        /// <returns></returns>
         [HttpGet]
         [CustomRoute("")]
-        public virtual HttpResponseMessage Get()
+        public virtual Task<HttpResponseMessage> Get()
         {
-            //TODO: Fix this https://github.com/DavidParks8/Owin-Authorization/issues/55 (non root access users)
+            var startContentIdsAsInt = ClaimsPrincipal.GetContentStartNodeIds();
+            if (startContentIdsAsInt == null)
+                return Task.FromResult(Request.CreateResponse(HttpStatusCode.Unauthorized));
+            
+            var rootContent = startContentIdsAsInt.Contains(Constants.System.Root)
+                ? Services.ContentService.GetRootContent()
+                : Services.ContentService.GetByIds(startContentIdsAsInt);
 
-            var rootContent = Services.ContentService.GetRootContent();
             var result = Mapper.Map<IEnumerable<ContentRepresentation>>(rootContent).ToList();
             var representation = new ContentListRepresenation(result);
 
-            return Request.CreateResponse(HttpStatusCode.OK, representation);
+            return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, representation));
         }
 
         [HttpGet]
         [CustomRoute("{id}")]
-        public HttpResponseMessage Get(int id)
+        public async Task<HttpResponseMessage> Get(int id)
         {
-            AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.ContentRead);
+            if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.ContentRead))
+                return Request.CreateResponse(HttpStatusCode.Unauthorized);
 
             var content = Services.ContentService.GetById(id);
             var result = Mapper.Map<ContentRepresentation>(content);
@@ -86,9 +99,10 @@ namespace Umbraco.RestApi.Controllers
 
         [HttpGet]
         [CustomRoute("{id}/meta")]
-        public HttpResponseMessage GetMetadata(int id)
+        public async Task<HttpResponseMessage> GetMetadata(int id)
         {
-            AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.ContentRead);
+            if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.ContentRead))
+                return Request.CreateResponse(HttpStatusCode.Unauthorized);
 
             var found = Services.ContentService.GetById(id);
             if (found == null) throw new HttpResponseException(HttpStatusCode.NotFound);
@@ -107,11 +121,12 @@ namespace Umbraco.RestApi.Controllers
 
         [HttpGet]
         [CustomRoute("{id}/children")]
-        public HttpResponseMessage GetChildren(int id,
+        public async Task<HttpResponseMessage> GetChildren(int id,
             [ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query)
         {
-            AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.ContentRead);
+            if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.ContentRead))
+                return Request.CreateResponse(HttpStatusCode.Unauthorized);
 
             var items = Services.ContentService.GetPagedChildren(id, query.Page - 1, query.PageSize, out var total, filter:query.Query);
             var pages = ContentControllerHelper.GetTotalPages(total, query.PageSize);
@@ -123,11 +138,12 @@ namespace Umbraco.RestApi.Controllers
 
         [HttpGet]
         [CustomRoute("{id}/descendants/")]
-        public HttpResponseMessage GetDescendants(int id,
+        public async Task<HttpResponseMessage> GetDescendants(int id,
             [ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query)
         {
-            AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.ContentRead);
+            if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.ContentRead))
+                return Request.CreateResponse(HttpStatusCode.Unauthorized);
 
             var items = Services.ContentService.GetPagedDescendants(id, query.Page - 1, query.PageSize, out var total, filter: query.Query);
             var pages = ContentControllerHelper.GetTotalPages(total, query.PageSize);
@@ -139,11 +155,12 @@ namespace Umbraco.RestApi.Controllers
 
         [HttpGet]
         [CustomRoute("{id}/ancestors/")]
-        public HttpResponseMessage GetAncestors(int id,
+        public async Task<HttpResponseMessage> GetAncestors(int id,
            [ModelBinder(typeof(PagedQueryModelBinder))]
            PagedRequest query)
         {
-            AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.ContentRead);
+            if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.ContentRead))
+                return Request.CreateResponse(HttpStatusCode.Unauthorized);
 
             var items = Services.ContentService.GetAncestors(id).ToArray();
             var total = items.Length;
@@ -157,7 +174,7 @@ namespace Umbraco.RestApi.Controllers
 
         [HttpGet]
         [CustomRoute("search")]
-        public HttpResponseMessage Search(
+        public Task<HttpResponseMessage> Search(
             [ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query)
         {
@@ -189,7 +206,7 @@ namespace Umbraco.RestApi.Controllers
             //return as paged list of media items
             var representation = new ContentPagedListRepresentation(items, result.TotalItemCount, pages, query.Page - 1, query.PageSize, LinkTemplates.Content.Search, new { query = query.Query, pageSize = query.PageSize });
 
-            return Request.CreateResponse(HttpStatusCode.OK, representation);
+            return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, representation));
         }
 
 
@@ -198,7 +215,7 @@ namespace Umbraco.RestApi.Controllers
 
         [HttpPost]
         [CustomRoute("")]
-        public HttpResponseMessage Post(ContentRepresentation content)
+        public Task<HttpResponseMessage> Post(ContentRepresentation content)
         {
             if (content == null) Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -232,11 +249,11 @@ namespace Umbraco.RestApi.Controllers
                 Mapper.Map(content, created);
                 Services.ContentService.Save(created);
 
-                return Request.CreateResponse(HttpStatusCode.Created, Mapper.Map<ContentRepresentation>(created));
+                return Task.FromResult(Request.CreateResponse(HttpStatusCode.Created, Mapper.Map<ContentRepresentation>(created)));
             }
             catch (ModelValidationException exception)
             {
-                return Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors);
+                return Task.FromResult(Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors));
             }
         }
 
@@ -251,7 +268,7 @@ namespace Umbraco.RestApi.Controllers
         /// </remarks>
         [HttpPut]
         [CustomRoute("{id}")]
-        public HttpResponseMessage Put(int id, ContentRepresentation content)
+        public Task<HttpResponseMessage> Put(int id, ContentRepresentation content)
         {
             if (content == null) Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -288,24 +305,24 @@ namespace Umbraco.RestApi.Controllers
                 }
 
                 var rep = Mapper.Map<ContentRepresentation>(found);
-                return Request.CreateResponse(HttpStatusCode.OK, rep);
+                return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, rep));
             }
             catch (ModelValidationException exception)
             {
-                return Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors);
+                return Task.FromResult(Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors));
             }
         }
 
         [HttpDelete]
         [CustomRoute("{id}")]
-        public HttpResponseMessage Delete(int id)
+        public Task<HttpResponseMessage> Delete(int id)
         {
             var found = Services.ContentService.GetById(id);
             if (found == null)
-                return Request.CreateResponse(HttpStatusCode.NotFound);
+                return Task.FromResult(Request.CreateResponse(HttpStatusCode.NotFound));
 
             Services.ContentService.Delete(found);
-            return Request.CreateResponse(HttpStatusCode.OK);
+            return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK));
         }
 
 

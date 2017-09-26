@@ -1,12 +1,13 @@
 ﻿using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace Umbraco.RestApi.Controllers
 {
     /// <summary>
     /// This is used to ensure consistency between controllers which allows for better testing
     /// </summary>
-    internal interface IMetadataController
+    public interface IMetadataController
     {
-        HttpResponseMessage GetMetadata(int id);
+        Task<HttpResponseMessage> GetMetadata(int id);
     }
 }

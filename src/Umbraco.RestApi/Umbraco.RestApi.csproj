@@ -248,6 +248,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AuthorizationServiceWrapper.cs" />
     <Compile Include="Controllers\ContentController.cs" />
     <Compile Include="Controllers\ContentControllerHelper.cs" />
     <Compile Include="Controllers\ICrudController.cs" />
@@ -301,6 +302,7 @@
     <Compile Include="Models\PagedQuery.cs" />
     <Compile Include="Routing\WriteableRoute.cs" />
     <Compile Include="Security\AuthorizationPolicies.cs" />
+    <Compile Include="Security\AuthorizationExtensions.cs" />
     <Compile Include="Security\ContentPermissionHandler.cs" />
     <Compile Include="Security\ContentPermissionRequirement.cs" />
     <Compile Include="Security\ContentResourceAccess.cs" />

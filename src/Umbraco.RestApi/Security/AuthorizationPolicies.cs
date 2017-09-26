@@ -1,6 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Security.Claims;
+﻿using System.Collections.Generic;
+using System.Net;
 using System.Text;
 
 namespace Umbraco.RestApi.Security

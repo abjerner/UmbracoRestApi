@@ -37,10 +37,9 @@ namespace Umbraco.RestApi.Security
             {
                 context.Fail();
                 return Task.FromResult(0);
-            }            
-
+            }
             var user = _services.UserService.GetUserById(id.Result);
-            if (user == null)
+            if (user == null)                
             {
                 context.Fail();
                 return Task.FromResult(0);
@@ -70,7 +69,7 @@ namespace Umbraco.RestApi.Security
 
             return Task.FromResult(0);
         }
-
+        
         private bool CheckPermissions(IUser user, int nodeId, char[] permissionsToCheck, IContent contentItem)
         {
             var tempStorage = new Dictionary<string, object>();

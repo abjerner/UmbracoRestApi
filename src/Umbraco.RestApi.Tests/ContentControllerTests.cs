@@ -13,8 +13,11 @@ using Moq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
+using umbraco.BusinessLogic.Actions;
 using Umbraco.Core;
 using Umbraco.Core.Models;
+using Umbraco.Core.Models.EntityBase;
+using Umbraco.Core.Models.Membership;
 using Umbraco.Core.Persistence.DatabaseModelDefinitions;
 using Umbraco.Core.PropertyEditors;
 using Umbraco.Core.Publishing;
@@ -110,6 +113,8 @@ namespace Umbraco.RestApi.Tests
                  //This will be invoked before the controller is created so we can modify these mocked services
                 (testServices) =>
                  {
+                     MockServicesForAuthorizationSuccess(testServices, 123);
+
                      var mockContentService = Mock.Get(testServices.ServiceContext.ContentService);
 
                      mockContentService.Setup(x => x.GetById(It.IsAny<int>())).Returns(() => ModelMocks.SimpleMockedContent());
@@ -138,6 +143,8 @@ namespace Umbraco.RestApi.Tests
                  //This will be invoked before the controller is created so we can modify these mocked services
                 (testServices) =>
                  {
+                     MockServicesForAuthorizationSuccess(testServices, 123);
+
                      var mockContentService = Mock.Get(testServices.ServiceContext.ContentService);
 
                      mockContentService.Setup(x => x.GetById(It.IsAny<int>())).Returns(() => ModelMocks.SimpleMockedContent());
@@ -158,7 +165,10 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (testServices) => { });
+                (testServices) =>
+                {
+                    MockServicesForAuthorizationSuccess(testServices, 123);
+                });
 
             await Get_Children_Is_200_Response(startup, RouteConstants.ContentSegment);
         }
@@ -168,7 +178,10 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (testServices) => { });
+                (testServices) =>
+                {
+                    MockServicesForAuthorizationSuccess(testServices, 123);
+                });
 
             await base.Get_Descendants_Is_200_Response(startup, RouteConstants.ContentSegment);
         }
@@ -180,9 +193,7 @@ namespace Umbraco.RestApi.Tests
                 //This will be invoked before the controller is created so we can modify these mocked services
                 (testServices) =>
                 {
-                    Mock.Get(testServices.ServiceContext.ContentService)
-                        .Setup(x => x.GetById(123))
-                        .Returns(ModelMocks.SimpleMockedContent());
+                    MockServicesForAuthorizationSuccess(testServices, 123);
                 });
 
             await base.Get_Ancestors_Is_200_Response(startup, RouteConstants.ContentSegment);
@@ -195,6 +206,8 @@ namespace Umbraco.RestApi.Tests
                 //This will be invoked before the controller is created so we can modify these mocked services
                 (testServices) =>
                 {
+                    MockServicesForAuthorizationSuccess(testServices, 123);
+
                     var mockContentService = Mock.Get(testServices.ServiceContext.ContentService);
 
                     mockContentService.Setup(x => x.GetById(It.IsAny<int>())).Returns(() => ModelMocks.SimpleMockedContent());
@@ -458,6 +471,38 @@ namespace Umbraco.RestApi.Tests
   }
 }", Encoding.UTF8, "application/json"));
             
+        }
+
+        /// <summary>
+        /// Sets up the services to return the correct data based on the Authorization logic for the non-published content controller
+        /// </summary>
+        /// <param name="testServices"></param>
+        /// <param name="contentId"></param>
+        /// <remarks>
+        /// Much of this is based on the call to Umbraco Core's ContentController.CheckPermissions which performs quite a few checks.
+        /// Ideally we'd move this authorization logic to an interface so we can mock it instead.
+        /// </remarks>
+        private void MockServicesForAuthorizationSuccess(TestServices testServices, int contentId)
+        {
+            Mock.Get(testServices.ServiceContext.ContentService)
+                .Setup(x => x.GetById(contentId))
+                .Returns(ModelMocks.SimpleMockedContent());
+
+            Mock.Get(testServices.ServiceContext.EntityService)
+                .Setup(x => x.GetAllPaths(UmbracoObjectTypes.Document, It.IsAny<int[]>()))
+                .Returns((UmbracoObjectTypes objType, int[] ids) =>
+                {
+                    return ids.Select(i => new EntityPath
+                    {
+                        Id = i,
+                        Path = i == Constants.System.Root ? "-1" : string.Concat("-1,", i)
+                    });
+                });
+
+            Mock.Get(testServices.ServiceContext.UserService)
+                .Setup(x => x.GetPermissionsForPath(It.IsAny<IUser>(), It.IsAny<string>()))
+                .Returns(() =>
+                    new EntityPermissionSet(contentId, new EntityPermissionCollection(new[] { new EntityPermission(1, contentId, new[] { ActionBrowse.Instance.Letter.ToString() }) })));
         }
 
     }

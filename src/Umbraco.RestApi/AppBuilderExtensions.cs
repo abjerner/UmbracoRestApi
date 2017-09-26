@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Security.Claims;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin.Security.Authorization;
@@ -40,30 +41,32 @@ namespace Umbraco.RestApi
             {
                 options.AddPolicy(
                     AuthorizationPolicies.PublishedContentRead,
-                    policy =>
-                    {
-                        //to read published content the logged in user must have either of these claim types and value
-                        policy.Requirements.Add(new ClaimsAuthorizationRequirement(AuthorizationPolicies.RestApiClaimType, null));
-                        //OR
-                        policy.Requirements.Add(new ClaimsAuthorizationRequirement(Core.Constants.Security.SessionIdClaimType, null));
-                    });
-
+                    policy => policy.RequireSessionIdOrRestApiClaim());
+                
                 options.AddPolicy(
                     AuthorizationPolicies.ContentRead,
                     policy =>
                     {
-                        //policy.RequireAssertion(context => true);
+                        policy.RequireSessionIdOrRestApiClaim();
                         policy.Requirements.Add(new UmbracoSectionAccessRequirement(Core.Constants.Applications.Content));
                         policy.Requirements.Add(new ContentPermissionRequirement(ActionBrowse.Instance.Letter.ToString()));
                     });
                 
                 options.AddPolicy(
                     AuthorizationPolicies.MediaRead,
-                    policy => policy.Requirements.Add(new UmbracoSectionAccessRequirement(Core.Constants.Applications.Media)));
+                    policy =>
+                    {
+                        policy.RequireSessionIdOrRestApiClaim();
+                        policy.Requirements.Add(new UmbracoSectionAccessRequirement(Core.Constants.Applications.Media));
+                    });
 
                 options.AddPolicy(
                     AuthorizationPolicies.MemberRead,
-                    policy => policy.Requirements.Add(new UmbracoSectionAccessRequirement(Core.Constants.Applications.Members)));
+                    policy =>
+                    {
+                        policy.RequireSessionIdOrRestApiClaim();
+                        policy.Requirements.Add(new UmbracoSectionAccessRequirement(Core.Constants.Applications.Members));
+                    });
 
                 var handlers = new IAuthorizationHandler[]
                 {
@@ -113,19 +116,5 @@ namespace Umbraco.RestApi
             return app;
         }
         
-    }
-
-    internal class AuthorizationServiceWrapper : IDisposable
-    {
-        public IAuthorizationService AuthorizationService { get; }
-
-        public AuthorizationServiceWrapper(IAuthorizationService authorizationService)
-        {
-            AuthorizationService = authorizationService;
-        }
-
-        public void Dispose()
-        {
-        }
     }
 }

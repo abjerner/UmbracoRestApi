@@ -31,7 +31,7 @@ namespace Umbraco.RestApi.Tests.TestHelpers
                         Roles = new[] {"admin"},
                         AllowedApplications = new[] {"content", "media", "members"},
                         Culture = "en-US",
-                        RealName = "Admin",                        
+                        RealName = "Admin",
                         StartContentNodes = new []{ -1 },
                         StartMediaNodes = new[] { -1 },
                         Username = "admin"
