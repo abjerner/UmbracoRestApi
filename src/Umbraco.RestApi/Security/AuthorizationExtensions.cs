@@ -1,7 +1,10 @@
 ﻿using System;
+using System.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Web.Http.Filters;
+using Microsoft.Owin.Security;
 using Microsoft.Owin.Security.Authorization;
+using Microsoft.Owin.Security.OAuth;
 using Newtonsoft.Json;
 using Umbraco.Core;
 using Umbraco.Core.Models.Membership;
@@ -43,7 +46,7 @@ namespace Umbraco.RestApi.Security
             policy.RequireAssertion(context =>
                 context.User.HasClaim(c =>
                     //to read published content the logged in user must have either of these claim types and value
-                        c.Type == AuthorizationPolicies.RestApiClaimType
+                        c.Type == AuthorizationPolicies.UmbracoRestApiClaimType
                         //if we are checking the SessionIdClaimType then it should be issued from Umbraco (i.e. cookie authentication)
                         || (c.Type == Core.Constants.Security.SessionIdClaimType && c.Issuer == UmbracoBackOfficeIdentity.Issuer)));
         }

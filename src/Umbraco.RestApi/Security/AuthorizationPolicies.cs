@@ -6,7 +6,9 @@ namespace Umbraco.RestApi.Security
 {
     public class AuthorizationPolicies
     {
-        public const string RestApiClaimType = "http://umbraco.org/2017/09/identity/claims/restapi";
+        public const string UmbracoRestApiIssuer = "UmbracoRestApi";
+        public const string UmbracoRestApiClaimType = "http://umbraco.org/2017/09/identity/claims/restapi";
+        public const string UmbracoRestApiTokenAuthenticationType = "UmbracoRestApiTokenAuthenticationType";
 
         public const string PublishedContentRead = "PublishedContentRead";
 

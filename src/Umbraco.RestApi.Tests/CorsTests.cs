@@ -17,7 +17,6 @@ using Umbraco.Core.Configuration;
 using Umbraco.Core.Models;
 using Umbraco.Core.PropertyEditors;
 using Umbraco.RestApi.Routing;
-using Umbraco.RestApi.Security;
 using Umbraco.RestApi.Tests.TestHelpers;
 using Task = System.Threading.Tasks.Task;
 
@@ -30,14 +29,14 @@ namespace Umbraco.RestApi.Tests
         public void FixtureSetUp()
         {
             ConfigurationManager.AppSettings.Set("umbracoPath", "~/umbraco");
-            ConfigurationManager.AppSettings.Set("umbracoConfigurationStatus", UmbracoVersion.Current.ToString(3));            
+            ConfigurationManager.AppSettings.Set("umbracoConfigurationStatus", UmbracoVersion.Current.ToString(3));
         }
 
         [TearDown]
         public void TearDown()
         {
             //Hack - because Reset is internal
-            typeof (PropertyEditorResolver).CallStaticMethod("Reset", true);
+            typeof(PropertyEditorResolver).CallStaticMethod("Reset", true);
             UmbracoRestApiOptionsInstance.Options = new UmbracoRestApiOptions();
         }
 
@@ -61,7 +60,7 @@ namespace Umbraco.RestApi.Tests
                     //customize the authz policies, in this case we want to allow everything
                     CustomAuthorizationPolicyCallback = (policyName, defaultPolicy) => (builder => builder.RequireAssertion(context => true))
                 });
-                app.UseWebApi(httpConfig);                
+                app.UseWebApi(httpConfig);
             }))
             {
                 var request = new HttpRequestMessage()
@@ -76,7 +75,7 @@ namespace Umbraco.RestApi.Tests
                 var result = await server.HttpClient.SendAsync(request);
                 Console.WriteLine(result);
 
-                var json = await ((StreamContent) result.Content).ReadAsStringAsync();
+                var json = await ((StreamContent)result.Content).ReadAsStringAsync();
                 Console.Write(JsonConvert.SerializeObject(JsonConvert.DeserializeObject(json), Formatting.Indented));
 
                 Assert.AreEqual(HttpStatusCode.OK, result.StatusCode);
@@ -116,7 +115,7 @@ namespace Umbraco.RestApi.Tests
                         SupportsCredentials = true
                     }
                 });
-                app.UseWebApi(httpConfig);           
+                app.UseWebApi(httpConfig);
             }))
             {
                 var request = new HttpRequestMessage()
@@ -150,7 +149,7 @@ namespace Umbraco.RestApi.Tests
                 //This will be invoked before the controller is created so we can modify these mocked services
                 (testServices) =>
                 {
-                   ContentServiceMocks.SetupMocksForPost(testServices.ServiceContext);
+                    ContentServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
             using (var server = TestServer.Create(app =>

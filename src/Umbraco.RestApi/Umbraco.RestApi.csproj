@@ -118,6 +118,9 @@
     <Reference Include="Microsoft.Owin.Security.Cookies, Version=3.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Owin.Security.Cookies.3.1.0\lib\net45\Microsoft.Owin.Security.Cookies.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Owin.Security.Jwt, Version=3.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Owin.Security.Jwt.3.1.0\lib\net45\Microsoft.Owin.Security.Jwt.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Owin.Security.OAuth, Version=3.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Owin.Security.OAuth.3.1.0\lib\net45\Microsoft.Owin.Security.OAuth.dll</HintPath>
     </Reference>
@@ -155,6 +158,10 @@
     </Reference>
     <Reference Include="System.Data.SqlServerCe.Entity, Version=4.0.0.1, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
       <HintPath>..\packages\UmbracoCms.Core.7.7.1\lib\net45\System.Data.SqlServerCe.Entity.dll</HintPath>
+    </Reference>
+    <Reference Include="System.IdentityModel" />
+    <Reference Include="System.IdentityModel.Tokens.Jwt, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.IdentityModel.Tokens.Jwt.4.0.0\lib\net45\System.IdentityModel.Tokens.Jwt.dll</HintPath>
     </Reference>
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Net.Http.Extensions, Version=2.2.29.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
@@ -301,6 +308,8 @@
     <Compile Include="Routing\CustomRouteAttribute.cs" />
     <Compile Include="Models\PagedQuery.cs" />
     <Compile Include="Routing\WriteableRoute.cs" />
+    <Compile Include="Security\UmbracoAuthorizationServerProvider.cs" />
+    <Compile Include="Security\UmbracoAuthorizationServerProviderOptions.cs" />
     <Compile Include="Security\AuthorizationPolicies.cs" />
     <Compile Include="Security\AuthorizationExtensions.cs" />
     <Compile Include="Security\ContentPermissionHandler.cs" />
@@ -309,6 +318,7 @@
     <Compile Include="Security\FilterAllowedOutgoingContent.cs" />
     <Compile Include="Security\MediaPermissionHandler.cs" />
     <Compile Include="Security\MediaPermissionRequirement.cs" />
+    <Compile Include="Security\UmbracoAuthType.cs" />
     <Compile Include="Security\UmbracoSectionAccessHandler.cs" />
     <Compile Include="Security\UmbracoSectionAccessRequirement.cs" />
     <Compile Include="SpecificAssemblyResolver.cs" />

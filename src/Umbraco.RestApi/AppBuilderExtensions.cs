@@ -1,9 +1,18 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IdentityModel.Tokens;
 using System.Security.Claims;
+using System.Text;
+using System.Threading.Tasks;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
+using Microsoft.Owin;
+using Microsoft.Owin.Security;
 using Microsoft.Owin.Security.Authorization;
 using Microsoft.Owin.Security.Authorization.Infrastructure;
+using Microsoft.Owin.Security.Infrastructure;
+using Microsoft.Owin.Security.Jwt;
+using Microsoft.Owin.Security.OAuth;
 using Owin;
 using umbraco;
 using umbraco.BusinessLogic.Actions;
@@ -17,8 +26,129 @@ using Umbraco.Web.Security.Identity;
 
 namespace Umbraco.RestApi
 {
+
+    /// <summary>
+    /// Used to write out jwt tokens
+    /// </summary>
+    /// <remarks>
+    /// For some oddball reason microsoft doesn't support this ootb with the normal JwtFormat class, it only unprotects so conveniently we need
+    /// to implement this ourselves
+    /// see http://odetocode.com/blogs/scott/archive/2015/01/15/using-json-web-tokens-with-katana-and-webapi.aspx
+    /// </remarks>
+    internal class JwtFormatWriter : ISecureDataFormat<AuthenticationTicket>
+    {
+        private readonly OAuthAuthorizationServerOptions _options;
+        private readonly string _issuer;
+        private readonly string _audience;
+        private readonly string _base64Key;
+
+        public JwtFormatWriter(OAuthAuthorizationServerOptions options, string issuer, string audience, string base64Key)
+        {
+            _options = options;
+            _issuer = issuer;
+            _audience = audience;
+            _base64Key = base64Key;
+        }
+
+        public string SignatureAlgorithm => "http://www.w3.org/2001/04/xmldsig-more#hmac-sha256";
+        public string DigestAlgorithm => "http://www.w3.org/2001/04/xmlenc#sha256";
+
+        public string Protect(AuthenticationTicket data)
+        {
+            if (data == null) throw new ArgumentNullException("data");
+            
+            var issuer = _issuer;
+            var audience = _audience;
+            var key = Convert.FromBase64String(_base64Key);
+            //TODO: Validate key length, must be at least 128
+            var now = DateTime.UtcNow;
+            var expires = now.AddMinutes(_options.AccessTokenExpireTimeSpan.TotalMinutes);
+            var signingCredentials = new SigningCredentials(
+                new InMemorySymmetricSecurityKey(key),
+                SignatureAlgorithm,
+                DigestAlgorithm);
+            var token = new JwtSecurityToken(issuer, audience, data.Identity.Claims, now, expires, signingCredentials);
+
+            return new JwtSecurityTokenHandler().WriteToken(token);            
+        }
+
+        public AuthenticationTicket Unprotect(string protectedText)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     public static class AppBuilderExtensions
     {
+
+        //another interesting one https://blog.jayway.com/2014/09/25/securing-asp-net-web-api-endpoints-using-owin-oauth-2-0-and-claims/
+
+        /// <summary>
+        /// Configures Umbraco to issue and process authentication tokens
+        /// </summary>
+        /// <param name="app"></param>
+        /// <param name="authServerProviderOptions"></param>
+        /// <remarks>
+        /// This is a very simple implementation of token authentication, the expiry below is for a single day and with
+        /// this implementation there is no way to force expire tokens on the server however given the code below and the additional
+        /// callbacks that can be registered for the BackOfficeAuthServerProvider these types of things could be implemented. Additionally the
+        /// BackOfficeAuthServerProvider could be overridden to include this functionality instead of coding the logic into the callbacks.
+        /// </remarks>
+        /// <example>
+        /// 
+        /// An example of using this implementation is to use the UmbracoStandardOwinSetup and execute this extension method as follows:
+        /// 
+        /// <![CDATA[
+        /// 
+        ///   public override void Configuration(IAppBuilder app)
+        ///   {
+        ///       //ensure the default options are configured
+        ///       base.Configuration(app);
+        ///   
+        ///       //configure token auth
+        ///       app.UseUmbracoBackOfficeTokenAuth();
+        ///   }
+        /// 
+        /// ]]>
+        /// 
+        /// Then be sure to read the details in UmbracoStandardOwinSetup on how to configure Owin to startup using it.
+        /// </example>
+        public static void UseUmbracoTokenAuthentication(this IAppBuilder app, UmbracoAuthorizationServerProviderOptions authServerProviderOptions = null)
+        {
+            authServerProviderOptions = authServerProviderOptions ?? new UmbracoAuthorizationServerProviderOptions();
+
+            var base64Key = Convert.ToBase64String(Encoding.UTF8.GetBytes(authServerProviderOptions.Secret));
+            var tokenProvider = new SymmetricKeyIssuerSecurityTokenProvider(
+                AuthorizationPolicies.UmbracoRestApiIssuer,
+                base64Key);
+
+            var oAuthServerOptions = new OAuthAuthorizationServerOptions()
+            {
+                //generally you wouldn't allow this unless on SSL!
+#if DEBUG
+                AllowInsecureHttp = true,
+#endif                                
+                TokenEndpointPath = new PathString(authServerProviderOptions.AuthEndpoint),
+                AuthenticationType = AuthorizationPolicies.UmbracoRestApiTokenAuthenticationType,
+                AccessTokenExpireTimeSpan = TimeSpan.FromDays(1),
+                Provider = new UmbracoAuthorizationServerProvider(authServerProviderOptions)               
+            };
+
+            oAuthServerOptions.AccessTokenFormat = new JwtFormatWriter(
+                oAuthServerOptions,
+                tokenProvider.Issuer,
+                authServerProviderOptions.Audience, 
+                base64Key);
+
+            // Token Generation
+            app.UseOAuthAuthorizationServer(oAuthServerOptions);
+            app.UseJwtBearerAuthentication(new JwtBearerAuthenticationOptions
+            {
+                AllowedAudiences = new[] { authServerProviderOptions.Audience },
+                IssuerSecurityTokenProviders = new[] { tokenProvider }
+            });
+        }
+
         /// <summary>
         /// Required call to enable the REST API
         /// </summary>
@@ -27,9 +157,9 @@ namespace Umbraco.RestApi
         /// <param name="options">
         /// Options to configure the rest api including CORS and Authorization policies
         /// </param>
-        public static void UseUmbracoRestApi(this IAppBuilder app, 
-            ApplicationContext applicationContext, 
-            UmbracoRestApiOptions options = null)
+        public static void UseUmbracoRestApi(this IAppBuilder app,
+        ApplicationContext applicationContext,
+        UmbracoRestApiOptions options = null)
         {
             if (applicationContext == null) throw new ArgumentNullException(nameof(applicationContext));
             UmbracoRestApiOptionsInstance.Options = options ?? new UmbracoRestApiOptions();
@@ -47,7 +177,7 @@ namespace Umbraco.RestApi
         /// This is a .NET Core approach to authorization but we have a package that has backported all of this for us for .NET 452
         /// </remarks>
         internal static void UseUmbracoRestApiAuthorizationPolicies(
-            this IAppBuilder app, 
+            this IAppBuilder app,
             ApplicationContext applicationContext,
             Func<string, AuthorizationPolicy, Action<AuthorizationPolicyBuilder>> customPolicyCallback = null)
         {
@@ -63,7 +193,7 @@ namespace Umbraco.RestApi
 
                 //Published Content READ
 
-                AddAuthorizationPolicy(options, 
+                AddAuthorizationPolicy(options,
                     AuthorizationPolicies.PublishedContentRead,
                     policy => policy.RequireSessionIdOrRestApiClaim(),
                     customPolicyCallback);
@@ -183,7 +313,7 @@ namespace Umbraco.RestApi
 
                 var handlers = new IAuthorizationHandler[]
                 {
-                    new UmbracoSectionAccessHandler(), 
+                    new UmbracoSectionAccessHandler(),
                     new ContentPermissionHandler(applicationContext.Services),
                     new MediaPermissionHandler(applicationContext.Services)
                 };
@@ -239,8 +369,8 @@ namespace Umbraco.RestApi
         /// <param name="customPolicyCallback"></param>
         public static void AddAuthorizationPolicy(
             AuthorizationOptions options,
-            string name, 
-            Action<AuthorizationPolicyBuilder> configurePolicy, 
+            string name,
+            Action<AuthorizationPolicyBuilder> configurePolicy,
             Func<string, AuthorizationPolicy, Action<AuthorizationPolicyBuilder>> customPolicyCallback)
         {
             //get the default policy
