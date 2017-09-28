@@ -13,7 +13,11 @@ using Moq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
+using umbraco.BusinessLogic.Actions;
+using Umbraco.Core;
 using Umbraco.Core.Models;
+using Umbraco.Core.Models.EntityBase;
+using Umbraco.Core.Models.Membership;
 using Umbraco.Core.Persistence.DatabaseModelDefinitions;
 using Umbraco.Core.PropertyEditors;
 using Umbraco.RestApi.Routing;
@@ -53,6 +57,8 @@ namespace Umbraco.RestApi.Tests
                 //This will be invoked before the controller is created so we can modify these mocked services,
                 (testServices) =>
                 {
+                    MockServicesForAuthorizationSuccess(testServices, 123, 456);
+
                     var mockMediaService = Mock.Get(testServices.ServiceContext.MediaService);
                     mockMediaService.Setup(x => x.GetRootMedia()).Returns(new[]
                     {
@@ -76,6 +82,8 @@ namespace Umbraco.RestApi.Tests
                 //This will be invoked before the controller is created so we can modify these mocked services
                 (testServices) =>
                 {
+                    MockServicesForAuthorizationSuccess(testServices);
+
                     var mockSearchResults = new Mock<ISearchResults>();
                     mockSearchResults.Setup(results => results.TotalItemCount).Returns(10);
                     mockSearchResults.Setup(results => results.Skip(It.IsAny<int>())).Returns(new[]
@@ -108,6 +116,8 @@ namespace Umbraco.RestApi.Tests
                 //This will be invoked before the controller is created so we can modify these mocked services
                  (testServices) =>
                  {
+                     MockServicesForAuthorizationSuccess(testServices, 123);
+
                      var mockMediaService = Mock.Get(testServices.ServiceContext.MediaService);
 
                      mockMediaService.Setup(x => x.GetById(It.IsAny<int>())).Returns(() => ModelMocks.SimpleMockedMedia());
@@ -136,6 +146,8 @@ namespace Umbraco.RestApi.Tests
                 //This will be invoked before the controller is created so we can modify these mocked services
                  (testServices) =>
                  {
+                     MockServicesForAuthorizationSuccess(testServices, 123);
+
                      var mockMediaService = Mock.Get(testServices.ServiceContext.MediaService);
 
                      mockMediaService.Setup(x => x.GetById(It.IsAny<int>())).Returns(() => ModelMocks.SimpleMockedMedia());
@@ -156,7 +168,10 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (testServices) => { });
+                (testServices) =>
+                {
+                    MockServicesForAuthorizationSuccess(testServices, 123);
+                });
 
             await Get_Children_Is_200_Response(startup.UseDefaultTestSetup, RouteConstants.MediaSegment);
         }
@@ -166,7 +181,10 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (testServices) => { });
+                (testServices) =>
+                {
+                    MockServicesForAuthorizationSuccess(testServices, 123);
+                });
 
             await base.Get_Descendants_Is_200_Response(startup.UseDefaultTestSetup, RouteConstants.MediaSegment);
         }
@@ -176,7 +194,10 @@ namespace Umbraco.RestApi.Tests
         {
             var startup = new TestStartup(
                 //This will be invoked before the controller is created so we can modify these mocked services
-                (testServices) => { });
+                (testServices) =>
+                {
+                    MockServicesForAuthorizationSuccess(testServices, 123);
+                });
 
             await base.Get_Ancestors_Is_200_Response(startup.UseDefaultTestSetup, RouteConstants.MediaSegment);
         }
@@ -188,6 +209,8 @@ namespace Umbraco.RestApi.Tests
                 //This will be invoked before the controller is created so we can modify these mocked services
                 (testServices) =>
                 {
+                    MockServicesForAuthorizationSuccess(testServices, 123);
+
                     var mockMediaService = Mock.Get(testServices.ServiceContext.MediaService);
 
                     mockMediaService.Setup(x => x.GetById(It.IsAny<int>())).Returns(() => ModelMocks.SimpleMockedMedia());
@@ -240,6 +263,7 @@ namespace Umbraco.RestApi.Tests
                 //This will be invoked before the controller is created so we can modify these mocked services
                 (testServices) =>
                 {
+                    MockServicesForAuthorizationSuccess(testServices, 456);
                     MediaServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
@@ -262,6 +286,7 @@ namespace Umbraco.RestApi.Tests
                 //This will be invoked before the controller is created so we can modify these mocked services
                 (testServices) =>
                 {
+                    MockServicesForAuthorizationSuccess(testServices, 456);
                     MediaServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
@@ -311,6 +336,7 @@ namespace Umbraco.RestApi.Tests
                 //This will be invoked before the controller is created so we can modify these mocked services
                 (testServices) =>
                 {
+                    MockServicesForAuthorizationSuccess(testServices, 456);
                     MediaServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
@@ -359,6 +385,7 @@ namespace Umbraco.RestApi.Tests
                 //This will be invoked before the controller is created so we can modify these mocked services
                 (testServices) =>
                 {
+                    MockServicesForAuthorizationSuccess(testServices, 456);
                     MediaServiceMocks.SetupMocksForPost(testServices.ServiceContext);
 
                     var mockPropertyEditor = Mock.Get(PropertyEditorResolver.Current);
@@ -410,6 +437,7 @@ namespace Umbraco.RestApi.Tests
                 //This will be invoked before the controller is created so we can modify these mocked services
                 (testServices) =>
                 {
+                    MockServicesForAuthorizationSuccess(testServices, 456);
                     MediaServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
@@ -424,6 +452,37 @@ namespace Umbraco.RestApi.Tests
   }
 }", Encoding.UTF8, "application/json"));
             
+        }
+
+        /// <summary>
+        /// Sets up the services to return the correct data based on the Authorization logic for the non-published content controller
+        /// </summary>
+        /// <param name="testServices"></param>
+        /// <param name="contentIds"></param>
+        /// <remarks>
+        /// Much of this is based on the call to Umbraco Core's ContentController.CheckPermissions which performs quite a few checks.
+        /// Ideally we'd move this authorization logic to an interface so we can mock it instead.
+        /// </remarks>
+        private void MockServicesForAuthorizationSuccess(TestServices testServices, params int[] contentIds)
+        {
+            foreach (var contentId in contentIds)
+            {
+                Mock.Get(testServices.ServiceContext.MediaService)
+                    .Setup(x => x.GetById(contentId))
+                    .Returns(ModelMocks.SimpleMockedMedia(contentId));                                
+            }
+
+            Mock.Get(testServices.ServiceContext.EntityService)
+                .Setup(x => x.GetAllPaths(UmbracoObjectTypes.Media, It.IsAny<int[]>()))
+                .Returns((UmbracoObjectTypes objType, int[] ids) =>
+                {
+                    return ids.Select(i => new EntityPath
+                    {
+                        Id = i,
+                        Path = i == Constants.System.Root ? "-1" : string.Concat("-1,", i)
+                    });
+                });
+
         }
 
     }

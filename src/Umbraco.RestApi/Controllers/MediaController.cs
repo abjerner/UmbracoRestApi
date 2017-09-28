@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -16,10 +17,12 @@ using System.Web.Http.ModelBinding;
 using System.Threading.Tasks;
 using System.Web;
 using Microsoft.Owin.Security.Authorization.WebApi;
+using umbraco.BusinessLogic.Actions;
 using Umbraco.Core.Configuration;
 using Umbraco.Core.Configuration.UmbracoSettings;
 using Umbraco.RestApi.Security;
 using Umbraco.Web.WebApi;
+using WebApi.Hal;
 using Task = System.Threading.Tasks.Task;
 
 namespace Umbraco.RestApi.Controllers
@@ -405,6 +408,7 @@ namespace Umbraco.RestApi.Controllers
             Services.MediaService.Save(media);
             return Request.CreateResponse(HttpStatusCode.Created, Mapper.Map<MediaRepresentation>(media));
         }
+
     }
 
 }

@@ -8,6 +8,7 @@ using Umbraco.Core.Services;
 
 namespace Umbraco.RestApi.Security
 {
+
     /// <summary>
     /// This inspects the result of the action that returns a collection of content and removes 
     /// any item that the current user doesn't have access to

@@ -184,7 +184,8 @@ namespace Umbraco.RestApi
                 var handlers = new IAuthorizationHandler[]
                 {
                     new UmbracoSectionAccessHandler(), 
-                    new ContentPermissionHandler(applicationContext.Services)
+                    new ContentPermissionHandler(applicationContext.Services),
+                    new MediaPermissionHandler(applicationContext.Services)
                 };
                 options.Dependencies.Service = new DefaultAuthorizationService(new DefaultAuthorizationPolicyProvider(options), handlers);
 
