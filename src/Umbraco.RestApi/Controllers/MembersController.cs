@@ -14,12 +14,14 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Web.Http.ModelBinding;
 using Examine.Providers;
+using Microsoft.Owin.Security.Authorization.WebApi;
+using Umbraco.RestApi.Security;
 using Umbraco.Web.WebApi;
 using Task = System.Threading.Tasks.Task;
 
 namespace Umbraco.RestApi.Controllers
 {
-    [UmbracoAuthorize]
+    [ResourceAuthorize(Policy = AuthorizationPolicies.DefaultRestApi)]
     [UmbracoRoutePrefix("rest/v1/members")]
     public class MembersController : UmbracoHalController, ICrudController<MemberRepresentation>, ISearchController
     {

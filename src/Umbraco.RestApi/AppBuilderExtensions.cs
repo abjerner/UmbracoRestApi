@@ -24,7 +24,9 @@ namespace Umbraco.RestApi
         /// </summary>
         /// <param name="app"></param>
         /// <param name="applicationContext"></param>
-        /// <param name="options"></param>
+        /// <param name="options">
+        /// Options to configure the rest api including CORS and Authorization policies
+        /// </param>
         public static void UseUmbracoRestApi(this IAppBuilder app, 
             ApplicationContext applicationContext, 
             UmbracoRestApiOptions options = null)
@@ -34,7 +36,6 @@ namespace Umbraco.RestApi
 
             app.UseUmbracoRestApiAuthorizationPolicies(applicationContext, UmbracoRestApiOptionsInstance.Options.CustomAuthorizationPolicyCallback);
         }
-
 
         /// <summary>
         /// Authorization for the rest API uses authorization schemes, see https://docs.microsoft.com/en-us/aspnet/core/security/authorization/policies
@@ -52,10 +53,22 @@ namespace Umbraco.RestApi
         {
             app.UseAuthorization(options =>
             {
+                //A policy that is used at a top level controller - this is more or less to ensure that any actions that 
+                //don't have an explicit authz policy assigned will defer to this default one
+
+                AddAuthorizationPolicy(options,
+                    AuthorizationPolicies.DefaultRestApi,
+                    policy => policy.RequireSessionIdOrRestApiClaim(),
+                    customPolicyCallback);
+
+                //Published Content READ
+
                 AddAuthorizationPolicy(options, 
                     AuthorizationPolicies.PublishedContentRead,
                     policy => policy.RequireSessionIdOrRestApiClaim(),
                     customPolicyCallback);
+
+                //Content CRUD
 
                 AddAuthorizationPolicy(options,
                     AuthorizationPolicies.ContentRead,
@@ -94,17 +107,73 @@ namespace Umbraco.RestApi
                     },
                     customPolicyCallback);
 
+                //Media CRUD
+
                 AddAuthorizationPolicy(options,
                     AuthorizationPolicies.MediaRead,
                     policy =>
                     {
                         policy.RequireSessionIdOrRestApiClaim();
                         policy.Requirements.Add(new UmbracoSectionAccessRequirement(Core.Constants.Applications.Media));
+                        policy.Requirements.Add(new MediaPermissionRequirement());
+                    },
+                    customPolicyCallback);
+                AddAuthorizationPolicy(options,
+                    AuthorizationPolicies.MediaCreate,
+                    policy =>
+                    {
+                        policy.RequireSessionIdOrRestApiClaim();
+                        policy.Requirements.Add(new UmbracoSectionAccessRequirement(Core.Constants.Applications.Media));
+                        policy.Requirements.Add(new MediaPermissionRequirement());
+                    },
+                    customPolicyCallback);
+                AddAuthorizationPolicy(options,
+                    AuthorizationPolicies.MediaUpdate,
+                    policy =>
+                    {
+                        policy.RequireSessionIdOrRestApiClaim();
+                        policy.Requirements.Add(new UmbracoSectionAccessRequirement(Core.Constants.Applications.Media));
+                        policy.Requirements.Add(new MediaPermissionRequirement());
+                    },
+                    customPolicyCallback);
+                AddAuthorizationPolicy(options,
+                    AuthorizationPolicies.MediaDelete,
+                    policy =>
+                    {
+                        policy.RequireSessionIdOrRestApiClaim();
+                        policy.Requirements.Add(new UmbracoSectionAccessRequirement(Core.Constants.Applications.Media));
+                        policy.Requirements.Add(new MediaPermissionRequirement());
                     },
                     customPolicyCallback);
 
+                //Members CRUD
+
                 AddAuthorizationPolicy(options,
                     AuthorizationPolicies.MemberRead,
+                    policy =>
+                    {
+                        policy.RequireSessionIdOrRestApiClaim();
+                        policy.Requirements.Add(new UmbracoSectionAccessRequirement(Core.Constants.Applications.Members));
+                    },
+                    customPolicyCallback);
+                AddAuthorizationPolicy(options,
+                    AuthorizationPolicies.MemberCreate,
+                    policy =>
+                    {
+                        policy.RequireSessionIdOrRestApiClaim();
+                        policy.Requirements.Add(new UmbracoSectionAccessRequirement(Core.Constants.Applications.Members));
+                    },
+                    customPolicyCallback);
+                AddAuthorizationPolicy(options,
+                    AuthorizationPolicies.MemberUpdate,
+                    policy =>
+                    {
+                        policy.RequireSessionIdOrRestApiClaim();
+                        policy.Requirements.Add(new UmbracoSectionAccessRequirement(Core.Constants.Applications.Members));
+                    },
+                    customPolicyCallback);
+                AddAuthorizationPolicy(options,
+                    AuthorizationPolicies.MemberDelete,
                     policy =>
                     {
                         policy.RequireSessionIdOrRestApiClaim();

@@ -1,12 +1,8 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using System.Security.Claims;
-using System.Security.Principal;
 using Microsoft.Owin.Security.Authorization;
 using Umbraco.Core;
 using Umbraco.Core.Models;
 using Umbraco.Core.Models.Membership;
-using Umbraco.Core.Security;
 using Umbraco.Core.Services;
 using Umbraco.Web.Editors;
 using Task = System.Threading.Tasks.Task;
@@ -14,18 +10,18 @@ using Task = System.Threading.Tasks.Task;
 namespace Umbraco.RestApi.Security
 {
     /// <summary>
-    /// An AuthZ handler to check if the user has access to the specified content item by path and by permission
+    /// An AuthZ handler to check if the user has access to the specified media item by path
     /// </summary>
-    public class ContentPermissionHandler : AuthorizationHandler<ContentPermissionRequirement, ContentResourceAccess>
+    public class MediaPermissionHandler : AuthorizationHandler<MediaPermissionRequirement, ContentResourceAccess>
     {
         private readonly ServiceContext _services;
 
-        public ContentPermissionHandler(ServiceContext services)
+        public MediaPermissionHandler(ServiceContext services)
         {
             _services = services;
         }
 
-        protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, ContentPermissionRequirement requirement, ContentResourceAccess resource)
+        protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, MediaPermissionRequirement requirement, ContentResourceAccess resource)
         {
             var user = context.User.GetUserFromClaims(_services.UserService);
             if (user == null)
@@ -43,21 +39,18 @@ namespace Umbraco.RestApi.Security
 
             foreach (var nodeId in resource.NodeIds)
             {
-                IContent content = null;
+                IMedia media = null;
                 if (nodeId != Constants.System.Root && nodeId != Constants.System.RecycleBinContent)
                 {
-                    content = _services.ContentService.GetById(nodeId);
-                    if (content == null)
+                    media = _services.MediaService.GetById(nodeId);
+                    if (media == null)
                     {
                         context.Fail();
                         return Task.FromResult(0);
                     }
                 }
 
-                var allowed = CheckPermissions(user, nodeId, 
-                    //currently permissions are only one letter hence the [0] array accessor
-                    requirement.Permissions.Select(x => x[0]).ToArray(), 
-                    content);
+                var allowed = CheckPermissions(user, nodeId, media);
 
                 if (allowed)
                     context.Succeed(requirement);
@@ -70,16 +63,16 @@ namespace Umbraco.RestApi.Security
 
             return Task.FromResult(0);
         }
-        
-        private bool CheckPermissions(IUser user, int nodeId, char[] permissionsToCheck, IContent contentItem)
+
+        private bool CheckPermissions(IUser user, int nodeId, IMedia mediaItem)
         {
             var tempStorage = new Dictionary<string, object>();
             //TODO: Using reflection, this will be public in 7.7.2
-            var result = (bool)typeof(ContentController).CallStaticMethod("CheckPermissions",
+            var result = (bool)typeof(MediaController).CallStaticMethod("CheckPermissions",
                 tempStorage,
-                user,
-                _services.UserService, _services.ContentService, _services.EntityService,
-                nodeId, permissionsToCheck, contentItem);
+                user,                
+                _services.MediaService, _services.EntityService,
+                nodeId, mediaItem);
             return result;
         }
     }

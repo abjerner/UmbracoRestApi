@@ -6,9 +6,11 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web.Http;
+using Microsoft.Owin.Security.Authorization.WebApi;
 using Umbraco.Core.Models;
 using Umbraco.RestApi.Models;
 using Umbraco.RestApi.Routing;
+using Umbraco.RestApi.Security;
 using Umbraco.Web;
 using Umbraco.Web.WebApi;
 using WebApi.Hal;
@@ -16,8 +18,8 @@ using Task = System.Threading.Tasks.Task;
 
 namespace Umbraco.RestApi.Controllers
 {
-    //TODO: How to authorize this? https://github.com/umbraco/UmbracoRestApi/issues/24
-    [UmbracoAuthorize]
+    
+    [ResourceAuthorize(Policy = AuthorizationPolicies.DefaultRestApi)]
     [UmbracoRoutePrefix("rest/v1/relations")]
     public class RelationsController : UmbracoHalController, ICrudController<RelationRepresentation>, IRootController
     {

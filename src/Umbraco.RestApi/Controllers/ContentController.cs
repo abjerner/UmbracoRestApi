@@ -32,7 +32,7 @@ using Task = System.Threading.Tasks.Task;
 
 namespace Umbraco.RestApi.Controllers
 {
-    [Authorize]
+    [ResourceAuthorize(Policy = AuthorizationPolicies.DefaultRestApi)]
     [UmbracoRoutePrefix("rest/v1/content")]
     public class ContentController : UmbracoHalController, ITraversableController<ContentRepresentation>
     {

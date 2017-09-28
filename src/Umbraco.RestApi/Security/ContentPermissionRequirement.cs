@@ -3,7 +3,7 @@
 namespace Umbraco.RestApi.Security
 {
     /// <summary>
-    /// An AuthZ requirement for validating that the user has a specific permission for a content item
+    /// An AuthZ requirement for validating that the user has permission for a content item
     /// </summary>
     public class ContentPermissionRequirement : IAuthorizationRequirement
     {

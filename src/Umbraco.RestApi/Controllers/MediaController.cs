@@ -15,14 +15,16 @@ using Umbraco.Web;
 using System.Web.Http.ModelBinding;
 using System.Threading.Tasks;
 using System.Web;
+using Microsoft.Owin.Security.Authorization.WebApi;
 using Umbraco.Core.Configuration;
 using Umbraco.Core.Configuration.UmbracoSettings;
+using Umbraco.RestApi.Security;
 using Umbraco.Web.WebApi;
 using Task = System.Threading.Tasks.Task;
 
 namespace Umbraco.RestApi.Controllers
 {
-    [UmbracoAuthorize]
+    [ResourceAuthorize(Policy = AuthorizationPolicies.DefaultRestApi)]
     [UmbracoRoutePrefix("rest/v1/media")]
     public class MediaController : UmbracoHalController, ITraversableController<MediaRepresentation>
     {
