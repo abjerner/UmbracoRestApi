@@ -70,5 +70,28 @@ namespace Umbraco.RestApi.Security
                 return null;
             }
         }
+
+        /// <summary>
+        /// Returns the users calculated start node ids from it's claims
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
+        public static int[] GetMediaStartNodeIds(this ClaimsPrincipal user)
+        {
+            var startMediaId = user.FindFirst(Constants.Security.StartMediaNodeIdClaimType);
+            if (startMediaId == null || startMediaId.Value.DetectIsJson() == false)
+            {
+                return null;
+            }
+
+            try
+            {
+                return JsonConvert.DeserializeObject<int[]>(startMediaId.Value);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
     }
 }

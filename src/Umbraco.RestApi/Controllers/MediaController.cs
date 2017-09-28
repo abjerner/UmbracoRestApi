@@ -63,31 +63,44 @@ namespace Umbraco.RestApi.Controllers
 
         [HttpGet]
         [CustomRoute("")]
-        public virtual Task<HttpResponseMessage> Get()
+        public virtual async Task<HttpResponseMessage> Get()
         {
+            var startMediaIdsAsInt = ClaimsPrincipal.GetMediaStartNodeIds();
+            if (startMediaIdsAsInt == null || startMediaIdsAsInt.Length == 0)
+                return Request.CreateResponse(HttpStatusCode.Unauthorized);
+
+            if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(startMediaIdsAsInt), AuthorizationPolicies.MediaRead))
+                return Request.CreateResponse(HttpStatusCode.Unauthorized);
+
             var rootMedia = Services.MediaService.GetRootMedia();
             var result = Mapper.Map<IEnumerable<MediaRepresentation>>(rootMedia).ToList();
             var representation = new MediaListRepresenation(result);
 
-            return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, representation));
+            return Request.CreateResponse(HttpStatusCode.OK, representation);
         }
 
         [HttpGet]
         [CustomRoute("{id}")]
-        public Task<HttpResponseMessage> Get(int id)
+        public async Task<HttpResponseMessage> Get(int id)
         {
+            if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.MediaRead))
+                return Request.CreateResponse(HttpStatusCode.Unauthorized);
+
             var content = Services.MediaService.GetById(id);
             var result = Mapper.Map<MediaRepresentation>(content);
 
-            return Task.FromResult(result == null
+            return result == null
                 ? Request.CreateResponse(HttpStatusCode.NotFound)
-                : Request.CreateResponse(HttpStatusCode.OK, result));
+                : Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
         [HttpGet]
         [CustomRoute("{id}/meta")]
-        public Task<HttpResponseMessage> GetMetadata(int id)
+        public async Task<HttpResponseMessage> GetMetadata(int id)
         {
+            if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.MediaRead))
+                return Request.CreateResponse(HttpStatusCode.Unauthorized);
+
             var found = Services.MediaService.GetById(id);
             if (found == null) throw new HttpResponseException(HttpStatusCode.NotFound);
 
@@ -100,44 +113,53 @@ namespace Umbraco.RestApi.Controllers
                 CreateTemplate = Mapper.Map<ContentCreationTemplate>(found)
             };
 
-            return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, result));
+            return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
         [HttpGet]
         [CustomRoute("{id}/children")]
-        public Task<HttpResponseMessage> GetChildren(int id,
+        public async Task<HttpResponseMessage> GetChildren(int id,
             [ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query)
         {
+            if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.MediaRead))
+                return Request.CreateResponse(HttpStatusCode.Unauthorized);
+
             var items = Services.MediaService.GetPagedChildren(id, query.Page - 1, query.PageSize, out var total, filter: query.Query);
             var pages = ContentControllerHelper.GetTotalPages(total, query.PageSize);
             var mapped = Mapper.Map<IEnumerable<MediaRepresentation>>(items).ToList();
 
             var result = new MediaPagedListRepresentation(mapped, total, pages, query.Page, query.PageSize, LinkTemplates.Media.PagedChildren, new { id = id });
-            return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, result));
+            return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
 
         [HttpGet]
         [CustomRoute("{id}/descendants/")]
-        public Task<HttpResponseMessage> GetDescendants(int id,
+        public async Task<HttpResponseMessage> GetDescendants(int id,
             [ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query)
         {
+            if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.MediaRead))
+                return Request.CreateResponse(HttpStatusCode.Unauthorized);
+
             var items = Services.MediaService.GetPagedDescendants(id, query.Page - 1, query.PageSize, out var total, filter: query.Query);
             var pages = (total + query.PageSize - 1) / query.PageSize;
             var mapped = Mapper.Map<IEnumerable<MediaRepresentation>>(items).ToList();
             
             var result = new MediaPagedListRepresentation(mapped, total, pages, query.Page - 1, query.PageSize, LinkTemplates.Media.PagedDescendants, new { id = id });
-            return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, result));
+            return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
         [HttpGet]
         [CustomRoute("{id}/ancestors/")]
-        public Task<HttpResponseMessage> GetAncestors(int id,
+        public async Task<HttpResponseMessage> GetAncestors(int id,
             [ModelBinder(typeof(PagedQueryModelBinder))]
             PagedRequest query)
         {
+            if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.MediaRead))
+                return Request.CreateResponse(HttpStatusCode.Unauthorized);
+
             var items = Services.MediaService.GetAncestors(id).ToArray();
             var total = items.Length;
             var pages = (total + query.PageSize - 1) / query.PageSize;
@@ -145,15 +167,20 @@ namespace Umbraco.RestApi.Controllers
             var mapped = Mapper.Map<IEnumerable<MediaRepresentation>>(paged).ToList();
 
             var result = new MediaPagedListRepresentation(mapped, total, pages, query.Page - 1, query.PageSize, LinkTemplates.Media.PagedAncestors, new { id = id });
-            return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, result));
+            return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
         [HttpGet]
         [CustomRoute("search")]
-        public Task<HttpResponseMessage> Search(
+        public async Task<HttpResponseMessage> Search(
             [ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query)
         {
+            if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, ContentResourceAccess.Empty(), AuthorizationPolicies.MediaRead))
+                return Request.CreateResponse(HttpStatusCode.Unauthorized);
+
+            //TODO: Authorize this! how? Same as core, i guess we just filter the results
+
             if (query.Query.IsNullOrWhiteSpace()) throw new HttpResponseException(HttpStatusCode.NotFound);
 
             //Query prepping - ensure that we only search for media items...
@@ -182,7 +209,7 @@ namespace Umbraco.RestApi.Controllers
             //return as paged list of media items
             var representation = new MediaPagedListRepresentation(items, result.TotalItemCount, pages, query.Page - 1, query.PageSize, LinkTemplates.Media.Search, new { query = query.Query, pageSize = query.PageSize });
 
-            return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, representation));
+            return Request.CreateResponse(HttpStatusCode.OK, representation);
         }
 
 
@@ -192,9 +219,12 @@ namespace Umbraco.RestApi.Controllers
 
         [HttpPost]
         [CustomRoute("")]
-        public Task<HttpResponseMessage> Post(MediaRepresentation content)
+        public async Task<HttpResponseMessage> Post(MediaRepresentation content)
         {
-            if (content == null) return Task.FromResult(Request.CreateResponse(HttpStatusCode.NotFound));
+            if (content == null) return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(content.ParentId), AuthorizationPolicies.MediaCreate))
+                return Request.CreateResponse(HttpStatusCode.Unauthorized);
 
             try
             {
@@ -226,56 +256,73 @@ namespace Umbraco.RestApi.Controllers
                 Mapper.Map(content, created);
                 Services.MediaService.Save(created);
 
-                return Task.FromResult(Request.CreateResponse(HttpStatusCode.Created, Mapper.Map<MediaRepresentation>(created)));
+                return Request.CreateResponse(HttpStatusCode.Created, Mapper.Map<MediaRepresentation>(created));
             }
             catch (ModelValidationException exception)
             {
-                return Task.FromResult(Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors));
+                return Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors);
             }
         }
 
         [HttpPut]
         [CustomRoute("{id}")]
-        public Task<HttpResponseMessage> Put(int id, MediaRepresentation content)
+        public async Task<HttpResponseMessage> Put(int id, MediaRepresentation content)
         {
-            if (content == null) return Task.FromResult(Request.CreateResponse(HttpStatusCode.NotFound));
+            if (content == null) return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            //TODO: Since this Id is based on a route parameter it should be possible to authz this with an attribute
+            if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.MediaUpdate))
+                return Request.CreateResponse(HttpStatusCode.Unauthorized);
 
             try
             {
                 var found = Services.MediaService.GetById(id);
                 if (found == null)
-                    return Task.FromResult(Request.CreateResponse(HttpStatusCode.NotFound));
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
 
                 Mapper.Map(content, found);
                 Services.MediaService.Save(found, Security.GetUserId());
 
                 var rep = Mapper.Map<MediaRepresentation>(found);
-                return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, rep));
+                return Request.CreateResponse(HttpStatusCode.OK, rep);
             }
             catch (ModelValidationException exception)
             {
-                return Task.FromResult(Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors));
+                return Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors);
             }
         }
 
         [HttpDelete]
         [CustomRoute("{id}")]
-        public virtual Task<HttpResponseMessage> Delete(int id)
+        public virtual async Task<HttpResponseMessage> Delete(int id)
         {
+            //TODO: Since this Id is based on a route parameter it should be possible to authz this with an attribute
+            if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.MediaDelete))
+                return Request.CreateResponse(HttpStatusCode.Unauthorized);
+
             var found = Services.MediaService.GetById(id);
             if (found == null)
-                return Task.FromResult(Request.CreateResponse(HttpStatusCode.NotFound));
+                return Request.CreateResponse(HttpStatusCode.NotFound);
 
             Services.MediaService.Delete(found);
-            return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK));
+            return Request.CreateResponse(HttpStatusCode.OK);
         }
 
 
-
+        /// <summary>
+        /// Update a media item's file
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="property"></param>
+        /// <returns></returns>
         [HttpPut]
         [CustomRoute("{id}/upload")]
         public async Task<HttpResponseMessage> UploadFile(int id, string property = "umbracoFile")
         {
+            //TODO: Since this Id is based on a route parameter it should be possible to authz this with an attribute
+            if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.MediaUpdate))
+                return Request.CreateResponse(HttpStatusCode.Unauthorized);
+
             if (!Request.Content.IsMimeMultipartContent())
             {
                 return Request.CreateErrorResponse(HttpStatusCode.UnsupportedMediaType, "The request doesn't contain valid content!");
@@ -305,10 +352,20 @@ namespace Umbraco.RestApi.Controllers
             return Request.CreateResponse(HttpStatusCode.OK, Mapper.Map<MediaRepresentation>(media));
         }
 
+        /// <summary>
+        /// Create a media item by posting a file
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="mediaType"></param>
+        /// <param name="property"></param>
+        /// <returns></returns>
         [HttpPost]
         [CustomRoute("{id}/upload")]
         public async Task<HttpResponseMessage> PostFile(int id, string mediaType = null, string property = Constants.Conventions.Media.File)
         {
+            if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.MediaCreate))
+                return Request.CreateResponse(HttpStatusCode.Unauthorized);
+
             if (!Request.Content.IsMimeMultipartContent())
             {
                 return Request.CreateErrorResponse(HttpStatusCode.UnsupportedMediaType, "The request doesn't contain valid content!");
@@ -346,7 +403,7 @@ namespace Umbraco.RestApi.Controllers
             var media = Services.MediaService.CreateMedia(name, id, mediaType);
             media.SetValue(property, httpFile);
             Services.MediaService.Save(media);
-            return Request.CreateResponse(HttpStatusCode.OK, Mapper.Map<MediaRepresentation>(media));
+            return Request.CreateResponse(HttpStatusCode.Created, Mapper.Map<MediaRepresentation>(media));
         }
     }
 
