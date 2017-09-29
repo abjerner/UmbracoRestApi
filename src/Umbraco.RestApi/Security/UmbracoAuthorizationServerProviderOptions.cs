@@ -38,7 +38,7 @@ namespace Umbraco.RestApi.Security
         /// </summary>
         public string Audience { get; set; }
 
-        public string AuthEndpoint { get; set; } = "/umbraco/restapi/oauth/token";
+        public string AuthEndpoint { get; set; } = "/umbraco/rest/oauth/token";
         public CorsPolicy CorsPolicy { get; set; }
     }
 }
