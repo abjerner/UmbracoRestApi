@@ -28,7 +28,7 @@ namespace Umbraco.RestApi.Security
         /// </remarks>
         public static IUser GetUserFromClaims(this ClaimsPrincipal principal, IUserService userService)
         {
-            var idClaim = principal.FindFirst(c => c.Type == ClaimTypes.NameIdentifier && c.Issuer == UmbracoBackOfficeIdentity.Issuer);
+            var idClaim = principal.FindFirst(c => c.Type == ClaimTypes.NameIdentifier);
             if (idClaim == null)
             {
                 return null;

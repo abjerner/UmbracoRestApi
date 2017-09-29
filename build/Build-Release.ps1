@@ -17,11 +17,9 @@ $NuGetPackagesPath = Join-Path -Path $SolutionRoot "packages"
 #trace
 "Solution Root: $SolutionRoot"
 
-$MSBuild = "$Env:SYSTEMROOT\Microsoft.NET\Framework\v4.0.30319\msbuild.exe";
-
 # Make sure we don't have a release folder for this version already
 $BuildFolder = Join-Path -Path $RepoRoot -ChildPath "build";
-$ReleaseFolder = Join-Path -Path $BuildFolder -ChildPath "Releases\v$ReleaseVersionNumber$PreReleaseName";
+$ReleaseFolder = Join-Path -Path $BuildFolder -ChildPath "Release";
 if ((Get-Item $ReleaseFolder -ErrorAction SilentlyContinue) -ne $null)
 {
 	Write-Warning "$ReleaseFolder already exists on your local machine. It will now be deleted."
@@ -33,8 +31,30 @@ New-Item $ReleaseFolder -Type directory
 $NuGet = "$BuildFolder\nuget.exe"
 $FileExists = Test-Path $NuGet 
 If ($FileExists -eq $False) {
-	$SourceNugetExe = "http://nuget.org/nuget.exe"
+	Write-Host "Retrieving nuget.exe..."
+	$SourceNugetExe = "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe"
 	Invoke-WebRequest $SourceNugetExe -OutFile $NuGet
+}
+
+# ensure we have vswhere
+New-Item "$BuildFolder\vswhere" -type directory -force
+$vswhere = "$BuildFolder\vswhere.exe"
+if (-not (test-path $vswhere))
+{
+	Write-Host "Download VsWhere..."
+	$path = "$BuildFolder\tmp"
+	&$nuget install vswhere -OutputDirectory $path -Verbosity quiet
+	$dir = ls "$path\vswhere.*" | sort -property Name -descending | select -first 1
+	$file = ls -path "$dir" -name vswhere.exe -recurse
+	mv "$dir\$file" $vswhere   
+	}
+
+$MSBuild = &$vswhere -latest -products * -requires Microsoft.Component.MSBuild -property installationPath
+if ($MSBuild) {
+	$MSBuild = join-path $MSBuild 'MSBuild\15.0\Bin\MSBuild.exe'
+	if (-not (test-path $msbuild)) {
+	throw "MSBuild not found!"
+	}
 }
 
 #trace
@@ -56,6 +76,10 @@ $Copyright = "Copyright © Umbraco " + (Get-Date).year;
 
 # Build the solution in release mode
 $SolutionPath = Join-Path -Path $SolutionRoot -ChildPath "Umbraco.RestApi.sln";
+
+#restore nuget packages
+Write-Host "Restoring nuget packages..."
+& $NuGet restore $SolutionPath
 
 # clean sln for all deploys
 & $MSBuild "$SolutionPath" /p:Configuration=Release /maxcpucount /t:Clean

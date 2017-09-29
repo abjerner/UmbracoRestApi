@@ -28,6 +28,8 @@ namespace Umbraco.RestApi
     public static class AppBuilderExtensions
     {
 
+        //TODO: Need to follow more of this for http://bitoftech.net/2014/10/27/json-web-token-asp-net-web-api-2-jwt-owin-authorization-server/ dealing with AudienceStores
+
         //another interesting one https://blog.jayway.com/2014/09/25/securing-asp-net-web-api-endpoints-using-owin-oauth-2-0-and-claims/
 
         /// <summary>
@@ -64,7 +66,10 @@ namespace Umbraco.RestApi
         {
             authServerProviderOptions = authServerProviderOptions ?? new UmbracoAuthorizationServerProviderOptions();
 
-            var base64Key = Convert.ToBase64String(Encoding.UTF8.GetBytes(authServerProviderOptions.Secret));
+            //if a secret is supplied then 
+            var base64Key = Convert.ToBase64String(
+                Encoding.UTF8.GetBytes(
+                    authServerProviderOptions.Secret));
 
             var tokenProvider = new SymmetricKeyIssuerSecurityTokenProvider(
                 AuthorizationPolicies.UmbracoRestApiIssuer,
@@ -73,19 +78,17 @@ namespace Umbraco.RestApi
             var oAuthServerOptions = new OAuthAuthorizationServerOptions()
             {
                 //generally you wouldn't allow this unless on SSL!
-#if DEBUG
-                AllowInsecureHttp = true,
-#endif                                
+                AllowInsecureHttp = authServerProviderOptions.AllowInsecureHttp,
                 TokenEndpointPath = new PathString(authServerProviderOptions.AuthEndpoint),
                 AuthenticationType = AuthorizationPolicies.UmbracoRestApiTokenAuthenticationType,
                 AccessTokenExpireTimeSpan = TimeSpan.FromDays(1),
-                Provider = new UmbracoAuthorizationServerProvider(authServerProviderOptions)               
+                Provider = new UmbracoAuthorizationServerProvider(authServerProviderOptions)
             };
 
             oAuthServerOptions.AccessTokenFormat = new JwtFormatWriter(
                 oAuthServerOptions,
                 tokenProvider.Issuer,
-                authServerProviderOptions.Audience, 
+                authServerProviderOptions.Audience,
                 base64Key);
 
             // Token Generation
@@ -94,11 +97,20 @@ namespace Umbraco.RestApi
             {
                 AllowedAudiences = new[] { authServerProviderOptions.Audience },
                 IssuerSecurityTokenProviders = new[] { tokenProvider },
+                
                 Provider = new OAuthBearerAuthenticationProvider
                 {
                     OnApplyChallenge = context => { return Task.FromResult(0); },
                     OnRequestToken = context => { return Task.FromResult(0); },
-                    OnValidateIdentity = context => { return Task.FromResult(0); }
+                    OnValidateIdentity = context =>
+                    {
+                        //ensure that the rest api claim is added to the ticket if everything is validated
+                        if (context.IsValidated)
+                        {
+                            context.Ticket.Identity.AddClaim(new Claim(AuthorizationPolicies.UmbracoRestApiClaimType, "true", ClaimValueTypes.Boolean, AuthorizationPolicies.UmbracoRestApiIssuer));
+                        }
+                        return Task.FromResult(0);
+                    }
                 }
             });
         }
@@ -112,8 +124,8 @@ namespace Umbraco.RestApi
         /// Options to configure the rest api including CORS and Authorization policies
         /// </param>
         public static void UseUmbracoRestApi(this IAppBuilder app,
-        ApplicationContext applicationContext,
-        UmbracoRestApiOptions options = null)
+            ApplicationContext applicationContext,
+            UmbracoRestApiOptions options = null)
         {
             if (applicationContext == null) throw new ArgumentNullException(nameof(applicationContext));
             UmbracoRestApiOptionsInstance.Options = options ?? new UmbracoRestApiOptions();

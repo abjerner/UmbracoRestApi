@@ -59,7 +59,8 @@ namespace Umbraco.RestApi.Tests
             var authServerOptions = new UmbracoAuthorizationServerProviderOptions
             {
                 Secret = "abcdefghijklmnopqrstuvwxyz12345678909876543210",
-                Audience = "test"
+                Audience = "test",
+                AllowInsecureHttp = true
             };
             using (var server = TestServer.Create(app =>
             {
@@ -122,7 +123,8 @@ namespace Umbraco.RestApi.Tests
             var authServerOptions = new UmbracoAuthorizationServerProviderOptions
             {
                 Secret = "abcdefghijklmnopqrstuvwxyz12345678909876543210",
-                Audience = "test"
+                Audience = "test",
+                AllowInsecureHttp = true
             };
             using (var server = TestServer.Create(app =>
             {

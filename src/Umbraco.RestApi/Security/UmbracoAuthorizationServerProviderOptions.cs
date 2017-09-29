@@ -23,8 +23,21 @@ namespace Umbraco.RestApi.Security
             };
         }
 
+        /// <summary>
+        /// Generally you wouldn't allow this unless on SSL!
+        /// </summary>
+        public bool AllowInsecureHttp { get; set; }
+
+        /// <summary>
+        /// This is the key for the client
+        /// </summary>
         public string Secret { get; set; }
+
+        /// <summary>
+        /// This is a "ClientId"
+        /// </summary>
         public string Audience { get; set; }
+
         public string AuthEndpoint { get; set; } = "/umbraco/restapi/oauth/token";
         public CorsPolicy CorsPolicy { get; set; }
     }
