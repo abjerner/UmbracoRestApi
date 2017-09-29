@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using Umbraco.Core.Models.Membership;
@@ -35,10 +36,13 @@ namespace Umbraco.RestApi.Controllers
             return 0;
         }
 
-        public IDictionary<string, ContentPropertyInfo> GetDefaultFieldMetaData(IUser currentUser)
+        internal IDictionary<string, ContentPropertyInfo> GetDefaultFieldMetaData(ClaimsPrincipal user)
         {
-            var userCulture = currentUser.GetUserCulture(_textService);
+            var cultureClaim = user.FindFirst(ClaimTypes.Locality);
+            if (cultureClaim == null)
+                throw new InvalidOperationException($"The required user claim {ClaimTypes.Locality} is missing");
 
+            var userCulture = new CultureInfo(cultureClaim.Value);
             //TODO: This shouldn't actually localize based on the current user!!!
             // this should localize based on the current request's Accept-Language and Content-Language headers
 

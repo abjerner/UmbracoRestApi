@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Net.Http;
+using System.Security.Claims;
 using System.Web;
 using System.Web.Http;
 using System.Web.Http.Controllers;
@@ -19,6 +20,7 @@ using Umbraco.Core.Models.Membership;
 using Umbraco.Core.Profiling;
 using Umbraco.Core.Security;
 using Umbraco.Core.Services;
+using Umbraco.RestApi.Security;
 using Umbraco.Web;
 using Umbraco.Web.Routing;
 using Umbraco.Web.Security;
@@ -48,29 +50,24 @@ namespace Umbraco.RestApi.Tests.TestHelpers
                 //chuck it into the props since this is what MS does when hosted
                 request.Properties["MS_HttpContext"] = httpContext;
 
-                var backofficeIdentity = (UmbracoBackOfficeIdentity)owinContext.Authentication.User.Identity;
-
                 var webSecurity = new Mock<WebSecurity>(null, null);
 
                 //mock CurrentUser
                 var admin = Mock.Of<IUser>(u => u.IsApproved == true
                                                 && u.IsLockedOut == false
-                                                && u.AllowedSections == backofficeIdentity.AllowedApplications
-                                                && u.Email == "admin@admin.com"
-                                                && u.Id == (int) backofficeIdentity.Id
-                                                && u.Language == "en"
-                                                && u.Name == backofficeIdentity.RealName
-                                                && u.StartContentIds == backofficeIdentity.StartContentNodes
-                                                && u.StartMediaIds == backofficeIdentity.StartMediaNodes
-                                                && u.Username == backofficeIdentity.Username);
+                                                && u.AllowedSections == owinContext.Authentication.User.GetAllowedSections()
+                                                //&& u.Email == "admin@admin.com"
+                                                && u.Id == owinContext.Authentication.User.GetUserId().Value
+                                                && u.Language == owinContext.Authentication.User.GetUserCulture().DisplayName
+                                                && u.Name == owinContext.Authentication.User.GetUserName()
+                                                && u.StartContentIds == owinContext.Authentication.User.GetContentStartNodeIds()
+                                                && u.StartMediaIds == owinContext.Authentication.User.GetMediaStartNodeIds()
+                                                && u.Username == owinContext.Authentication.User.GetLoginName());
+
                 webSecurity.Setup(x => x.CurrentUser).Returns(admin);
                 var mockedUserService = Mock.Get(ApplicationContext.Services.UserService);
-                mockedUserService.Setup(x => x.GetUserById(0)).Returns(admin);
-
-                //mock Validate
-                webSecurity.Setup(x => x.ValidateCurrentUser())
-                    .Returns(() => true);
-
+                mockedUserService.Setup(x => x.GetUserById(admin.Id)).Returns(admin);
+                
                 var umbCtx = UmbracoContext.EnsureContext(
                     //set the user of the HttpContext
                     httpContext,

@@ -266,6 +266,7 @@
     <Compile Include="Controllers\MediaController.cs" />
     <Compile Include="Controllers\MembersController.cs" />
     <Compile Include="Controllers\PagedRequestModelBinder.cs" />
+    <Compile Include="JwtFormatWriter.cs" />
     <Compile Include="LinkTemplateExtensions.cs" />
     <Compile Include="LinkTemplates.cs" />
     <Compile Include="Models\ContentPagedListRepresentation.cs" />

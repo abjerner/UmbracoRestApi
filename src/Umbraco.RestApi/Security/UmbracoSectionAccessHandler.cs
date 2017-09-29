@@ -14,13 +14,13 @@ namespace Umbraco.RestApi.Security
     {
         protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, UmbracoSectionAccessRequirement requirement)
         {
-            if (!context.User.HasClaim(c => c.Type == Core.Constants.Security.AllowedApplicationsClaimType && c.Issuer == UmbracoBackOfficeIdentity.Issuer))
+            var allowedApps = context.User.GetAllowedSections();
+
+            if (allowedApps == null)
             {
                 context.Fail();
                 return Task.FromResult(0);
             }
-
-            var allowedApps = context.User.FindAll(x => x.Type == Core.Constants.Security.AllowedApplicationsClaimType).Select(app => app.Value).ToList();
 
             var allowed = allowedApps.Contains(requirement.Section);
 

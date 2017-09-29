@@ -10,8 +10,7 @@ namespace Umbraco.RestApi.Controllers
     {
         public override HttpActionDescriptor SelectAction(HttpControllerContext controllerContext)
         {
-            object action,allvalues;
-            var hasAction = controllerContext.RouteData.Values.TryGetValue("action", out allvalues);
+            var hasAction = controllerContext.RouteData.Values.TryGetValue("action", out var allvalues);
             controllerContext.RouteData.Values.TryGetValue("allvalues", out allvalues);
             var method = controllerContext.Request.Method;
 

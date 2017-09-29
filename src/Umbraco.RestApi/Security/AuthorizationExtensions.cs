@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Globalization;
 using System.IdentityModel.Tokens;
+using System.Linq;
 using System.Security.Claims;
 using System.Web.Http.Filters;
 using Microsoft.Owin.Security;
@@ -21,6 +23,9 @@ namespace Umbraco.RestApi.Security
         /// <param name="principal"></param>
         /// <param name="userService"></param>
         /// <returns></returns>
+        /// <remarks>
+        /// TODO: Remove the need for this class - but this would require an IPermissionService that a developer could override
+        /// </remarks>
         public static IUser GetUserFromClaims(this ClaimsPrincipal principal, IUserService userService)
         {
             var idClaim = principal.FindFirst(c => c.Type == ClaimTypes.NameIdentifier && c.Issuer == UmbracoBackOfficeIdentity.Issuer);
@@ -49,6 +54,57 @@ namespace Umbraco.RestApi.Security
                         c.Type == AuthorizationPolicies.UmbracoRestApiClaimType
                         //if we are checking the SessionIdClaimType then it should be issued from Umbraco (i.e. cookie authentication)
                         || (c.Type == Core.Constants.Security.SessionIdClaimType && c.Issuer == UmbracoBackOfficeIdentity.Issuer)));
+        }
+
+        public static CultureInfo GetUserCulture(this ClaimsPrincipal user)
+        {
+            var culture = user.FindFirst(ClaimTypes.Locality);
+            if (culture == null)
+            {
+                return null;
+            }
+            return new CultureInfo(culture.Value);
+        }
+
+        public static string GetUserName(this ClaimsPrincipal user)
+        {
+            var userName = user.FindFirst(ClaimTypes.GivenName);
+            return userName?.Value;
+        }
+
+        public static string GetLoginName(this ClaimsPrincipal user)
+        {
+            var userName = user.FindFirst(ClaimTypes.Name);
+            return userName?.Value;
+        }
+
+        public static int? GetUserId(this ClaimsPrincipal user)
+        {
+            var id = user.FindFirst(ClaimTypes.NameIdentifier);
+            if (id == null)
+            {
+                return null;
+            }
+            var intId = id.Value.TryConvertTo<int>();
+            if (intId)
+                return intId.Result;
+
+            return null;
+        }
+
+        /// <summary>
+        /// Returns the user's allowed sections from claims
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
+        public static string[] GetAllowedSections(this ClaimsPrincipal user)
+        {
+            if (!user.HasClaim(c => c.Type == Constants.Security.AllowedApplicationsClaimType))
+            {
+                return null;
+            }
+            var allowedApps = user.FindAll(Constants.Security.AllowedApplicationsClaimType);
+            return allowedApps?.Select(x => x.Value).ToArray();
         }
 
         /// <summary>

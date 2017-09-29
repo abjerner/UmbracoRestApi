@@ -32,6 +32,14 @@ using Task = System.Threading.Tasks.Task;
 
 namespace Umbraco.RestApi.Controllers
 {
+    /// <summary>
+    /// A controller for working with non-published content (database level)
+    /// </summary>
+    /// <remarks>
+    /// TODO: Query access to this controller will generally only work if the Id claim type belongs to a real Umbraco User since permissions
+    /// for that user need to be looked up. The only way around this would be to be able to have an IPermissionService that could be added
+    /// to the rest api options and a developer could replace that.
+    /// </remarks>
     [ResourceAuthorize(Policy = AuthorizationPolicies.DefaultRestApi)]
     [UmbracoRoutePrefix("rest/v1/content")]
     public class ContentController : UmbracoHalController, ITraversableController<ContentRepresentation>
@@ -117,7 +125,7 @@ namespace Umbraco.RestApi.Controllers
 
             var result = new ContentMetadataRepresentation(LinkTemplates.Content.MetaData, LinkTemplates.Content.Self, id)
             {
-                Fields = helper.GetDefaultFieldMetaData(Security.CurrentUser),
+                Fields = helper.GetDefaultFieldMetaData(ClaimsPrincipal),
                 Properties = Mapper.Map<IDictionary<string, ContentPropertyInfo>>(found),
                 CreateTemplate = Mapper.Map<ContentCreationTemplate>(found)
             };
