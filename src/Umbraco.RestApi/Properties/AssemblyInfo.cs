@@ -23,7 +23,7 @@ using System.Runtime.InteropServices;
 
 [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyFileVersion("1.0.0")]
-[assembly: AssemblyInformationalVersion("1.0.0-beta0003")]
+[assembly: AssemblyInformationalVersion("1.0.0-beta0004")]
 [assembly: AssemblyCopyright("Copyright © Umbraco 2017")]
 
 [assembly: InternalsVisibleTo("Umbraco.RestApi.Tests")]
