@@ -10,6 +10,7 @@ using Umbraco.Core;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using Umbraco.Core.Profiling;
+using Umbraco.RestApi.Controllers;
 using Umbraco.RestApi.Models;
 using Umbraco.RestApi.Models.Mapping;
 using Umbraco.Web.WebApi;
@@ -86,7 +87,14 @@ namespace Umbraco.RestApi.Tests.TestHelpers
             httpConfig.Services.Replace(typeof(IHttpControllerSelector), new NamespaceHttpControllerSelector(httpConfig));
 
             //Create routes
-            UmbracoRestStartup.CreateRoutes(httpConfig);
+            UmbracoRestStartup.CreateRoutes(httpConfig, new[]
+            {
+                typeof(PublishedContentController),
+                typeof(ContentController),
+                typeof(MediaController),
+                typeof(MembersController),
+                typeof(RelationsController)
+            });
 
             return httpConfig;
         }
