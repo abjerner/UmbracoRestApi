@@ -20,12 +20,18 @@ namespace Umbraco.RestApi
         protected override void ApplicationStarted(UmbracoApplicationBase umbracoApplication, ApplicationContext applicationContext)
         {
             //Create routes for REST
-            var halControllerTypes = PluginManager.Current.ResolveTypes<UmbracoHalController>().ToArray();
-            CreateRoutes(GlobalConfiguration.Configuration, halControllerTypes);
+            CreateRoutes(GlobalConfiguration.Configuration, new[]
+            {
+                typeof(PublishedContentController),
+                typeof(ContentController),
+                typeof(MediaController),
+                typeof(MembersController),
+                typeof(RelationsController)
+            });
         }
         
 
-        public static void CreateRoutes(HttpConfiguration config, Type[] halControllerTypes)
+        public static void CreateRoutes(HttpConfiguration config, params Type[] halControllerTypes)
         {
             //NOTE : we are using custom attribute routing... This is because there is no way to enable attribute routing against your own
             // assemblies with a custom DefaultDirectRouteProvider which we would require to implement inherited attribute routes. 
