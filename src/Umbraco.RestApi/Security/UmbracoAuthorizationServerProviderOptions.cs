@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Web;
 using System.Web.Cors;
+using System.Web.Hosting;
 using ClientDependency.Core;
 using Microsoft.AspNet.Identity.Owin;
 
@@ -28,9 +30,9 @@ namespace Umbraco.RestApi.Security
             //set the secret based on the current website
 
             var timezone = TimeZone.CurrentTimeZone.StandardName;
-            var directory = System.Web.HttpRuntime.BinDirectory;
+            var directory = HostingEnvironment.IsHosted ? HttpRuntime.BinDirectory : AppDomain.CurrentDomain.BaseDirectory + "/bin";            
             var machineName = Environment.MachineName;
-            var appDomainAppId = System.Web.HttpRuntime.AppDomainAppId;
+            var appDomainAppId = HttpRuntime.AppDomainAppId;
             Secret = string.Concat(timezone, directory, machineName, appDomainAppId).GenerateHash();
 
             //for now we only have one Audience
