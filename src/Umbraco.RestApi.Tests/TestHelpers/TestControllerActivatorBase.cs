@@ -20,6 +20,7 @@ using Umbraco.Core.Models.Membership;
 using Umbraco.Core.Profiling;
 using Umbraco.Core.Security;
 using Umbraco.Core.Services;
+using Umbraco.RestApi.Controllers;
 using Umbraco.RestApi.Security;
 using Umbraco.Web;
 using Umbraco.Web.Routing;
@@ -108,6 +109,7 @@ namespace Umbraco.RestApi.Tests.TestHelpers
                 container.Register<BaseSearchProvider>(factory => searchProvider);
                 container.Register<IUmbracoSettingsSection>(factory => mockSettings);
                 container.Register<IContentSection>(factory => mockSettings.Content);
+                container.Register<IPublishedContentRequestFactory>(factory => Mock.Of<IPublishedContentRequestFactory>());
                 container.Register(controllerType);
 
                 var testServices = new TestServices(request, umbHelper.UmbracoContext, mockedTypedContentQuery, ApplicationContext.Services, searchProvider, mockSettings);

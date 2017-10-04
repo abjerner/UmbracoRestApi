@@ -179,6 +179,7 @@
       <HintPath>..\packages\System.Threading.Tasks.Dataflow.4.7.0\lib\portable-net45+win8+wpa81\System.Threading.Tasks.Dataflow.dll</HintPath>
     </Reference>
     <Reference Include="System.Web" />
+    <Reference Include="System.Web.ApplicationServices" />
     <Reference Include="System.Web.Cors, Version=5.2.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.AspNet.Cors.5.2.3\lib\net45\System.Web.Cors.dll</HintPath>
     </Reference>
@@ -258,6 +259,8 @@
     <Compile Include="AuthorizationServiceWrapper.cs" />
     <Compile Include="Controllers\ContentController.cs" />
     <Compile Include="Controllers\ContentControllerHelper.cs" />
+    <Compile Include="Controllers\IPublishedContentRequestFactory.cs" />
+    <Compile Include="Controllers\PublishedContentRequestFactory.cs" />
     <Compile Include="Controllers\ICrudController.cs" />
     <Compile Include="Controllers\IMetadataController.cs" />
     <Compile Include="Controllers\IRootController.cs" />
@@ -322,6 +325,7 @@
     <Compile Include="Security\UmbracoAuthType.cs" />
     <Compile Include="Security\UmbracoSectionAccessHandler.cs" />
     <Compile Include="Security\UmbracoSectionAccessRequirement.cs" />
+    <Compile Include="Serialization\HtmlStringConverter.cs" />
     <Compile Include="SpecificAssemblyResolver.cs" />
     <Compile Include="SpecificControllerTypeResolver.cs" />
     <Compile Include="UmbracoRestApiOptionsInstance.cs" />
