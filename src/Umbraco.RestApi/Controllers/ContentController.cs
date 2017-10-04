@@ -267,7 +267,7 @@ namespace Umbraco.RestApi.Controllers
                 }
 
                 //create an item before persisting of the correct content type
-                var created = Services.ContentService.CreateContent(content.Name, content.ParentId, content.ContentTypeAlias, Security.CurrentUser.Id);
+                var created = Services.ContentService.CreateContent(content.Name, content.ParentId, content.ContentTypeAlias, ClaimsPrincipal.GetUserId() ?? 0);
 
                 //Validate properties
                 var validator = new ContentPropertyValidator<IContent>(ModelState, Services.DataTypeService);
@@ -279,7 +279,7 @@ namespace Umbraco.RestApi.Controllers
                 }
 
                 Mapper.Map(content, created);
-                Services.ContentService.Save(created);
+                Services.ContentService.Save(created, ClaimsPrincipal.GetUserId() ?? 0);
 
                 return Request.CreateResponse(HttpStatusCode.Created, Mapper.Map<ContentRepresentation>(created));
             }
@@ -327,12 +327,12 @@ namespace Umbraco.RestApi.Controllers
                 if (!content.Published)
                 {
                     //if the flag is not published then we just save a draft
-                    Services.ContentService.Save(found);
+                    Services.ContentService.Save(found, ClaimsPrincipal.GetUserId() ?? 0);
                 }
                 else
                 {
                     //publish it if the flag is set, if it's already published that's ok too
-                    var result = Services.ContentService.SaveAndPublishWithStatus(found);
+                    var result = Services.ContentService.SaveAndPublishWithStatus(found, ClaimsPrincipal.GetUserId() ?? 0);
                     if (!result.Success)
                     {
                         SetModelStateForPublishStatus(result.Result);

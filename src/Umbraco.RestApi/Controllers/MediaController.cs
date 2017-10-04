@@ -253,7 +253,7 @@ namespace Umbraco.RestApi.Controllers
                 }
 
                 //create an item before persisting of the correct content type
-                var created = Services.MediaService.CreateMedia(content.Name, content.ParentId, content.ContentTypeAlias, Security.CurrentUser.Id);
+                var created = Services.MediaService.CreateMedia(content.Name, content.ParentId, content.ContentTypeAlias, ClaimsPrincipal.GetUserId() ?? 0);
 
                 //Validate properties
                 var validator = new ContentPropertyValidator<IMedia>(ModelState, Services.DataTypeService);
@@ -265,7 +265,7 @@ namespace Umbraco.RestApi.Controllers
                 }
 
                 Mapper.Map(content, created);
-                Services.MediaService.Save(created);
+                Services.MediaService.Save(created, ClaimsPrincipal.GetUserId() ?? 0);
 
                 return Request.CreateResponse(HttpStatusCode.Created, Mapper.Map<MediaRepresentation>(created));
             }
@@ -292,7 +292,7 @@ namespace Umbraco.RestApi.Controllers
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
                 Mapper.Map(content, found);
-                Services.MediaService.Save(found, Security.GetUserId());
+                Services.MediaService.Save(found, ClaimsPrincipal.GetUserId() ?? 0);
 
                 var rep = Mapper.Map<MediaRepresentation>(found);
                 return Request.CreateResponse(HttpStatusCode.OK, rep);
@@ -358,7 +358,7 @@ namespace Umbraco.RestApi.Controllers
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             media.SetValue(property, httpFile);
-            Services.MediaService.Save(media);
+            Services.MediaService.Save(media, ClaimsPrincipal.GetUserId() ?? 0);
 
             return Request.CreateResponse(HttpStatusCode.OK, Mapper.Map<MediaRepresentation>(media));
         }
@@ -413,7 +413,7 @@ namespace Umbraco.RestApi.Controllers
 
             var media = Services.MediaService.CreateMedia(name, id, mediaType);
             media.SetValue(property, httpFile);
-            Services.MediaService.Save(media);
+            Services.MediaService.Save(media, ClaimsPrincipal.GetUserId() ?? 0);
             return Request.CreateResponse(HttpStatusCode.Created, Mapper.Map<MediaRepresentation>(media));
         }
 
