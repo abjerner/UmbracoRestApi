@@ -17,13 +17,10 @@ namespace Umbraco.RestApi.Controllers
             {
                 SerializerSettings =
                 {
-                    ContractResolver = new CamelCasePropertyNamesContractResolver(),
-                    Converters = new List<JsonConverter>(new[]
-                    {
-                        new HtmlStringConverter()
-                    })
+                    ContractResolver = new CamelCasePropertyNamesContractResolver()                    
                 }
             };
+            jsonFormatter.SerializerSettings.Converters.Add(new HtmlStringConverter());
             controllerSettings.Formatters.Insert(0, jsonFormatter);
 
             //controllerSettings.Services.Replace(typeof (IHttpActionSelector), new CustomActionSelector());
