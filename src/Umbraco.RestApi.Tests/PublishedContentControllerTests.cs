@@ -43,7 +43,7 @@ namespace Umbraco.RestApi.Tests
                     mockTypedContent.Setup(x => x.TypedContent(It.IsAny<int>())).Returns(() => ModelMocks.SimpleMockedPublishedContent(123, 456, 789));
                 });
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
+            using (var server = TestServer.Create(builder => startup.UseDefaultTestSetup(builder)))
             {
                 var request = new HttpRequestMessage()
                 {
@@ -84,7 +84,7 @@ namespace Umbraco.RestApi.Tests
 
                 });
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
+            using (var server = TestServer.Create(builder => startup.UseDefaultTestSetup(builder)))
             {
                 var request = new HttpRequestMessage()
                 {
@@ -116,7 +116,7 @@ namespace Umbraco.RestApi.Tests
                     mockTypedContent.Setup(x => x.TypedContent(It.IsAny<int>())).Returns(() => ModelMocks.SimpleMockedPublishedContent(123, 456, 789));
                 });
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
+            using (var server = TestServer.Create(builder => startup.UseDefaultTestSetup(builder)))
             {
                 var request = new HttpRequestMessage()
                 {
@@ -169,7 +169,7 @@ namespace Umbraco.RestApi.Tests
                     });
                 });
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
+            using (var server = TestServer.Create(builder => startup.UseDefaultTestSetup(builder)))
             {
                 var request = new HttpRequestMessage()
                 {
@@ -209,7 +209,7 @@ namespace Umbraco.RestApi.Tests
                     });
                 });
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
+            using (var server = TestServer.Create(builder => startup.UseDefaultTestSetup(builder)))
             {
                 var request = new HttpRequestMessage()
                 {

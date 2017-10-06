@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Web.Http.Controllers;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Umbraco.RestApi.Serialization;
 using WebApi.Hal;
 
 namespace Umbraco.RestApi.Controllers
@@ -14,9 +17,10 @@ namespace Umbraco.RestApi.Controllers
             {
                 SerializerSettings =
                 {
-                    ContractResolver = new CamelCasePropertyNamesContractResolver()
+                    ContractResolver = new CamelCasePropertyNamesContractResolver()                    
                 }
             };
+            jsonFormatter.SerializerSettings.Converters.Add(new HtmlStringConverter());
             controllerSettings.Formatters.Insert(0, jsonFormatter);
 
             //controllerSettings.Services.Replace(typeof (IHttpActionSelector), new CustomActionSelector());

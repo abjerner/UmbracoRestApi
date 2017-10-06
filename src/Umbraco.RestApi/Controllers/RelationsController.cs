@@ -4,18 +4,22 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
+using Microsoft.Owin.Security.Authorization.WebApi;
 using Umbraco.Core.Models;
 using Umbraco.RestApi.Models;
 using Umbraco.RestApi.Routing;
+using Umbraco.RestApi.Security;
 using Umbraco.Web;
 using Umbraco.Web.WebApi;
 using WebApi.Hal;
+using Task = System.Threading.Tasks.Task;
 
 namespace Umbraco.RestApi.Controllers
 {
-    //TODO: How to authorize this? https://github.com/umbraco/UmbracoRestApi/issues/24
-    [UmbracoAuthorize]
+    
+    [ResourceAuthorize(Policy = AuthorizationPolicies.DefaultRestApi)]
     [UmbracoRoutePrefix("rest/v1/relations")]
     public class RelationsController : UmbracoHalController, ICrudController<RelationRepresentation>, IRootController
     {
@@ -43,63 +47,63 @@ namespace Umbraco.RestApi.Controllers
         /// <returns></returns>
         [HttpGet]
         [CustomRoute("")]
-        public HttpResponseMessage Get()
+        public Task<HttpResponseMessage> Get()
         {   
             var relationTypes = Services.RelationService.GetAllRelationTypes();
             var result = Mapper.Map<IEnumerable<RelationTypeRepresentation>>(relationTypes).ToList();
             var representation = new RelationTypeListRepresentation(result);
 
-            return Request.CreateResponse(HttpStatusCode.OK, representation);
+            return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, representation));
         }
 
         [HttpGet]
         [CustomRoute("relationtype/{alias}")]
-        public HttpResponseMessage GetRelationType(string alias)
+        public Task<HttpResponseMessage> GetRelationType(string alias)
         {
             var relType = Services.RelationService.GetRelationTypeByAlias(alias);
 
             if (relType == null)
-                return Request.CreateResponse(HttpStatusCode.NotFound);
+                return Task.FromResult(Request.CreateResponse(HttpStatusCode.NotFound));
 
             var mapped = Mapper.Map<RelationTypeRepresentation>(relType);
             
-            return Request.CreateResponse(HttpStatusCode.OK, mapped);
+            return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, mapped));
         }
 
         [HttpGet]
         [CustomRoute("children/{id}")]
-        public HttpResponseMessage GetByParent(int id, string relationType = null)
+        public Task<HttpResponseMessage> GetByParent(int id, string relationType = null)
         {
             var parent = Services.EntityService.Get(id);            
 
             if (parent == null)
-                return Request.CreateResponse(HttpStatusCode.NotFound);
+                return Task.FromResult(Request.CreateResponse(HttpStatusCode.NotFound));
                 
             var relations = (string.IsNullOrEmpty(relationType)) ? Services.RelationService.GetByParent(parent) : Services.RelationService.GetByParent(parent, relationType);
             var mapped = relations.Select(CreateRepresentation).ToList();
 
             var relationsRep = new RelationListRepresentation( mapped );
-            return Request.CreateResponse(HttpStatusCode.OK, relationsRep);
+            return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, relationsRep));
         }
 
         [HttpGet]
         [CustomRoute("parents/{id}")]
-        public HttpResponseMessage GetByChild(int id, string relationType = null)
+        public Task<HttpResponseMessage> GetByChild(int id, string relationType = null)
         {
             var child = Services.EntityService.Get(id);
             if (child == null)
-                return Request.CreateResponse(HttpStatusCode.NotFound);
+                return Task.FromResult(Request.CreateResponse(HttpStatusCode.NotFound));
 
             var type = Services.RelationService.GetRelationTypeByAlias(relationType);
             if (type == null)
-                return Request.CreateResponse(HttpStatusCode.NotFound);
+                return Task.FromResult(Request.CreateResponse(HttpStatusCode.NotFound));
 
 
             var relations = (string.IsNullOrEmpty(relationType)) ? Services.RelationService.GetByChild(child) : Services.RelationService.GetByChild(child, relationType);
             var mapped = relations.Select(CreateRepresentation).ToList();
             var relationsRep = new RelationListRepresentation(mapped);
 
-            return Request.CreateResponse(HttpStatusCode.OK, relationsRep);
+            return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, relationsRep));
         }
         
 
@@ -108,13 +112,13 @@ namespace Umbraco.RestApi.Controllers
         //RELATIONS CRUD
         [HttpGet]
         [CustomRoute("{id}")]
-        public HttpResponseMessage Get(int id)
+        public Task<HttpResponseMessage> Get(int id)
         {
             var result = Services.RelationService.GetById(id);
 
-            return result == null
+            return Task.FromResult(result == null
                 ? Request.CreateResponse(HttpStatusCode.NotFound)
-                : Request.CreateResponse(HttpStatusCode.OK, CreateRepresentation(result));
+                : Request.CreateResponse(HttpStatusCode.OK, CreateRepresentation(result)));
         }
 
         /// <summary>
@@ -124,7 +128,7 @@ namespace Umbraco.RestApi.Controllers
         /// <returns></returns>
         [HttpPost]
         [CustomRoute("")]
-        public HttpResponseMessage Post(RelationRepresentation relation)
+        public Task<HttpResponseMessage> Post(RelationRepresentation relation)
         {
             if (relation == null) throw new ArgumentNullException(nameof(relation));
 
@@ -147,23 +151,23 @@ namespace Umbraco.RestApi.Controllers
                 
                 Services.RelationService.Save(created);
                 
-                return Request.CreateResponse(HttpStatusCode.Created, CreateRepresentation(created));
+                return Task.FromResult(Request.CreateResponse(HttpStatusCode.Created, CreateRepresentation(created)));
             }
             catch (ModelValidationException exception)
             {
-                return Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors);
+                return Task.FromResult(Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors));
             }
         }
 
         [HttpPut]
         [CustomRoute("{id}")]
-        public HttpResponseMessage Put(int id, RelationRepresentation relation)
+        public Task<HttpResponseMessage> Put(int id, RelationRepresentation relation)
         {
             try
             {
                 var found = Services.RelationService.GetById(id);
                 if (found == null)
-                    return Request.CreateResponse(HttpStatusCode.NotFound);
+                    return Task.FromResult(Request.CreateResponse(HttpStatusCode.NotFound));
 
                 Mapper.Map(relation, found);
 
@@ -176,24 +180,24 @@ namespace Umbraco.RestApi.Controllers
 
                 Services.RelationService.Save(found);
 
-                return Request.CreateResponse(HttpStatusCode.OK, CreateRepresentation(found));
+                return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, CreateRepresentation(found)));
             }
             catch (ModelValidationException exception)
             {
-                return Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors);
+                return Task.FromResult(Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors));
             }
         }
 
         [HttpDelete]
         [CustomRoute("{id}")]
-        public virtual HttpResponseMessage Delete(int id)
+        public virtual Task<HttpResponseMessage> Delete(int id)
         {
             var found = Services.RelationService.GetById(id);
             if (found == null)
-                return Request.CreateResponse(HttpStatusCode.NotFound);
+                return Task.FromResult(Request.CreateResponse(HttpStatusCode.NotFound));
 
             Services.RelationService.Delete(found);
-            return Request.CreateResponse(HttpStatusCode.OK);
+            return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK));
         }
         
 

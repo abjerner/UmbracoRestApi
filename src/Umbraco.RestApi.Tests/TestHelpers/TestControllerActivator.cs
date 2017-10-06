@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Web.Http;
 using Examine.Providers;
 using LightInject;
+using Umbraco.Core;
 using Umbraco.Core.Configuration.UmbracoSettings;
 using Umbraco.Core.Services;
 using Umbraco.Web;
@@ -13,7 +14,8 @@ namespace Umbraco.RestApi.Tests.TestHelpers
     {
         private readonly Action<TestServices> _onServicesCreated;
 
-        public TestControllerActivator(Action<TestServices> onServicesCreated)
+        public TestControllerActivator(ApplicationContext appCtx, Action<TestServices> onServicesCreated) 
+            : base(appCtx)
         {
             _onServicesCreated = onServicesCreated;
         }

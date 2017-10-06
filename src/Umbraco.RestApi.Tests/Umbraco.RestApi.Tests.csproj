@@ -110,17 +110,23 @@
     <Reference Include="Microsoft.Owin, Version=3.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Owin.3.1.0\lib\net45\Microsoft.Owin.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Owin.Host.HttpListener">
-      <HintPath>..\packages\Microsoft.Owin.Host.HttpListener.3.0.1\lib\net45\Microsoft.Owin.Host.HttpListener.dll</HintPath>
+    <Reference Include="Microsoft.Owin.Host.HttpListener, Version=3.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Owin.Host.HttpListener.3.1.0\lib\net45\Microsoft.Owin.Host.HttpListener.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Owin.Host.SystemWeb, Version=3.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Owin.Host.SystemWeb.3.1.0\lib\net45\Microsoft.Owin.Host.SystemWeb.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Owin.Hosting">
-      <HintPath>..\packages\Microsoft.Owin.Hosting.3.0.1\lib\net45\Microsoft.Owin.Hosting.dll</HintPath>
+    <Reference Include="Microsoft.Owin.Hosting, Version=3.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Owin.Hosting.3.1.0\lib\net45\Microsoft.Owin.Hosting.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Owin.Security, Version=3.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Owin.Security.3.1.0\lib\net45\Microsoft.Owin.Security.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Owin.Security.Authorization, Version=1.0.1.2, Culture=neutral, PublicKeyToken=ba8e29017989cc66, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Owin.Security.Authorization.1.0.1.2\lib\net452\Microsoft.Owin.Security.Authorization.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Owin.Security.Authorization.WebApi, Version=1.0.1.2, Culture=neutral, PublicKeyToken=ba8e29017989cc66, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Owin.Security.Authorization.WebApi.1.0.1.2\lib\net452\Microsoft.Owin.Security.Authorization.WebApi.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Owin.Security.Cookies, Version=3.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Owin.Security.Cookies.3.1.0\lib\net45\Microsoft.Owin.Security.Cookies.dll</HintPath>
@@ -128,8 +134,8 @@
     <Reference Include="Microsoft.Owin.Security.OAuth, Version=3.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Owin.Security.OAuth.3.1.0\lib\net45\Microsoft.Owin.Security.OAuth.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Owin.Testing">
-      <HintPath>..\packages\Microsoft.Owin.Testing.3.0.1\lib\net45\Microsoft.Owin.Testing.dll</HintPath>
+    <Reference Include="Microsoft.Owin.Testing, Version=3.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Owin.Testing.3.1.0\lib\net45\Microsoft.Owin.Testing.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Web.Helpers, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.AspNet.WebHelpers.3.2.3\lib\net45\Microsoft.Web.Helpers.dll</HintPath>
@@ -289,14 +295,16 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AuthorizationServerTests.cs" />
     <Compile Include="AutoMapperTests.cs" />
     <Compile Include="CamelCaseTests.cs" />
     <Compile Include="ContentControllerTests.cs" />
     <Compile Include="ControllerTests.cs" />
-    <Compile Include="CorsTest.cs" />
+    <Compile Include="CorsTests.cs" />
     <Compile Include="MediaControllerTests.cs" />
     <Compile Include="MembersControllerTests.cs" />
     <Compile Include="RelationsControllerTests.cs" />
+    <Compile Include="TestHelpers\AuthenticateEverythingAuthenticationOptions.cs" />
     <Compile Include="TestHelpers\AuthenticateEverythingExtensions.cs" />
     <Compile Include="TestHelpers\AuthenticateEverythingMiddleware.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -308,6 +316,7 @@
     <Compile Include="TestHelpers\RelationServiceMocks.cs" />
     <Compile Include="TestHelpers\ServiceMocks.cs" />
     <Compile Include="TestHelpers\TestControllerActivator.cs" />
+    <Compile Include="TestHelpers\TestServices.cs" />
     <Compile Include="TestHelpers\TestStartup.cs" />
     <Compile Include="TestHelpers\ProviderUtilities.cs" />
     <Compile Include="PublishedContentControllerTests.cs" />

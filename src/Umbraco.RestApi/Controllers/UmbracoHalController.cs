@@ -2,15 +2,20 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
+using System.Net.Http;
+using System.Security.Claims;
 using System.Text.RegularExpressions;
 using System.Web.Http;
+using System.Web.Http.Controllers;
 using System.Web.Http.ModelBinding;
+using Microsoft.Owin.Security.Authorization;
 using Umbraco.Core.Models;
 using Umbraco.Core.Services;
 using Umbraco.RestApi.Models;
 using Umbraco.Web;
 using Umbraco.Web.WebApi;
 using WebApi.Hal;
+using Microsoft.AspNet.Identity.Owin;
 
 namespace Umbraco.RestApi.Controllers
 {
@@ -19,9 +24,11 @@ namespace Umbraco.RestApi.Controllers
     [HalFormatterConfiguration]
     public abstract class UmbracoHalController : UmbracoApiControllerBase
     {
+        private IAuthorizationService _authorizationService;
 
         protected UmbracoHalController()
         {
+            
         }
 
         protected UmbracoHalController(
@@ -31,6 +38,54 @@ namespace Umbraco.RestApi.Controllers
         {
         }
 
+        /// <summary>
+        /// Expose the <see cref="IAuthorizationService"/> from the OwinContext in order to authorize 'Documents'
+        /// </summary>
+        /// <remarks>
+        /// This is required for any authorization that requires a resource such as a Context (i.e. Content item, etc...)
+        /// Authorization via Attributes only provides so much information, if more granular authorization is required then it needs to be done
+        /// in inline code using the <see cref="IAuthorizationService"/>
+        /// </remarks>
+        protected IAuthorizationService AuthorizationService
+        {
+            get
+            {
+                if (_authorizationService == null)
+                {
+                    var authService = Request.GetOwinContext().Get<AuthorizationServiceWrapper>();
+                    if (authService == null)
+                    {
+                        throw new InvalidOperationException("No " + typeof(IAuthorizationService) + " was found in the OwinContext, ensure ConfigureUmbracoRestApiAuthorizationPolicies has been executed");
+                    }
+                    else
+                        _authorizationService = authService.AuthorizationService;
+                }
+                return _authorizationService;
+            }   
+        }
+
+        /// <summary>
+        /// Exposes the <see cref="ClaimsPrincipal"/> for the request
+        /// </summary>
+        /// <remarks>
+        /// This is the current user assigned to the request
+        /// </remarks>
+        /// <exception cref="InvalidOperationException">
+        /// An exception is thrown if it is not an instance of <see cref="ClaimsPrincipal"/>
+        /// </exception>
+        protected ClaimsPrincipal ClaimsPrincipal
+        {
+            get
+            {
+                if (!(User is ClaimsPrincipal claimsPrincipal))
+                    throw new InvalidOperationException("The current principal must be of type " + typeof(ClaimsPrincipal));
+                return claimsPrincipal;
+            }
+        }
+
+        /// <summary>
+        /// Returns the current API version from the request
+        /// </summary>
         protected int CurrentVersionRequest => int.Parse(Regex.Match(Request.RequestUri.AbsolutePath, "/v(\\d+)/", RegexOptions.Compiled).Groups[1].Value);
         
         /// <summary>

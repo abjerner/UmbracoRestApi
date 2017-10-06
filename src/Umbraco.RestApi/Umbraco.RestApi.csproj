@@ -109,8 +109,17 @@
     <Reference Include="Microsoft.Owin.Security, Version=3.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Owin.Security.3.1.0\lib\net45\Microsoft.Owin.Security.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Owin.Security.Authorization, Version=1.0.1.2, Culture=neutral, PublicKeyToken=ba8e29017989cc66, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Owin.Security.Authorization.1.0.1.2\lib\net452\Microsoft.Owin.Security.Authorization.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Owin.Security.Authorization.WebApi, Version=1.0.1.2, Culture=neutral, PublicKeyToken=ba8e29017989cc66, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Owin.Security.Authorization.WebApi.1.0.1.2\lib\net452\Microsoft.Owin.Security.Authorization.WebApi.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Owin.Security.Cookies, Version=3.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Owin.Security.Cookies.3.1.0\lib\net45\Microsoft.Owin.Security.Cookies.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Owin.Security.Jwt, Version=3.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Owin.Security.Jwt.3.1.0\lib\net45\Microsoft.Owin.Security.Jwt.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Owin.Security.OAuth, Version=3.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Owin.Security.OAuth.3.1.0\lib\net45\Microsoft.Owin.Security.OAuth.dll</HintPath>
@@ -150,6 +159,10 @@
     <Reference Include="System.Data.SqlServerCe.Entity, Version=4.0.0.1, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
       <HintPath>..\packages\UmbracoCms.Core.7.7.1\lib\net45\System.Data.SqlServerCe.Entity.dll</HintPath>
     </Reference>
+    <Reference Include="System.IdentityModel" />
+    <Reference Include="System.IdentityModel.Tokens.Jwt, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.IdentityModel.Tokens.Jwt.4.0.0\lib\net45\System.IdentityModel.Tokens.Jwt.dll</HintPath>
+    </Reference>
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Net.Http.Extensions, Version=2.2.29.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Net.Http.2.2.29\lib\net45\System.Net.Http.Extensions.dll</HintPath>
@@ -166,6 +179,7 @@
       <HintPath>..\packages\System.Threading.Tasks.Dataflow.4.7.0\lib\portable-net45+win8+wpa81\System.Threading.Tasks.Dataflow.dll</HintPath>
     </Reference>
     <Reference Include="System.Web" />
+    <Reference Include="System.Web.ApplicationServices" />
     <Reference Include="System.Web.Cors, Version=5.2.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.AspNet.Cors.5.2.3\lib\net45\System.Web.Cors.dll</HintPath>
     </Reference>
@@ -177,6 +191,9 @@
     </Reference>
     <Reference Include="System.Web.Http.Cors, Version=5.2.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.AspNet.WebApi.Cors.5.2.3\lib\net45\System.Web.Http.Cors.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.Http.Owin, Version=5.2.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.WebApi.Owin.5.2.3\lib\net45\System.Web.Http.Owin.dll</HintPath>
     </Reference>
     <Reference Include="System.Web.Http.WebHost, Version=5.2.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.AspNet.WebApi.WebHost.5.2.3\lib\net45\System.Web.Http.WebHost.dll</HintPath>
@@ -239,8 +256,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AuthorizationServiceWrapper.cs" />
     <Compile Include="Controllers\ContentController.cs" />
     <Compile Include="Controllers\ContentControllerHelper.cs" />
+    <Compile Include="Controllers\IPublishedContentRequestFactory.cs" />
+    <Compile Include="Controllers\PublishedContentRequestFactory.cs" />
     <Compile Include="Controllers\ICrudController.cs" />
     <Compile Include="Controllers\IMetadataController.cs" />
     <Compile Include="Controllers\IRootController.cs" />
@@ -249,6 +269,7 @@
     <Compile Include="Controllers\MediaController.cs" />
     <Compile Include="Controllers\MembersController.cs" />
     <Compile Include="Controllers\PagedRequestModelBinder.cs" />
+    <Compile Include="JwtFormatWriter.cs" />
     <Compile Include="LinkTemplateExtensions.cs" />
     <Compile Include="LinkTemplates.cs" />
     <Compile Include="Models\ContentPagedListRepresentation.cs" />
@@ -291,6 +312,20 @@
     <Compile Include="Routing\CustomRouteAttribute.cs" />
     <Compile Include="Models\PagedQuery.cs" />
     <Compile Include="Routing\WriteableRoute.cs" />
+    <Compile Include="Security\UmbracoAuthorizationServerProvider.cs" />
+    <Compile Include="Security\UmbracoAuthorizationServerProviderOptions.cs" />
+    <Compile Include="Security\AuthorizationPolicies.cs" />
+    <Compile Include="Security\AuthorizationExtensions.cs" />
+    <Compile Include="Security\ContentPermissionHandler.cs" />
+    <Compile Include="Security\ContentPermissionRequirement.cs" />
+    <Compile Include="Security\ContentResourceAccess.cs" />
+    <Compile Include="Security\FilterAllowedOutgoingContent.cs" />
+    <Compile Include="Security\MediaPermissionHandler.cs" />
+    <Compile Include="Security\MediaPermissionRequirement.cs" />
+    <Compile Include="Security\UmbracoAuthType.cs" />
+    <Compile Include="Security\UmbracoSectionAccessHandler.cs" />
+    <Compile Include="Security\UmbracoSectionAccessRequirement.cs" />
+    <Compile Include="Serialization\HtmlStringConverter.cs" />
     <Compile Include="SpecificAssemblyResolver.cs" />
     <Compile Include="SpecificControllerTypeResolver.cs" />
     <Compile Include="UmbracoRestApiOptionsInstance.cs" />

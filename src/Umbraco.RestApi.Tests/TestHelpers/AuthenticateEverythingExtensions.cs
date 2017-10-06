@@ -6,11 +6,13 @@ namespace Umbraco.RestApi.Tests.TestHelpers
 {
     public static class AuthenticateEverythingExtensions
     {
-        public static IAppBuilder AuthenticateEverything(this IAppBuilder app)
+        public static IAppBuilder AuthenticateEverything(this IAppBuilder app, AuthenticateEverythingAuthenticationOptions options = null)
         {
             if (app == null)
                 throw new ArgumentNullException("app");
-            app.Use(typeof(AuthenticateEverythingMiddleware), (object)app, (object)new AuthenticateEverythingMiddleware.AuthenticateEverythingAuthenticationOptions());
+            app.Use(typeof(AuthenticateEverythingMiddleware), 
+                app,
+                options ?? new AuthenticateEverythingAuthenticationOptions());
             app.UseStageMarker(PipelineStage.Authenticate);
             return app;
         }

@@ -28,7 +28,7 @@ namespace Umbraco.RestApi.Tests.TestHelpers
                            && content.ContentTypeId == 10
                            && content.Level == 1
                            && content.Name == "Home"
-                           && content.Path == "-1,123"
+                           && content.Path == $"-1,{parentId},{id}"
                            && content.ParentId == parentId
                            && content.SortOrder == 1
                            && content.Template == Mock.Of<ITemplate>(te => te.Id == 9 && te.Alias == "home")

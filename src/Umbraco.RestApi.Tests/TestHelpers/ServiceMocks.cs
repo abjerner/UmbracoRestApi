@@ -1,6 +1,7 @@
 using Moq;
 using Umbraco.Core;
 using Umbraco.Core.Logging;
+using Umbraco.Core.Models.Membership;
 using Umbraco.Core.Persistence;
 using Umbraco.Core.Persistence.SqlSyntax;
 using Umbraco.Core.Services;
@@ -32,6 +33,9 @@ namespace Umbraco.RestApi.Tests.TestHelpers
             var mockedDataTypeService = Mock.Of<IDataTypeService>();
             var mockedRelationService = Mock.Of<IRelationService>();
             var mockedMigrationService = new Mock<IMigrationEntryService>();
+            var mockedUserService = new Mock<IUserService>();            
+            var mockedEntityService = new Mock<IEntityService>();
+
             var serviceContext = new ServiceContext(
                 dataTypeService: mockedDataTypeService,
                 contentTypeService: mockedContentTypeService,
@@ -41,7 +45,9 @@ namespace Umbraco.RestApi.Tests.TestHelpers
                 localizedTextService: mockedTextService,
                 memberTypeService: mockedMemberTypeService,
                 relationService: mockedRelationService,
-                migrationEntryService: mockedMigrationService.Object);
+                migrationEntryService: mockedMigrationService.Object,
+                userService: mockedUserService.Object,
+                entityService: mockedEntityService.Object);
 
             return serviceContext;
         }

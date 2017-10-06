@@ -6,10 +6,13 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Web.Cors;
+using Microsoft.Owin.Security.Authorization;
+using Microsoft.Owin.Security.Authorization.Infrastructure;
 using Microsoft.Owin.Testing;
 using Moq;
 using Newtonsoft.Json;
 using NUnit.Framework;
+using Owin;
 using Umbraco.Core.Configuration;
 using Umbraco.Core.Models;
 using Umbraco.Core.PropertyEditors;
@@ -26,14 +29,14 @@ namespace Umbraco.RestApi.Tests
         public void FixtureSetUp()
         {
             ConfigurationManager.AppSettings.Set("umbracoPath", "~/umbraco");
-            ConfigurationManager.AppSettings.Set("umbracoConfigurationStatus", UmbracoVersion.Current.ToString(3));            
+            ConfigurationManager.AppSettings.Set("umbracoConfigurationStatus", UmbracoVersion.Current.ToString(3));
         }
 
         [TearDown]
         public void TearDown()
         {
             //Hack - because Reset is internal
-            typeof (PropertyEditorResolver).CallStaticMethod("Reset", true);
+            typeof(PropertyEditorResolver).CallStaticMethod("Reset", true);
             UmbracoRestApiOptionsInstance.Options = new UmbracoRestApiOptions();
         }
 
@@ -48,17 +51,21 @@ namespace Umbraco.RestApi.Tests
                     mockContentService.Setup(x => x.GetRootContent()).Returns(Enumerable.Empty<IContent>());
                 });
 
-            using (var server = TestServer.Create(builder =>
+            using (var server = TestServer.Create(app =>
             {
-                startup.Configuration(builder);
-
-                //default options
-                builder.ConfigureUmbracoRestApi(new UmbracoRestApiOptions());
+                var httpConfig = startup.UseTestWebApiConfiguration(app);
+                app.AuthenticateEverything();
+                app.UseUmbracoRestApi(startup.ApplicationContext, new UmbracoRestApiOptions
+                {
+                    //customize the authz policies, in this case we want to allow everything
+                    CustomAuthorizationPolicyCallback = (policyName, defaultPolicy) => (builder => builder.RequireAssertion(context => true))
+                });
+                app.UseWebApi(httpConfig);
             }))
             {
                 var request = new HttpRequestMessage()
                 {
-                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}", RouteConstants.ContentSegment)),
+                    RequestUri = new Uri($"http://testserver/umbraco/rest/v1/{RouteConstants.ContentSegment}"),
                     Method = HttpMethod.Get,
                 };
                 //add the origin so Cors kicks in!
@@ -68,7 +75,7 @@ namespace Umbraco.RestApi.Tests
                 var result = await server.HttpClient.SendAsync(request);
                 Console.WriteLine(result);
 
-                var json = await ((StreamContent) result.Content).ReadAsStringAsync();
+                var json = await ((StreamContent)result.Content).ReadAsStringAsync();
                 Console.Write(JsonConvert.SerializeObject(JsonConvert.DeserializeObject(json), Formatting.Indented));
 
                 Assert.AreEqual(HttpStatusCode.OK, result.StatusCode);
@@ -93,19 +100,22 @@ namespace Umbraco.RestApi.Tests
                     mockContentService.Setup(x => x.GetRootContent()).Returns(Enumerable.Empty<IContent>());
                 });
 
-            using (var server = TestServer.Create(builder =>
+            using (var server = TestServer.Create(app =>
             {
-                startup.Configuration(builder);
-
-                //default options
-                builder.ConfigureUmbracoRestApi(new UmbracoRestApiOptions
+                var httpConfig = startup.UseTestWebApiConfiguration(app);
+                app.AuthenticateEverything();
+                app.UseUmbracoRestApi(startup.ApplicationContext, new UmbracoRestApiOptions
                 {
+                    //customize the authz policies, in this case we want to allow everything
+                    CustomAuthorizationPolicyCallback = (policyName, defaultPolicy) => (builder => builder.RequireAssertion(context => true)),
+
                     CorsPolicy = new CorsPolicy()
                     {
                         AllowAnyOrigin = true,
                         SupportsCredentials = true
                     }
                 });
+                app.UseWebApi(httpConfig);
             }))
             {
                 var request = new HttpRequestMessage()
@@ -139,14 +149,24 @@ namespace Umbraco.RestApi.Tests
                 //This will be invoked before the controller is created so we can modify these mocked services
                 (testServices) =>
                 {
-                   TestHelpers.ContentServiceMocks.SetupMocksForPost(testServices.ServiceContext);
+                    ContentServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
+            using (var server = TestServer.Create(app =>
+            {
+                var httpConfig = startup.UseTestWebApiConfiguration(app);
+                app.AuthenticateEverything();
+                app.UseUmbracoRestApi(startup.ApplicationContext, new UmbracoRestApiOptions
+                {
+                    //customize the authz policies, in this case we want to allow everything
+                    CustomAuthorizationPolicyCallback = (policyName, defaultPolicy) => (builder => builder.RequireAssertion(context => true))
+                });
+                app.UseWebApi(httpConfig);
+            }))
             {
                 var request = new HttpRequestMessage()
                 {
-                    RequestUri = new Uri(string.Format("http://testserver/umbraco/rest/v1/{0}", RouteConstants.ContentSegment)),
+                    RequestUri = new Uri($"http://testserver/umbraco/rest/v1/{RouteConstants.ContentSegment}"),
                     Method = HttpMethod.Post,
                 };
 

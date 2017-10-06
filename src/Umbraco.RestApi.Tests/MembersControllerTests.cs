@@ -37,7 +37,7 @@ namespace Umbraco.RestApi.Tests
                     var mockMemberService = Mock.Get(testServices.ServiceContext.MemberService);
                 });
 
-            await Get_Root_With_OPTIONS(startup, RouteConstants.MembersSegment);
+            await Get_Root_With_OPTIONS(startup.UseDefaultTestSetup, RouteConstants.MembersSegment);
         }
 
         [Test]
@@ -56,7 +56,7 @@ namespace Umbraco.RestApi.Tests
                     });
                 });
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
+            using (var server = TestServer.Create(builder => startup.UseDefaultTestSetup(builder)))
             {
 
                 var request = new HttpRequestMessage()
@@ -113,7 +113,7 @@ namespace Umbraco.RestApi.Tests
                         });
                 });
 
-            await Search_200_Result(startup, RouteConstants.MembersSegment);
+            await Search_200_Result(startup.UseDefaultTestSetup, RouteConstants.MembersSegment);
         }
 
         [Test]
@@ -127,7 +127,7 @@ namespace Umbraco.RestApi.Tests
                      mockMemberService.Setup(x => x.GetById(It.IsAny<int>())).Returns(() => ModelMocks.SimpleMockedMember());
                  });
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
+            using (var server = TestServer.Create(builder => startup.UseDefaultTestSetup(builder)))
             {
                 var request = new HttpRequestMessage()
                 {
@@ -176,7 +176,7 @@ namespace Umbraco.RestApi.Tests
                          .Returns((string input, CultureInfo culture, IDictionary<string, string> tokens) => input);
                  });
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
+            using (var server = TestServer.Create(builder => startup.UseDefaultTestSetup(builder)))
             {
                 var request = new HttpRequestMessage()
                 {
@@ -211,7 +211,7 @@ namespace Umbraco.RestApi.Tests
                    MemberServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
-            await base.Post_Is_201_Response(startup, RouteConstants.MembersSegment, new StringContent(@"{
+            await base.Post_Is_201_Response(startup.UseDefaultTestSetup, RouteConstants.MembersSegment, new StringContent(@"{
   ""contentTypeAlias"": ""testType"",
   ""name"": ""John Johnson"",
   ""email"" : ""john@johnson.com"",
@@ -234,7 +234,7 @@ namespace Umbraco.RestApi.Tests
                     MemberServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
+            using (var server = TestServer.Create(builder => startup.UseDefaultTestSetup(builder)))
             {
                 var request = new HttpRequestMessage()
                 {
@@ -283,7 +283,7 @@ namespace Umbraco.RestApi.Tests
                     MemberServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
+            using (var server = TestServer.Create(builder => startup.UseDefaultTestSetup(builder)))
             {
                 var request = new HttpRequestMessage()
                 {
@@ -336,7 +336,7 @@ namespace Umbraco.RestApi.Tests
                     mockPropertyEditor.Setup(x => x.GetByAlias("testEditor")).Returns(new ModelMocks.SimplePropertyEditor());
                 });
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
+            using (var server = TestServer.Create(builder => startup.UseDefaultTestSetup(builder)))
             {
                 var request = new HttpRequestMessage()
                 {
@@ -384,7 +384,7 @@ namespace Umbraco.RestApi.Tests
                     MemberServiceMocks.SetupMocksForPost(testServices.ServiceContext);
                 });
 
-            using (var server = TestServer.Create(builder => startup.Configuration(builder)))
+            using (var server = TestServer.Create(builder => startup.UseDefaultTestSetup(builder)))
             {
                 var request = new HttpRequestMessage()
                 {

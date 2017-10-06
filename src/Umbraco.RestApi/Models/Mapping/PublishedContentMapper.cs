@@ -16,24 +16,37 @@ namespace Umbraco.RestApi.Models.Mapping
             config.CreateMap<IPublishedContent, PublishedContentRepresentation>()
                 .IgnoreHalProperties()
                 .ForMember(representation => representation.Key, expression => expression.MapFrom(x => (x is IPublishedContentWithKey) ? ((IPublishedContentWithKey) x).Key : Guid.Empty))
-                .ForMember(representation => representation.HasChildren, expression => expression.MapFrom(content => content.Children.Any()))                
-                .ForMember(representation => representation.Properties, expression => expression.ResolveUsing(content =>
+                .ForMember(representation => representation.HasChildren, expression => expression.MapFrom(content => content.Children.Any()))
+                .ForMember(representation => representation.Properties, expression => expression.ResolveUsing((ResolutionResult result) =>
                 {
-                    var result = content.Properties.ToDictionary(property => property.PropertyTypeAlias, property =>
+                    var content = (IPublishedContent) result.Context.SourceValue;
+
+                    //Check the context for our special value - this allows us to only render one level of recursive IPublishedContent properties,
+                    //since we don't want to cause it to render tons of nested picked properties, just the first level
+                    result.Context.Options.Items.TryGetValue("prop::level", out var level);
+
+                    var d = content.Properties.ToDictionary(property => property.PropertyTypeAlias, property =>
                     {
-                        //PP: Special rule - if a piece of content is pointing at a IPublished content - this is put here to make the current published API work - but it will
-                        //lead to possible circular references issues when serializing... 
-                        //TODO: How to deal with this? Assuming this is because of property value converters
                         if (property.Value is IPublishedContent)
-                            return Mapper.Map<PublishedContentRepresentation>(property.Value);
+                        {
+                            //if a level is set then exit, we don't want to process deeper than one level
+                            if (level != null) return null;
+                            //re-map but pass in a level so this recursion doesn't continue
+                            return Mapper.Map<PublishedContentRepresentation>(property.Value, options => options.Items["prop::level"] = 1);
+                        }
 
                         if (property.Value is IEnumerable<IPublishedContent>)
-                            return Mapper.Map<IEnumerable<PublishedContentRepresentation>>(property.Value);
-                        
+                        {
+                            //if a level is set then exit, we don't want to process deeper than one level
+                            if (level != null) return null;
+                            //re-map but pass in a level so this recursion doesn't continue
+                            return Mapper.Map<IEnumerable<PublishedContentRepresentation>>(property.Value, options => options.Items["prop::level"] = 1);
+                        }
+
                         return property.Value;
                     });
 
-                    return result;
+                    return d;
                 }));
         }
     }

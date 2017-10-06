@@ -4,20 +4,25 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
-using System.Web.Http.ModelBinding;
+using System.Web.Http.Filters;
+using System.Web.Security;
 using Examine;
 using Examine.Providers;
+using Microsoft.Owin.Security.Authorization.WebApi;
 using Umbraco.Core;
+using Umbraco.Core.Configuration;
+using Umbraco.Core.Configuration.UmbracoSettings;
 using Umbraco.Core.Models;
 using Umbraco.RestApi.Models;
 using Umbraco.RestApi.Routing;
+using Umbraco.RestApi.Security;
 using Umbraco.Web;
 using Umbraco.Web.WebApi;
 
 namespace Umbraco.RestApi.Controllers
 {
-    [UmbracoAuthorize]
-    [UmbracoRoutePrefix("rest/v1/content/published")]
+    [ResourceAuthorize(Policy = AuthorizationPolicies.PublishedContentRead)]
+    [UmbracoRoutePrefix("rest/v1/content/published")]    
     public class PublishedContentController : UmbracoHalController
     {
         public PublishedContentController()
@@ -30,24 +35,33 @@ namespace Umbraco.RestApi.Controllers
         /// <param name="umbracoContext"></param>
         /// <param name="umbracoHelper"></param>
         /// <param name="searchProvider"></param>
+        /// <param name="pcrFactory"></param>
         public PublishedContentController(
             UmbracoContext umbracoContext,
             UmbracoHelper umbracoHelper,
-            BaseSearchProvider searchProvider)
+            BaseSearchProvider searchProvider,
+            IPublishedContentRequestFactory pcrFactory)
             : base(umbracoContext, umbracoHelper)
         {
-            _searchProvider = searchProvider ?? throw new ArgumentNullException("searchProvider");
+            _pcrFactory = pcrFactory;
+            _searchProvider = searchProvider ?? throw new ArgumentNullException("searchProvider");            
         }
 
-        private BaseSearchProvider _searchProvider;
-        protected BaseSearchProvider SearchProvider => _searchProvider ?? (_searchProvider = ExamineManager.Instance.SearchProviderCollection["ExternalSearcher"]);
+        private IPublishedContentRequestFactory _pcrFactory;
+        protected IPublishedContentRequestFactory PcrFactory => _pcrFactory ?? (_pcrFactory = new PublishedContentRequestFactory(UmbracoContext, UmbracoConfig.For.UmbracoSettings().WebRouting, Roles.GetRolesForUser));
 
+        private BaseSearchProvider _searchProvider;
+        protected BaseSearchProvider SearchProvider => _searchProvider ?? (_searchProvider = ExamineManager.Instance.SearchProviderCollection["ExternalSearcher"]);        
 
         [HttpGet]
         [CustomRoute("")]
         public virtual HttpResponseMessage Get()
         {
-            var result = AutoMapper.Mapper.Map<IEnumerable<PublishedContentRepresentation>>(Umbraco.TypedContentAtRoot()).ToList();
+            var rootContent = Umbraco.TypedContentAtRoot().ToArray();
+            if (rootContent.Length > 0)
+                PcrFactory.Create(rootContent[0], Request.RequestUri);
+            
+            var result = AutoMapper.Mapper.Map<IEnumerable<PublishedContentRepresentation>>(rootContent).ToList();
             var representation = new PublishedContentListRepresenation(result);
             return Request.CreateResponse(HttpStatusCode.OK, representation);
         }
@@ -58,6 +72,10 @@ namespace Umbraco.RestApi.Controllers
         public HttpResponseMessage Get(int id)
         {
             var content = Umbraco.TypedContent(id);
+            if (content == null) return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            PcrFactory.Create(content, Request.RequestUri);
+
             var result = AutoMapper.Mapper.Map<PublishedContentRepresentation>(content);
 
             return result == null
@@ -69,11 +87,13 @@ namespace Umbraco.RestApi.Controllers
         [HttpGet]
         [CustomRoute("{id}/children")]
         public HttpResponseMessage GetChildren(int id,
-            [ModelBinder(typeof(PagedQueryModelBinder))]
+            [System.Web.Http.ModelBinding.ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query)
         {
             var content = Umbraco.TypedContent(id);
-            if (content == null) throw new HttpResponseException(HttpStatusCode.NotFound);
+            if (content == null) return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            PcrFactory.Create(content, Request.RequestUri);
 
             var resolved = (string.IsNullOrEmpty(query.Query)) ? content.Children().ToArray() : content.Children(query.Query.Split(',')).ToArray();
             var total = resolved.Length;
@@ -89,11 +109,13 @@ namespace Umbraco.RestApi.Controllers
         [HttpGet]
         [CustomRoute("{id}/descendants/")]
         public HttpResponseMessage GetDescendants(int id,
-            [ModelBinder(typeof(PagedQueryModelBinder))]
+            [System.Web.Http.ModelBinding.ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query)
         {
             var content = Umbraco.TypedContent(id);
-            if (content == null) throw new HttpResponseException(HttpStatusCode.NotFound);
+            if (content == null) return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            PcrFactory.Create(content, Request.RequestUri);
 
             var resolved = (string.IsNullOrEmpty(query.Query)) ? content.Descendants().ToArray() : content.Descendants(query.Query).ToArray();
 
@@ -107,11 +129,13 @@ namespace Umbraco.RestApi.Controllers
         [HttpGet]
         [CustomRoute("{id}/ancestors/{page?}/{pageSize?}")]
         public HttpResponseMessage GetAncestors(int id,
-            [ModelBinder(typeof(PagedQueryModelBinder))]
+            [System.Web.Http.ModelBinding.ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query)
         {
             var content = Umbraco.TypedContent(id);
-            if (content == null) throw new HttpResponseException(HttpStatusCode.NotFound);
+            if (content == null) return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            PcrFactory.Create(content, Request.RequestUri);
 
             var resolved = (string.IsNullOrEmpty(query.Query)) ? content.Ancestors().ToArray() : content.Ancestors(query.Query).ToArray();
 
@@ -127,7 +151,7 @@ namespace Umbraco.RestApi.Controllers
         [HttpGet]
         [CustomRoute("query/{id?}")]
         public HttpResponseMessage GetQuery(
-            [ModelBinder(typeof(PagedQueryModelBinder))]
+            [System.Web.Http.ModelBinding.ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query,
             int id = 0)
         {
@@ -157,13 +181,11 @@ namespace Umbraco.RestApi.Controllers
 
             return Request.CreateResponse(HttpStatusCode.OK, representation);
         }
-
-        //NOTE: We cannot accept POST here for now unless we modify the routing structure since there's only one POST per
-        // controller currently (with the way we've routed).
+        
         [HttpGet]
         [CustomRoute("search")]
         public HttpResponseMessage Search(
-            [ModelBinder(typeof(PagedQueryModelBinder))]
+            [System.Web.Http.ModelBinding.ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query)
         {
             if (query.Query.IsNullOrWhiteSpace()) throw new HttpResponseException(HttpStatusCode.NotFound);
@@ -185,6 +207,10 @@ namespace Umbraco.RestApi.Controllers
         public HttpResponseMessage GetByUrl(string url)
         {
             var content = UmbracoContext.ContentCache.GetByRoute(url);
+            if (content == null) return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            PcrFactory.Create(content, Request.RequestUri);
+
             var result = AutoMapper.Mapper.Map<PublishedContentRepresentation>(content);
 
             return result == null
@@ -197,6 +223,10 @@ namespace Umbraco.RestApi.Controllers
         public HttpResponseMessage GetByTag(string tag, string group = null, int page = 0, int size = 100)
         {
             var content = Umbraco.TagQuery.GetContentByTag(tag, group).ToArray();
+
+            if (content.Length > 0)
+                PcrFactory.Create(content[0], Request.RequestUri);
+
             var skip = (page * size);
             var total = content.Length;
             var pages = (total + size - 1) / size;

@@ -11,13 +11,17 @@ using Umbraco.Core;
 using System.Linq;
 using Examine;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Web.Http.ModelBinding;
 using Examine.Providers;
+using Microsoft.Owin.Security.Authorization.WebApi;
+using Umbraco.RestApi.Security;
 using Umbraco.Web.WebApi;
+using Task = System.Threading.Tasks.Task;
 
 namespace Umbraco.RestApi.Controllers
 {
-    [UmbracoAuthorize]
+    [ResourceAuthorize(Policy = AuthorizationPolicies.DefaultRestApi)]
     [UmbracoRoutePrefix("rest/v1/members")]
     public class MembersController : UmbracoHalController, ICrudController<MemberRepresentation>, ISearchController
     {
@@ -54,7 +58,7 @@ namespace Umbraco.RestApi.Controllers
 
         [HttpGet]
         [CustomRoute("search")]
-        public HttpResponseMessage Search(
+        public Task<HttpResponseMessage> Search(
             [ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query)
         {
@@ -85,19 +89,19 @@ namespace Umbraco.RestApi.Controllers
             //return as paged list of media items
             var representation = new MediaPagedListRepresentation(items, result.TotalItemCount, pages, query.Page - 1, query.PageSize, LinkTemplates.Media.Search, new { query = query.Query, pageSize = query.PageSize });
 
-            return Request.CreateResponse(HttpStatusCode.OK, representation);
+            return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, representation));
         }
 
         [HttpGet]
         [CustomRoute("{id}")]
-        public HttpResponseMessage Get(int id)
+        public Task<HttpResponseMessage> Get(int id)
         {
             var member = Services.MemberService.GetById(id); 
             var result = Mapper.Map<MemberRepresentation>(member);
 
-            return result == null
+            return Task.FromResult(result == null
                 ? Request.CreateResponse(HttpStatusCode.NotFound)
-                : Request.CreateResponse(HttpStatusCode.OK, result);
+                : Request.CreateResponse(HttpStatusCode.OK, result));
         }
 
 
@@ -106,9 +110,9 @@ namespace Umbraco.RestApi.Controllers
 
         [HttpPost]
         [CustomRoute("")]
-        public HttpResponseMessage Post(MemberRepresentation content)
+        public Task<HttpResponseMessage> Post(MemberRepresentation content)
         {
-            if (content == null) Request.CreateResponse(HttpStatusCode.NotFound);
+            if (content == null) return Task.FromResult(Request.CreateResponse(HttpStatusCode.NotFound));
 
             try
             {
@@ -140,22 +144,25 @@ namespace Umbraco.RestApi.Controllers
                 Mapper.Map(content, created);
                 Services.MemberService.Save(created);
 
-                return Request.CreateResponse(HttpStatusCode.Created, Mapper.Map<MemberRepresentation>(created));
+                return Task.FromResult(Request.CreateResponse(HttpStatusCode.Created, Mapper.Map<MemberRepresentation>(created)));
             }
             catch (ModelValidationException exception)
             {
-                return Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors);
+                return Task.FromResult(Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors));
             }
         }
 
         [HttpPut]
         [CustomRoute("{id}")]
-        public HttpResponseMessage Put(int id, MemberRepresentation content)
+        public Task<HttpResponseMessage> Put(int id, MemberRepresentation content)
         {
+            if (content == null) return Task.FromResult(Request.CreateResponse(HttpStatusCode.NotFound));
+
             try
             {
                 var found = Services.MemberService.GetById(id);
-                if (found == null) throw new HttpResponseException(HttpStatusCode.NotFound);
+                if (found == null)
+                    return Task.FromResult(Request.CreateResponse(HttpStatusCode.NotFound));
 
                 //Validate properties
                 var validator = new ContentPropertyValidator<IMember>(ModelState, Services.DataTypeService);
@@ -171,24 +178,24 @@ namespace Umbraco.RestApi.Controllers
                 Services.MemberService.Save(found);
 
                 var rep = Mapper.Map<MemberRepresentation>(found);
-                return Request.CreateResponse(HttpStatusCode.OK, rep);
+                return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, rep));
             }
             catch (ModelValidationException exception)
             {
-                return Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors);
+                return Task.FromResult(Request.CreateResponse(HttpStatusCode.BadRequest, exception.Errors));
             }
         }
 
         [HttpDelete]
         [CustomRoute("{id}")]
-        public virtual HttpResponseMessage Delete(int id)
+        public virtual Task<HttpResponseMessage> Delete(int id)
         {
             var found = Services.MemberService.GetById(id);
             if (found == null)
-                return Request.CreateResponse(HttpStatusCode.NotFound);
+                return Task.FromResult(Request.CreateResponse(HttpStatusCode.NotFound));
 
             Services.MemberService.Delete(found);
-            return Request.CreateResponse(HttpStatusCode.OK);
+            return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK));
         }
     
     }
