@@ -12,9 +12,11 @@ using Umbraco.Core.Models;
 using Umbraco.RestApi.Models;
 using Umbraco.RestApi.Routing;
 using Umbraco.Web;
+using Umbraco.Web.WebApi;
 
 namespace Umbraco.RestApi.Controllers
 {
+    [UmbracoAuthorize]
     [UmbracoRoutePrefix("rest/v1/content/published")]
     public class PublishedContentController : UmbracoHalController
     {
