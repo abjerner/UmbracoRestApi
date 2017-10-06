@@ -44,4 +44,42 @@ A great way to browse Umbraco's REST service is to use the great html/javascript
 * /umbraco/rest/v1/members
 * /umbraco/rest/v1/relations
 
-We will be enabling a single root endpoint that list these HAL links in the very near future!
+
+## Rest API V2 startup
+
+There will be a number of changes in the upcoming rest api project - the startup own class has been streamlined - it could look like the sample below:
+
+```
+using Microsoft.Owin;
+using Owin;
+using TestSite.App_Startup;
+using Umbraco.Web;
+using Umbraco.RestApi;
+using Umbraco.RestApi.Security;
+
+[assembly: OwinStartup("UmbracoRestApiStartup", typeof(UmbracoRestApiStartup))]
+
+namespace TestSite.App_Startup
+{    
+    public class UmbracoRestApiStartup : UmbracoDefaultOwinStartup
+    {
+        protected override void ConfigureMiddleware(IAppBuilder app)
+        {
+            base.ConfigureMiddleware(app);
+
+            app.UseUmbracoRestApi(ApplicationContext);
+            var authServerOptions = new UmbracoAuthorizationServerProviderOptions
+            {
+                //needed when not running on SSL and testing
+                AllowInsecureHttp = true                
+            };
+            app.UseUmbracoTokenAuthentication(authServerOptions);
+
+            //If you wish to allow the REST API endpoints to be authenticated with a user's back office cookie, enable this
+            // https://our.umbraco.org/Documentation/Implementation/Rest-Api/#security
+            //app.UseUmbracoCookieAuthenticationForRestApi(ApplicationContext);
+        }
+    }
+}
+```
+
