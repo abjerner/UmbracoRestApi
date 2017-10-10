@@ -17,6 +17,7 @@ using Umbraco.RestApi.Models;
 using Umbraco.RestApi.Routing;
 using Umbraco.RestApi.Security;
 using Umbraco.Web;
+using Umbraco.Web.WebApi;
 
 namespace Umbraco.RestApi.Controllers
 {
