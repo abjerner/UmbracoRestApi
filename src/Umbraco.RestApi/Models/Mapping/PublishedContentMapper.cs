@@ -15,6 +15,8 @@ namespace Umbraco.RestApi.Models.Mapping
 
             config.CreateMap<IPublishedContent, PublishedContentRepresentation>()
                 .IgnoreHalProperties()
+                .ForMember(representation => representation.CreateDate, expression => expression.MapFrom(x => x.CreateDate.ToUniversalTime())) 
+                .ForMember(representation => representation.CreateDate, expression => expression.MapFrom(x => x.UpdateDate.ToUniversalTime())) 
                 .ForMember(representation => representation.Key, expression => expression.MapFrom(x => (x is IPublishedContentWithKey) ? ((IPublishedContentWithKey) x).Key : Guid.Empty))
                 .ForMember(representation => representation.HasChildren, expression => expression.MapFrom(content => content.Children.Any()))
                 .ForMember(representation => representation.Properties, expression => expression.ResolveUsing((ResolutionResult result) =>

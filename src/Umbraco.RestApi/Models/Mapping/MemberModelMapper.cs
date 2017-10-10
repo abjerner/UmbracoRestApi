@@ -13,6 +13,8 @@ namespace Umbraco.RestApi.Models.Mapping
         {
             config.CreateMap<IMember, MemberRepresentation>()
                 .IgnoreHalProperties()
+                .ForMember(representation => representation.CreateDate, expression => expression.MapFrom(x => x.CreateDate.ToUniversalTime()))
+                .ForMember(representation => representation.CreateDate, expression => expression.MapFrom(x => x.UpdateDate.ToUniversalTime()))
                 .ForMember(representation => representation.HasChildren, expression => expression.UseValue(false))
                 .ForMember(representation => representation.Properties, expression => expression.ResolveUsing<ContentPropertiesResolver>());
             
