@@ -22,6 +22,8 @@ namespace Umbraco.RestApi.Models
 
             Links.Add(LinkTemplates.Media.PagedChildren);
             Links.Add(LinkTemplates.Media.PagedDescendants);
+
+            Links.Add(LinkTemplates.Media.Upload);
         }
     }
 }
