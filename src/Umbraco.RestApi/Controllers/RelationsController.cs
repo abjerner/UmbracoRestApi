@@ -15,6 +15,7 @@ using Umbraco.Web;
 using Umbraco.Web.WebApi;
 using WebApi.Hal;
 using Task = System.Threading.Tasks.Task;
+using System.Web;
 
 namespace Umbraco.RestApi.Controllers
 {
@@ -150,8 +151,11 @@ namespace Umbraco.RestApi.Controllers
                 }
                 
                 Services.RelationService.Save(created);
-                
-                return Task.FromResult(Request.CreateResponse(HttpStatusCode.Created, CreateRepresentation(created)));
+
+                var msg = Request.CreateResponse(HttpStatusCode.Created, CreateRepresentation(created));
+                msg.Headers.Add("location", VirtualPathUtility.ToAbsolute(LinkTemplates.Relations.Self.CreateLink(new { id = created.Id }).Href));
+
+                return Task.FromResult(msg);
             }
             catch (ModelValidationException exception)
             {

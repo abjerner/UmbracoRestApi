@@ -266,8 +266,11 @@ namespace Umbraco.RestApi.Controllers
 
                 Mapper.Map(content, created);
                 Services.MediaService.Save(created, ClaimsPrincipal.GetUserId() ?? 0);
+                
+                var msg = Request.CreateResponse(HttpStatusCode.Created, Mapper.Map<MediaRepresentation>(created));
+                msg.Headers.Add("location", VirtualPathUtility.ToAbsolute( LinkTemplates.Media.Self.CreateLink(new { id = created.Id }).Href ));
 
-                return Request.CreateResponse(HttpStatusCode.Created, Mapper.Map<MediaRepresentation>(created));
+                return msg;
             }
             catch (ModelValidationException exception)
             {

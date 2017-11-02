@@ -29,6 +29,7 @@ using Umbraco.RestApi.Security;
 using Umbraco.Web.WebApi;
 using WebApi.Hal;
 using Task = System.Threading.Tasks.Task;
+using System.Web;
 
 namespace Umbraco.RestApi.Controllers
 {
@@ -281,7 +282,11 @@ namespace Umbraco.RestApi.Controllers
                 Mapper.Map(content, created);
                 Services.ContentService.Save(created, ClaimsPrincipal.GetUserId() ?? 0);
 
-                return Request.CreateResponse(HttpStatusCode.Created, Mapper.Map<ContentRepresentation>(created));
+                var msg = Request.CreateResponse(HttpStatusCode.Created, Mapper.Map<ContentRepresentation>(created));
+                msg.Headers.Add("location", VirtualPathUtility.ToAbsolute(LinkTemplates.Content.Self.CreateLink(new { id = created.Id }).Href));
+
+                return msg;
+                
             }
             catch (ModelValidationException exception)
             {

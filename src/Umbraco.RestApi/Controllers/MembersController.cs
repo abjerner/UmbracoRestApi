@@ -18,6 +18,7 @@ using Microsoft.Owin.Security.Authorization.WebApi;
 using Umbraco.RestApi.Security;
 using Umbraco.Web.WebApi;
 using Task = System.Threading.Tasks.Task;
+using System.Web;
 
 namespace Umbraco.RestApi.Controllers
 {
@@ -144,7 +145,10 @@ namespace Umbraco.RestApi.Controllers
                 Mapper.Map(content, created);
                 Services.MemberService.Save(created);
 
-                return Task.FromResult(Request.CreateResponse(HttpStatusCode.Created, Mapper.Map<MemberRepresentation>(created)));
+                var msg = Request.CreateResponse(HttpStatusCode.Created, Mapper.Map<MemberRepresentation>(created));
+                msg.Headers.Add("location", VirtualPathUtility.ToAbsolute(LinkTemplates.Members.Self.CreateLink(new { id = created.Id }).Href));
+
+                return Task.FromResult(msg);
             }
             catch (ModelValidationException exception)
             {
