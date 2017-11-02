@@ -48,17 +48,21 @@ namespace Umbraco.RestApi.Controllers
         protected bool ValidateProperties(ContentRepresentationBase postedItem, TPersisted content)
         {
             var hasErrors = false;
-            foreach (var p in postedItem.Properties)
+
+            if (postedItem.Properties != null)
             {
-                if (!content.HasProperty(p.Key))
+                foreach (var p in postedItem.Properties)
                 {
-                    //TODO: Do we return errors here ? If someone deletes a property whilst their editing then should we just
-                    //save the property data that remains? Or inform them they need to reload... not sure. This problem exists currently too i think.
+                    if (!content.HasProperty(p.Key))
+                    {
+                        //TODO: Do we return errors here ? If someone deletes a property whilst their editing then should we just
+                        //save the property data that remains? Or inform them they need to reload... not sure. This problem exists currently too i think.
 
-                    var message = string.Format("property with alias: {0} was not found", p.Key);
-                    _modelState.AddModelError(string.Format("content.properties.{0}", p.Key), message);
+                        var message = string.Format("property with alias: {0} was not found", p.Key);
+                        _modelState.AddModelError(string.Format("content.properties.{0}", p.Key), message);
 
-                    hasErrors = true;
+                        hasErrors = true;
+                    }
                 }
             }
             return !hasErrors;
@@ -75,48 +79,51 @@ namespace Umbraco.RestApi.Controllers
         protected bool ValidatePropertyData(IDictionary<string, object> postedProperties, TPersisted content)
         {
             var hasError = false;
-            foreach (var p in postedProperties)
+            if (postedProperties != null)
             {
-
-                var propertyType = content.PropertyTypes.Single(x => x.Alias == p.Key);
-
-                var editor = PropertyEditorResolver.Current.GetByAlias(propertyType.PropertyEditorAlias);
-
-                if (editor == null)
+                foreach (var p in postedProperties)
                 {
-                    var message = string.Format("The property editor with alias: {0} was not found for property with id {1}", propertyType.PropertyEditorAlias, content.Properties[p.Key].Id);
-                    LogHelper.Warn<ContentPropertyValidator<TPersisted>>(message);                    
-                    continue;
-                }
 
-                //get the posted value for this property
-                var postedValue = p.Value;
+                    var propertyType = content.PropertyTypes.Single(x => x.Alias == p.Key);
 
-                //get the pre-values for this property
-                var preValues = _dataTypeService.GetPreValuesCollectionByDataTypeId(propertyType.DataTypeDefinitionId);
-                
-                foreach (var result in editor.ValueEditor.Validators.SelectMany(v => v.Validate(postedValue, preValues, editor)))
-                {
-                    _modelState.AddPropertyError(result, p.Key);
-                }
+                    var editor = PropertyEditorResolver.Current.GetByAlias(propertyType.PropertyEditorAlias);
 
-                //Now we need to validate the property based on the PropertyType validation (i.e. regex and required)
-                // NOTE: These will become legacy once we have pre-value overrides.
-                if (propertyType.Mandatory)
-                {
-                    foreach (var result in editor.ValueEditor.RequiredValidator.Validate(postedValue, "", preValues, editor))
+                    if (editor == null)
                     {
-                        hasError = true;
+                        var message = string.Format("The property editor with alias: {0} was not found for property with id {1}", propertyType.PropertyEditorAlias, content.Properties[p.Key].Id);
+                        LogHelper.Warn<ContentPropertyValidator<TPersisted>>(message);
+                        continue;
+                    }
+
+                    //get the posted value for this property
+                    var postedValue = p.Value;
+
+                    //get the pre-values for this property
+                    var preValues = _dataTypeService.GetPreValuesCollectionByDataTypeId(propertyType.DataTypeDefinitionId);
+
+                    foreach (var result in editor.ValueEditor.Validators.SelectMany(v => v.Validate(postedValue, preValues, editor)))
+                    {
                         _modelState.AddPropertyError(result, p.Key);
                     }
-                }
 
-                if (propertyType.ValidationRegExp.IsNullOrWhiteSpace() == false)
-                {
-                    foreach (var result in editor.ValueEditor.RegexValidator.Validate(postedValue, propertyType.ValidationRegExp, preValues, editor))
+                    //Now we need to validate the property based on the PropertyType validation (i.e. regex and required)
+                    // NOTE: These will become legacy once we have pre-value overrides.
+                    if (propertyType.Mandatory)
                     {
-                        hasError = true;
-                        _modelState.AddPropertyError(result, p.Key);
+                        foreach (var result in editor.ValueEditor.RequiredValidator.Validate(postedValue, "", preValues, editor))
+                        {
+                            hasError = true;
+                            _modelState.AddPropertyError(result, p.Key);
+                        }
+                    }
+
+                    if (propertyType.ValidationRegExp.IsNullOrWhiteSpace() == false)
+                    {
+                        foreach (var result in editor.ValueEditor.RegexValidator.Validate(postedValue, propertyType.ValidationRegExp, preValues, editor))
+                        {
+                            hasError = true;
+                            _modelState.AddPropertyError(result, p.Key);
+                        }
                     }
                 }
             }
