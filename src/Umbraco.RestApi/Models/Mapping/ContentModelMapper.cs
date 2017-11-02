@@ -53,13 +53,16 @@ namespace Umbraco.RestApi.Models.Mapping
                 .AfterMap((representation, content) =>
                 {
                     //TODO: Map template;
-                    
-                    foreach (var propertyRepresentation in representation.Properties)
+
+                    if (representation.Properties != null)
                     {
-                        var found = content.HasProperty(propertyRepresentation.Key) ? content.Properties[propertyRepresentation.Key] : null;
-                        if (found != null)
+                        foreach (var propertyRepresentation in representation.Properties)
                         {
-                            found.Value = propertyRepresentation.Value;
+                            var found = content.HasProperty(propertyRepresentation.Key) ? content.Properties[propertyRepresentation.Key] : null;
+                            if (found != null)
+                            {
+                                found.Value = propertyRepresentation.Value;
+                            }
                         }
                     }
                 });
