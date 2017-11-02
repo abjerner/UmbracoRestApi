@@ -88,7 +88,7 @@ namespace Umbraco.RestApi
             public static Link PagedAncestors => new Link("ancestors", BuildAncestorsUrl(BaseUrl));
             public static Link Search => new Link("search", BuildSearchUrl(BaseUrl));
 
-            public static Link Upload => new Link("upload", $"{BaseUrl}/{{id}}/upload{{?property}}");
+            public static Link Upload => new Link("upload", $"{BaseUrl}/{{id}}/upload{{?property,mediaType}}");
         }
     }
 }
