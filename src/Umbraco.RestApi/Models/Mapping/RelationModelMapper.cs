@@ -14,7 +14,7 @@ namespace Umbraco.RestApi.Models.Mapping
             config.CreateMap<IRelation, RelationRepresentation>()
                 .IgnoreHalProperties()
                 .ForMember(representation => representation.CreateDate, expression => expression.MapFrom(x => x.CreateDate.ToUniversalTime()))
-                .ForMember(representation => representation.CreateDate, expression => expression.MapFrom(x => x.UpdateDate.ToUniversalTime()))
+                .ForMember(representation => representation.UpdateDate, expression => expression.MapFrom(x => x.UpdateDate.ToUniversalTime()))
                 .ForMember(representation => representation.RelationTypeAlias, expression => expression.MapFrom(member => member.RelationType.Alias));
             
             config.CreateMap<IRelationType, RelationTypeRepresentation>()
