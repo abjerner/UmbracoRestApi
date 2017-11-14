@@ -66,7 +66,7 @@ $AssemblyInfoPath = Join-Path -Path $SolutionRoot -ChildPath "Umbraco.RestApi\Pr
 	-replace "(?<=AssemblyFileVersion\(`")[.\d]*(?=`"\))", $ReleaseVersionNumber |
 	sc -Path $AssemblyInfoPath -Encoding UTF8;
 (gc -Path $AssemblyInfoPath) `
-	-replace "(?<=AssemblyInformationalVersion\(`")[.\w-]*(?=`"\))", "$ReleaseVersionNumber$PreReleaseName" |
+	-replace "(?<=AssemblyInformationalVersion\(`")[.\w-]*(?=`"\))", "$ReleaseVersionNumber-$PreReleaseName" |
 	sc -Path $AssemblyInfoPath -Encoding UTF8;
 # Set the copyright
 $Copyright = "Copyright © Umbraco " + (Get-Date).year;
@@ -107,8 +107,8 @@ Copy-Item "$BuildFolder\Readme.txt" -Destination $ReleaseFolder
 Copy-Item "$BuildFolder\UmbracoCms.RestApi.nuspec" -Destination $ReleaseFolder
 $NuSpec = Join-Path -Path $ReleaseFolder -ChildPath "UmbracoCms.RestApi.nuspec";
 
-Write-Output "DEBUGGING: " $NuSpec -OutputDirectory $ReleaseFolder -Version $ReleaseVersionNumber$PreReleaseName
-& $NuGet pack $NuSpec -OutputDirectory $ReleaseFolder -Version $ReleaseVersionNumber$PreReleaseName
+Write-Output "DEBUGGING: " $NuSpec -OutputDirectory $ReleaseFolder -Version $ReleaseVersionNumber-$PreReleaseName
+& $NuGet pack $NuSpec -OutputDirectory $ReleaseFolder -Version $ReleaseVersionNumber-$PreReleaseName
 
 
 #TODO: Create an Umbraco package too!!!
