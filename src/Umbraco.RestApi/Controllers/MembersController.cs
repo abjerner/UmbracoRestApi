@@ -146,7 +146,7 @@ namespace Umbraco.RestApi.Controllers
                 Services.MemberService.Save(created);
 
                 var msg = Request.CreateResponse(HttpStatusCode.Created, Mapper.Map<MemberRepresentation>(created));
-                msg.Headers.Add("location", VirtualPathUtility.ToAbsolute(LinkTemplates.Members.Self.CreateLink(new { id = created.Id }).Href));
+                AddLocationResponseHeader(msg, LinkTemplates.Members.Self.CreateLink(new { id = created.Id }));
 
                 return Task.FromResult(msg);
             }

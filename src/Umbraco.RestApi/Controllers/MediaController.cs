@@ -268,7 +268,7 @@ namespace Umbraco.RestApi.Controllers
                 Services.MediaService.Save(created, ClaimsPrincipal.GetUserId() ?? 0);
                 
                 var msg = Request.CreateResponse(HttpStatusCode.Created, Mapper.Map<MediaRepresentation>(created));
-                msg.Headers.Add("location", VirtualPathUtility.ToAbsolute( LinkTemplates.Media.Self.CreateLink(new { id = created.Id }).Href ));
+                AddLocationResponseHeader(msg, LinkTemplates.Media.Self.CreateLink(new { id = created.Id }));                
 
                 return msg;
             }

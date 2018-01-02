@@ -16,6 +16,7 @@ using Umbraco.Web;
 using Umbraco.Web.WebApi;
 using WebApi.Hal;
 using Microsoft.AspNet.Identity.Owin;
+using WebApi.Hal.JsonConverters;
 
 namespace Umbraco.RestApi.Controllers
 {
@@ -149,5 +150,12 @@ namespace Umbraco.RestApi.Controllers
 
             return new ModelValidationException(errorModel);
         }
+
+        protected void AddLocationResponseHeader(HttpResponseMessage msg, Link link)
+        {
+            var converter = new LinksConverter();
+            msg.Headers.Add("location", converter.ResolveUri(link.Href));
+        }
+
     }
 }

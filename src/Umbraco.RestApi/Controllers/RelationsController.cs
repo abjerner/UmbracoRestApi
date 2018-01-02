@@ -153,7 +153,7 @@ namespace Umbraco.RestApi.Controllers
                 Services.RelationService.Save(created);
 
                 var msg = Request.CreateResponse(HttpStatusCode.Created, CreateRepresentation(created));
-                msg.Headers.Add("location", VirtualPathUtility.ToAbsolute(LinkTemplates.Relations.Self.CreateLink(new { id = created.Id }).Href));
+                AddLocationResponseHeader(msg, LinkTemplates.Relations.Self.CreateLink(new { id = created.Id }));
 
                 return Task.FromResult(msg);
             }

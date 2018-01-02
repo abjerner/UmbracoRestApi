@@ -283,8 +283,8 @@ namespace Umbraco.RestApi.Controllers
                 Services.ContentService.Save(created, ClaimsPrincipal.GetUserId() ?? 0);
 
                 var msg = Request.CreateResponse(HttpStatusCode.Created, Mapper.Map<ContentRepresentation>(created));
-                msg.Headers.Add("location", VirtualPathUtility.ToAbsolute(LinkTemplates.Content.Self.CreateLink(new { id = created.Id }).Href));
-
+                AddLocationResponseHeader(msg, LinkTemplates.Content.Self.CreateLink(new { id = created.Id }));
+                
                 return msg;
                 
             }
