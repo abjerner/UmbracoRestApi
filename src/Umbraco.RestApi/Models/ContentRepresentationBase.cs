@@ -12,8 +12,8 @@ namespace Umbraco.RestApi.Models
     /// </summary>
     public abstract class ContentRepresentationBase : EntityRepresentation
     {
-        public DateTimeOffset CreateDate { get; set; }
-        public DateTimeOffset UpdateDate { get; set; }
+        public DateTime CreateDate { get; set; }
+        public DateTime UpdateDate { get; set; }
      
         [Required]
         [Display(Name = "contentTypeAlias")]        
