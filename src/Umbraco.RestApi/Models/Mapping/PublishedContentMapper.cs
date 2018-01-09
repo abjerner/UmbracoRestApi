@@ -11,39 +11,6 @@ namespace Umbraco.RestApi.Models.Mapping
 {
     public class PublishedContentMapper : MapperConfiguration
     {
-
-        private class ContentWithKeyResolver : ValueResolver<IPublishedContent, Guid>
-        {
-            protected override Guid ResolveCore(IPublishedContent source)
-            {
-                var withKey = GetContentWithKey(source);
-                return withKey?.Key ?? Guid.Empty;
-            }
-
-            /// <summary>
-            /// Gets the published content with a guaranteed key
-            /// </summary>
-            /// <param name="content">The published content</param>
-            /// <returns>A published content with key</returns>
-            /// <remarks>
-            /// Workaround for the fact that GetKey() doesn't always work - see http://issues.umbraco.org/issue/U4-10128
-            /// </remarks>
-            private static IPublishedContentWithKey GetContentWithKey(IPublishedContent content)
-            {
-                var withKey = content as IPublishedContentWithKey;
-
-                if (withKey != null)
-                    return withKey;
-
-                var wrapped = content as PublishedContentWrapped;
-
-                if (wrapped != null)
-                    return GetContentWithKey(wrapped.Unwrap());
-
-                return null;
-            }
-        }
-
         public override void ConfigureMappings(IConfiguration config, ApplicationContext applicationContext)
         {
 
@@ -52,6 +19,7 @@ namespace Umbraco.RestApi.Models.Mapping
                 .ForMember(representation => representation.CreateDate, expression => expression.MapFrom(x => x.CreateDate.ToUniversalTime())) 
                 .ForMember(representation => representation.UpdateDate, expression => expression.MapFrom(x => x.UpdateDate.ToUniversalTime())) 
                 .ForMember(representation => representation.Key, expression => expression.ResolveUsing<ContentWithKeyResolver>())
+                .ForMember(representation => representation.Udi, expression => expression.ResolveUsing<PublishedContentUdiResolver>())
                 .ForMember(representation => representation.HasChildren, expression => expression.MapFrom(content => content.Children.Any()))
                 .ForMember(representation => representation.Properties, expression => expression.ResolveUsing((ResolutionResult result) =>
                 {
@@ -86,6 +54,48 @@ namespace Umbraco.RestApi.Models.Mapping
 
                     return d;
                 }));
+        }
+
+        private class PublishedContentUdiResolver : ValueResolver<IPublishedContent, Udi>
+        {
+            protected override Udi ResolveCore(IPublishedContent source)
+            {
+                var withKey = GetContentWithKey(source);
+                var key = withKey?.Key ?? Guid.Empty;
+                return Udi.Create(Constants.UdiEntityType.Document, key);
+            }
+        }
+
+        private class ContentWithKeyResolver : ValueResolver<IPublishedContent, Guid>
+        {
+            protected override Guid ResolveCore(IPublishedContent source)
+            {
+                var withKey = GetContentWithKey(source);
+                return withKey?.Key ?? Guid.Empty;
+            }
+        }
+
+        /// <summary>
+        /// Gets the published content with a guaranteed key
+        /// </summary>
+        /// <param name="content">The published content</param>
+        /// <returns>A published content with key</returns>
+        /// <remarks>
+        /// Workaround for the fact that GetKey() doesn't always work - see http://issues.umbraco.org/issue/U4-10128
+        /// </remarks>
+        private static IPublishedContentWithKey GetContentWithKey(IPublishedContent content)
+        {
+            var withKey = content as IPublishedContentWithKey;
+
+            if (withKey != null)
+                return withKey;
+
+            var wrapped = content as PublishedContentWrapped;
+
+            if (wrapped != null)
+                return GetContentWithKey(wrapped.Unwrap());
+
+            return null;
         }
     }
 }

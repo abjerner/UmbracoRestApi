@@ -21,7 +21,7 @@
             Links.Add(LinkTemplates.PublishedContent.Root);
 
             Links.Add( LinkTemplates.PublishedContent.PagedChildren.CreateLinkTemplate(Id));
-            Links.Add(LinkTemplates.PublishedContent.PagedDescendants.CreateLinkTemplate(Id)); ;
+            Links.Add(LinkTemplates.PublishedContent.PagedDescendants.CreateLinkTemplate(Id));
             Links.Add(LinkTemplates.PublishedContent.PagedAncestors.CreateLinkTemplate(Id));
 
             Links.Add(LinkTemplates.PublishedContent.Parent.CreateLink(new { parentId = ParentId }));
