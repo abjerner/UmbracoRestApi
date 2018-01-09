@@ -155,6 +155,58 @@ namespace Umbraco.RestApi.Tests
         }
 
         [Test]
+        public async Task Get_By_Key_Result()
+        {
+            var guidId = Guid.NewGuid();
+            var content = ModelMocks.SimpleMockedPublishedContent(guidId, 456, 789);
+
+            var startup = new TestStartup(
+                //This will be invoked before the controller is created so we can modify these mocked services
+                (testServices) =>
+                {
+                    var mockTypedContent = Mock.Get(testServices.PublishedContentQuery);
+                    mockTypedContent.Setup(x => x.TypedContent(It.IsAny<Guid>())).Returns(() => content);
+                });
+
+            using (var server = TestServer.Create(builder => startup.UseDefaultTestSetup(builder)))
+            {
+                var request = new HttpRequestMessage()
+                {
+                    RequestUri = new Uri($"http://testserver/umbraco/rest/v1/{RouteConstants.ContentSegment}/{RouteConstants.PublishedSegment}/{guidId}"),
+                    Method = HttpMethod.Get,
+                };
+
+                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/hal+json"));
+
+                Console.WriteLine(request);
+                var result = await server.HttpClient.SendAsync(request);
+                Console.WriteLine(result);
+
+                var json = await ((StreamContent)result.Content).ReadAsStringAsync();
+                Console.Write(JsonConvert.SerializeObject(JsonConvert.DeserializeObject(json), Formatting.Indented));
+
+                Assert.AreEqual(HttpStatusCode.OK, result.StatusCode);
+
+                Assert.AreEqual("application/hal+json", result.Content.Headers.ContentType.MediaType);
+                Assert.IsAssignableFrom<StreamContent>(result.Content);
+
+                //TODO: Need to assert more values!
+
+                var djson = JsonConvert.DeserializeObject<JObject>(json);
+
+                Assert.AreEqual($"/umbraco/rest/v1/content/published/{content.Id}", djson["_links"]["self"]["href"].Value<string>());
+                Assert.AreEqual("/umbraco/rest/v1/content/published/456", djson["_links"]["parent"]["href"].Value<string>());
+                Assert.AreEqual($"/umbraco/rest/v1/content/published/{content.Id}/children{{?page,size,query}}", djson["_links"]["children"]["href"].Value<string>());
+                Assert.AreEqual("/umbraco/rest/v1/content/published", djson["_links"]["root"]["href"].Value<string>());
+
+                var properties = djson["properties"].ToObject<IDictionary<string, object>>();
+                Assert.AreEqual(2, properties.Count());
+                Assert.IsTrue(properties.ContainsKey("TestProperty1"));
+                Assert.IsTrue(properties.ContainsKey("testProperty2"));
+            }
+        }
+
+        [Test]
         public async Task Get_Root_With_OPTIONS()
         {
             var startup = new TestStartup(
