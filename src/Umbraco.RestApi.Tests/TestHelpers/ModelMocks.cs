@@ -20,7 +20,8 @@ namespace Umbraco.RestApi.Tests.TestHelpers
         {
             var c = Mock.Of<IContent>(
                 content => content.Id == id
-                           && content.Published == true
+                           && content.Key == Guid.NewGuid()
+                            && content.Published == true
                            && content.CreateDate == DateTime.Now.AddDays(-2)
                            && content.CreatorId == 0
                            && content.HasIdentity == true
@@ -58,6 +59,7 @@ namespace Umbraco.RestApi.Tests.TestHelpers
         {
             var c = Mock.Of<IMedia>(
                 content => content.Id == id
+                           && content.Key == Guid.NewGuid()
                            && content.CreateDate == DateTime.Now.AddDays(-2)
                            && content.CreatorId == 0
                            && content.HasIdentity == true
@@ -93,6 +95,7 @@ namespace Umbraco.RestApi.Tests.TestHelpers
         {
             var c = Mock.Of<IMember>(
                 content => content.Id == id
+                           && content.Key == Guid.NewGuid()
                            && content.CreateDate == DateTime.Now.AddDays(-2)
                            && content.CreatorId == 0
                            && content.HasIdentity == true
@@ -165,8 +168,9 @@ namespace Umbraco.RestApi.Tests.TestHelpers
 
         public static IPublishedContent SimpleMockedPublishedContent(int id = 123, int? parentId = null, int? childId = null)
         {
-            return Mock.Of<IPublishedContent>(
+            return Mock.Of<IPublishedContentWithKey>(
                 content => content.Id == id
+                           && content.Key == Guid.NewGuid()
                            && content.IsDraft == false
                            && content.CreateDate == DateTime.Now.AddDays(-2)
                            && content.CreatorId == 0
