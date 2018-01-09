@@ -8,12 +8,12 @@ namespace Umbraco.RestApi.Controllers
     /// <summary>
     /// This is used to ensure consistency between controllers which allows for better testing
     /// </summary>
-    public interface ICrudController<in TRepresentation> 
+    public interface ICrudController<in TKey, in TRepresentation> 
         where TRepresentation : Representation
     {
-        Task<HttpResponseMessage> Get(int id);
+        Task<HttpResponseMessage> Get(TKey id);
         Task<HttpResponseMessage> Post(TRepresentation content);
-        Task<HttpResponseMessage> Put(int id, TRepresentation content);
-        Task<HttpResponseMessage> Delete(int id);
+        Task<HttpResponseMessage> Put(TKey id, TRepresentation content);
+        Task<HttpResponseMessage> Delete(TKey id);
     }
 }

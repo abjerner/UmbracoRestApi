@@ -43,7 +43,7 @@ namespace Umbraco.RestApi.Controllers
     /// </remarks>
     [ResourceAuthorize(Policy = AuthorizationPolicies.DefaultRestApi)]
     [UmbracoRoutePrefix("rest/v1/content")]
-    public class ContentController : UmbracoHalController, ITraversableController<ContentRepresentation>
+    public class ContentController : UmbracoHalController, ITraversableController<int, ContentRepresentation>, ITraversableController<Guid, ContentRepresentation>
     {
         /// <summary>
         /// Default ctor
@@ -98,7 +98,7 @@ namespace Umbraco.RestApi.Controllers
         }
 
         [HttpGet]
-        [CustomRoute("{id}")]
+        [CustomRoute("{id:int}")]
         public async Task<HttpResponseMessage> Get(int id)
         {
             if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.ContentRead))
@@ -113,7 +113,18 @@ namespace Umbraco.RestApi.Controllers
         }
 
         [HttpGet]
-        [CustomRoute("{id}/meta")]
+        [CustomRoute("{id:guid}")]
+        public async Task<HttpResponseMessage> Get(Guid id)
+        {
+            //We need to do the INT lookup from a GUID since the INT is what governs security there's no way around this right now
+            var intId = Services.EntityService.GetIdForKey(id, UmbracoObjectTypes.Document);
+            if (intId.Result < 0)
+                Request.CreateResponse(HttpStatusCode.NotFound);
+            return await Get(intId.Result);
+        }
+
+        [HttpGet]
+        [CustomRoute("{id:int}/meta")]
         public async Task<HttpResponseMessage> GetMetadata(int id)
         {
             if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.ContentRead))
@@ -135,7 +146,18 @@ namespace Umbraco.RestApi.Controllers
         }
 
         [HttpGet]
-        [CustomRoute("{id}/children")]
+        [CustomRoute("{id:guid}/meta")]
+        public async Task<HttpResponseMessage> GetMetadata(Guid id)
+        {
+            //We need to do the INT lookup from a GUID since the INT is what governs security there's no way around this right now
+            var intId = Services.EntityService.GetIdForKey(id, UmbracoObjectTypes.Document);
+            if (intId.Result < 0)
+                Request.CreateResponse(HttpStatusCode.NotFound);
+            return await GetMetadata(intId.Result);
+        }
+
+        [HttpGet]
+        [CustomRoute("{id:int}/children")]
         public async Task<HttpResponseMessage> GetChildren(int id,
             [ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query)
@@ -155,7 +177,19 @@ namespace Umbraco.RestApi.Controllers
         }
 
         [HttpGet]
-        [CustomRoute("{id}/descendants/")]
+        [CustomRoute("{id:guid}/children")]
+        public async Task<HttpResponseMessage> GetChildren(Guid id,
+            [ModelBinder(typeof(PagedQueryModelBinder))] PagedQuery query)
+        {
+            //We need to do the INT lookup from a GUID since the INT is what governs security there's no way around this right now
+            var intId = Services.EntityService.GetIdForKey(id, UmbracoObjectTypes.Document);
+            if (intId.Result < 0)
+                Request.CreateResponse(HttpStatusCode.NotFound);
+            return await GetChildren(intId.Result, query);
+        }
+
+        [HttpGet]
+        [CustomRoute("{id:int}/descendants/")]
         public async Task<HttpResponseMessage> GetDescendants(int id,
             [ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query)
@@ -175,7 +209,19 @@ namespace Umbraco.RestApi.Controllers
         }
 
         [HttpGet]
-        [CustomRoute("{id}/ancestors/")]
+        [CustomRoute("{id:guid}/descendants/")]
+        public async Task<HttpResponseMessage> GetDescendants(Guid id,
+            [ModelBinder(typeof(PagedQueryModelBinder))] PagedQuery query)
+        {
+            //We need to do the INT lookup from a GUID since the INT is what governs security there's no way around this right now
+            var intId = Services.EntityService.GetIdForKey(id, UmbracoObjectTypes.Document);
+            if (intId.Result < 0)
+                Request.CreateResponse(HttpStatusCode.NotFound);
+            return await GetDescendants(intId.Result, query);
+        }
+
+        [HttpGet]
+        [CustomRoute("{id:int}/ancestors/")]
         public async Task<HttpResponseMessage> GetAncestors(int id,
            [ModelBinder(typeof(PagedQueryModelBinder))]
            PagedRequest query)
@@ -194,6 +240,18 @@ namespace Umbraco.RestApi.Controllers
             FilterAllowedOutgoingContent(result);
 
             return Request.CreateResponse(HttpStatusCode.OK, result);
+        }
+
+        [HttpGet]
+        [CustomRoute("{id:guid}/ancestors/")]
+        public async Task<HttpResponseMessage> GetAncestors(Guid id,
+            [ModelBinder(typeof(PagedQueryModelBinder))] PagedRequest query)
+        {
+            //We need to do the INT lookup from a GUID since the INT is what governs security there's no way around this right now
+            var intId = Services.EntityService.GetIdForKey(id, UmbracoObjectTypes.Document);
+            if (intId.Result < 0)
+                Request.CreateResponse(HttpStatusCode.NotFound);
+            return await GetAncestors(intId.Result, query);
         }
 
         [HttpGet]
@@ -304,7 +362,7 @@ namespace Umbraco.RestApi.Controllers
         /// This can also be used to publish/unpublish an item
         /// </remarks>
         [HttpPut]
-        [CustomRoute("{id}")]
+        [CustomRoute("{id:int}")]
         public async Task<HttpResponseMessage> Put(int id, ContentRepresentation content)
         {
             if (content == null) return Request.CreateResponse(HttpStatusCode.NotFound);
@@ -354,8 +412,28 @@ namespace Umbraco.RestApi.Controllers
             }
         }
 
+        /// <summary>
+        /// Updates a content item
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="content"></param>
+        /// <returns></returns>
+        /// <remarks>
+        /// This can also be used to publish/unpublish an item
+        /// </remarks>
+        [HttpPut]
+        [CustomRoute("{id:guid}")]
+        public async Task<HttpResponseMessage> Put(Guid id, ContentRepresentation content)
+        {
+            //We need to do the INT lookup from a GUID since the INT is what governs security there's no way around this right now
+            var intId = Services.EntityService.GetIdForKey(id, UmbracoObjectTypes.Document);
+            if (intId.Result < 0)
+                Request.CreateResponse(HttpStatusCode.NotFound);
+            return await Put(intId.Result, content);
+        }
+
         [HttpDelete]
-        [CustomRoute("{id}")]
+        [CustomRoute("{id:int}")]
         public async Task<HttpResponseMessage> Delete(int id)
         {
             //TODO: Since this Id is based on a route parameter it should be possible to authz this with an attribute
@@ -368,6 +446,17 @@ namespace Umbraco.RestApi.Controllers
 
             Services.ContentService.Delete(found);
             return Request.CreateResponse(HttpStatusCode.OK);
+        }
+
+        [HttpDelete]
+        [CustomRoute("{id:guid}")]
+        public async Task<HttpResponseMessage> Delete(Guid id)
+        {
+            //We need to do the INT lookup from a GUID since the INT is what governs security there's no way around this right now
+            var intId = Services.EntityService.GetIdForKey(id, UmbracoObjectTypes.Document);
+            if (intId.Result < 0)
+                Request.CreateResponse(HttpStatusCode.NotFound);
+            return await Delete(intId.Result);
         }
 
         private void FilterAllowedOutgoingContent(SimpleListRepresentation<ContentRepresentation> rep)

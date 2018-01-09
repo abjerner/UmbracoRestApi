@@ -16,13 +16,14 @@ using Umbraco.Web.WebApi;
 using WebApi.Hal;
 using Task = System.Threading.Tasks.Task;
 using System.Web;
+using Umbraco.Core.Models.EntityBase;
 
 namespace Umbraco.RestApi.Controllers
 {
     
     [ResourceAuthorize(Policy = AuthorizationPolicies.DefaultRestApi)]
     [UmbracoRoutePrefix("rest/v1/relations")]
-    public class RelationsController : UmbracoHalController, ICrudController<RelationRepresentation>, IRootController
+    public class RelationsController : UmbracoHalController, ICrudController<int, RelationRepresentation>, IRootController
     {
         /// <summary>
         /// Default ctor
@@ -72,26 +73,50 @@ namespace Umbraco.RestApi.Controllers
         }
 
         [HttpGet]
-        [CustomRoute("children/{id}")]
+        [CustomRoute("children/{id:int}")]
         public Task<HttpResponseMessage> GetByParent(int id, string relationType = null)
         {
-            var parent = Services.EntityService.Get(id);            
+            return GetByParentInternal(() => Services.EntityService.Get(id), relationType);
+        }
+
+        [HttpGet]
+        [CustomRoute("children/{id:guid}")]
+        public Task<HttpResponseMessage> GetByParent(Guid id, string relationType = null)
+        {
+            return GetByParentInternal(() => Services.EntityService.GetByKey(id), relationType);
+        }
+
+        public Task<HttpResponseMessage> GetByParentInternal(Func<IUmbracoEntity> getEntity, string relationType = null)
+        {
+            var parent = getEntity();
 
             if (parent == null)
                 return Task.FromResult(Request.CreateResponse(HttpStatusCode.NotFound));
-                
+
             var relations = (string.IsNullOrEmpty(relationType)) ? Services.RelationService.GetByParent(parent) : Services.RelationService.GetByParent(parent, relationType);
             var mapped = relations.Select(CreateRepresentation).ToList();
 
-            var relationsRep = new RelationListRepresentation( mapped );
+            var relationsRep = new RelationListRepresentation(mapped);
             return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, relationsRep));
         }
 
         [HttpGet]
-        [CustomRoute("parents/{id}")]
+        [CustomRoute("parents/{id:int}")]
         public Task<HttpResponseMessage> GetByChild(int id, string relationType = null)
         {
-            var child = Services.EntityService.Get(id);
+            return GetByChildInternal(() => Services.EntityService.Get(id), relationType);
+        }
+
+        [HttpGet]
+        [CustomRoute("parents/{id:guid}")]
+        public Task<HttpResponseMessage> GetByChild(Guid id, string relationType = null)
+        {
+            return GetByChildInternal(() => Services.EntityService.GetByKey(id), relationType);
+        }
+
+        private Task<HttpResponseMessage> GetByChildInternal(Func<IUmbracoEntity> getEntity, string relationType = null)
+        {
+            var child = getEntity();
             if (child == null)
                 return Task.FromResult(Request.CreateResponse(HttpStatusCode.NotFound));
 
@@ -106,13 +131,9 @@ namespace Umbraco.RestApi.Controllers
 
             return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK, relationsRep));
         }
-        
 
-
-
-        //RELATIONS CRUD
         [HttpGet]
-        [CustomRoute("{id}")]
+        [CustomRoute("{id:int}")]
         public Task<HttpResponseMessage> Get(int id)
         {
             var result = Services.RelationService.GetById(id);
@@ -121,6 +142,9 @@ namespace Umbraco.RestApi.Controllers
                 ? Request.CreateResponse(HttpStatusCode.NotFound)
                 : Request.CreateResponse(HttpStatusCode.OK, CreateRepresentation(result)));
         }
+
+        //RELATIONS CRUD
+
 
         /// <summary>
         /// Creates a relation

@@ -74,7 +74,8 @@ namespace Umbraco.RestApi.Security
         private bool CheckPermissions(IUser user, int nodeId, char[] permissionsToCheck, IContent contentItem)
         {
             var tempStorage = new Dictionary<string, object>();
-            //TODO: Using reflection, this will be public in 7.7.2
+
+            //TODO: Using reflection, We need to make this public in core!
             var result = (bool)typeof(ContentController).CallStaticMethod("CheckPermissions",
                 tempStorage,
                 user,

@@ -68,10 +68,22 @@ namespace Umbraco.RestApi.Controllers
 
 
         [HttpGet]
-        [CustomRoute("{id}")]
+        [CustomRoute("{id:int}")]
         public HttpResponseMessage Get(int id)
         {
-            var content = Umbraco.TypedContent(id);
+            return GetInternal(() => Umbraco.TypedContent(id));
+        }
+
+        [HttpGet]
+        [CustomRoute("{id:guid}")]
+        public HttpResponseMessage Get(Guid id)
+        {
+            return GetInternal(() => Umbraco.TypedContent(id));
+        }
+
+        private HttpResponseMessage GetInternal(Func<IPublishedContent> getContent)
+        {
+            var content = getContent();
             if (content == null) return Request.CreateResponse(HttpStatusCode.NotFound);
 
             PcrFactory.Create(content, Request.RequestUri);
@@ -83,14 +95,26 @@ namespace Umbraco.RestApi.Controllers
                 : Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
-
         [HttpGet]
-        [CustomRoute("{id}/children")]
+        [CustomRoute("{id:int}/children")]
         public HttpResponseMessage GetChildren(int id,
             [System.Web.Http.ModelBinding.ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query)
         {
-            var content = Umbraco.TypedContent(id);
+            return GetChildren(() => Umbraco.TypedContent(id), query);
+        }
+
+        [HttpGet]
+        [CustomRoute("{id:guid}/children")]
+        public HttpResponseMessage GetChildren(Guid id,
+            [System.Web.Http.ModelBinding.ModelBinder(typeof(PagedQueryModelBinder))] PagedQuery query)
+        {
+            return GetChildren(() => Umbraco.TypedContent(id), query);
+        }
+
+        private HttpResponseMessage GetChildren(Func<IPublishedContent> getContent, PagedQuery query)
+        {
+            var content = getContent();
             if (content == null) return Request.CreateResponse(HttpStatusCode.NotFound);
 
             PcrFactory.Create(content, Request.RequestUri);
@@ -100,19 +124,31 @@ namespace Umbraco.RestApi.Controllers
             var pages = (total + query.PageSize - 1) / query.PageSize;
 
             var items = AutoMapper.Mapper.Map<IEnumerable<PublishedContentRepresentation>>(resolved.Skip(ContentControllerHelper.GetSkipSize(query.Page - 1, query.PageSize)).Take(query.PageSize)).ToList();
-            var result = new PublishedContentPagedListRepresentation(items, total, pages, query.Page - 1, query.PageSize, LinkTemplates.PublishedContent.PagedChildren, new { id = id });
+            var result = new PublishedContentPagedListRepresentation(items, total, pages, query.Page - 1, query.PageSize, LinkTemplates.PublishedContent.PagedChildren, new { id = content.Id });
 
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
-
         [HttpGet]
-        [CustomRoute("{id}/descendants/")]
+        [CustomRoute("{id:int}/descendants/")]
         public HttpResponseMessage GetDescendants(int id,
             [System.Web.Http.ModelBinding.ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query)
         {
-            var content = Umbraco.TypedContent(id);
+            return GetDescendantsInternal(() => Umbraco.TypedContent(id), query);
+        }
+
+        [HttpGet]
+        [CustomRoute("{id:guid}/descendants/")]
+        public HttpResponseMessage GetDescendants(Guid id,
+            [System.Web.Http.ModelBinding.ModelBinder(typeof(PagedQueryModelBinder))] PagedQuery query)
+        {
+            return GetDescendantsInternal(() => Umbraco.TypedContent(id), query);
+        }
+
+        private HttpResponseMessage GetDescendantsInternal(Func<IPublishedContent> getContent, PagedQuery query)
+        {
+            var content = getContent();
             if (content == null) return Request.CreateResponse(HttpStatusCode.NotFound);
 
             PcrFactory.Create(content, Request.RequestUri);
@@ -122,17 +158,30 @@ namespace Umbraco.RestApi.Controllers
             var total = resolved.Length;
             var pages = (total + query.PageSize - 1) / query.PageSize;
             var items = AutoMapper.Mapper.Map<IEnumerable<PublishedContentRepresentation>>(resolved.Skip(ContentControllerHelper.GetSkipSize(query.Page - 1, query.PageSize)).Take(query.PageSize)).ToList();
-            var result = new PublishedContentPagedListRepresentation(items, total, pages, query.Page - 1, query.PageSize, LinkTemplates.PublishedContent.PagedDescendants, new { id = id });
+            var result = new PublishedContentPagedListRepresentation(items, total, pages, query.Page - 1, query.PageSize, LinkTemplates.PublishedContent.PagedDescendants, new { id = content.Id });
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
         [HttpGet]
-        [CustomRoute("{id}/ancestors/{page?}/{pageSize?}")]
+        [CustomRoute("{id:int}/ancestors/{page?}/{pageSize?}")]
         public HttpResponseMessage GetAncestors(int id,
             [System.Web.Http.ModelBinding.ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query)
         {
-            var content = Umbraco.TypedContent(id);
+            return GetAncestorsInternal(() => Umbraco.TypedContent(id), query);
+        }
+
+        [HttpGet]
+        [CustomRoute("{id:guid}/ancestors/{page?}/{pageSize?}")]
+        public HttpResponseMessage GetAncestors(Guid id,
+            [System.Web.Http.ModelBinding.ModelBinder(typeof(PagedQueryModelBinder))] PagedQuery query)
+        {
+            return GetAncestorsInternal(() => Umbraco.TypedContent(id), query);
+        }
+        
+        private HttpResponseMessage GetAncestorsInternal(Func<IPublishedContent> getContent, PagedQuery query)
+        {
+            var content = getContent();
             if (content == null) return Request.CreateResponse(HttpStatusCode.NotFound);
 
             PcrFactory.Create(content, Request.RequestUri);
@@ -143,7 +192,7 @@ namespace Umbraco.RestApi.Controllers
             var pages = (total + query.PageSize - 1) / query.PageSize;
 
             var items = AutoMapper.Mapper.Map<IEnumerable<PublishedContentRepresentation>>(resolved.Skip(ContentControllerHelper.GetSkipSize(query.Page - 1, query.PageSize)).Take(query.PageSize)).ToList();
-            var result = new PublishedContentPagedListRepresentation(items, total, pages, query.Page - 1, query.PageSize, LinkTemplates.PublishedContent.PagedAncestors, new { id = id });
+            var result = new PublishedContentPagedListRepresentation(items, total, pages, query.Page - 1, query.PageSize, LinkTemplates.PublishedContent.PagedAncestors, new { id = content.Id });
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
@@ -158,6 +207,7 @@ namespace Umbraco.RestApi.Controllers
             var rootQuery = "";
             if (id > 0)
             {
+                //TODO: Change to xpath id() query, see https://github.com/umbraco/Umbraco-CMS/pull/1831
                 rootQuery = $"//*[@id='{id}']";
             }
 
@@ -183,6 +233,19 @@ namespace Umbraco.RestApi.Controllers
         }
         
         [HttpGet]
+        [CustomRoute("query/{id:guid?}")]
+        public HttpResponseMessage GetQuery(
+            [System.Web.Http.ModelBinding.ModelBinder(typeof(PagedQueryModelBinder))] PagedQuery query,
+            Guid? id = null)
+        {
+            //we will convert to INT here because the GUID lookup in xpath is slow until we fix this https://github.com/umbraco/Umbraco-CMS/pull/2367
+            var intId = id.HasValue ? Services.EntityService.GetIdForKey(id.Value, UmbracoObjectTypes.Document) : Attempt.Succeed(0);
+            if (intId.Result < 0)
+                Request.CreateResponse(HttpStatusCode.NotFound);
+            return GetQuery(query, intId.Result);
+        }
+
+        [HttpGet]
         [CustomRoute("search")]
         public HttpResponseMessage Search(
             [System.Web.Http.ModelBinding.ModelBinder(typeof(PagedQueryModelBinder))]
@@ -190,8 +253,9 @@ namespace Umbraco.RestApi.Controllers
         {
             if (query.Query.IsNullOrWhiteSpace()) throw new HttpResponseException(HttpStatusCode.NotFound);
 
-            //TODO: This would be more efficient if we went straight to the ExamineManager and used it's built in Skip method
+            //TODO: This would be WAY more efficient if we went straight to the ExamineManager and used it's built in Skip method
             // but then we have to write our own model mappers and don't have time for that right now.
+            //see https://github.com/umbraco/UmbracoRestApi/issues/25
 
             var result = Umbraco.ContentQuery.TypedSearch(SearchProvider.CreateSearchCriteria().RawQuery(query.Query), _searchProvider).ToArray();
             var paged = result.Skip(ContentControllerHelper.GetSkipSize(query.Page - 1, query.PageSize)).Take(query.PageSize);
