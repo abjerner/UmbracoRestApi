@@ -142,9 +142,9 @@ namespace Umbraco.RestApi.Tests
 
                 var djson = JsonConvert.DeserializeObject<JObject>(json);
 
-                Assert.AreEqual("/umbraco/rest/v1/content/published/123", djson["_links"]["self"]["href"].Value<string>());
+                Assert.AreEqual("/umbraco/rest/v1/content/published/0000007b-0000-0000-0000-000000000000", djson["_links"]["self"]["href"].Value<string>());
                 Assert.AreEqual("/umbraco/rest/v1/content/published/456", djson["_links"]["parent"]["href"].Value<string>());
-                Assert.AreEqual("/umbraco/rest/v1/content/published/123/children{?page,size,query}", djson["_links"]["children"]["href"].Value<string>());
+                Assert.AreEqual("/umbraco/rest/v1/content/published/0000007b-0000-0000-0000-000000000000/children{?page,size,query}", djson["_links"]["children"]["href"].Value<string>());
                 Assert.AreEqual("/umbraco/rest/v1/content/published", djson["_links"]["root"]["href"].Value<string>());
 
                 var properties = djson["properties"].ToObject<IDictionary<string, object>>();
@@ -194,9 +194,9 @@ namespace Umbraco.RestApi.Tests
 
                 var djson = JsonConvert.DeserializeObject<JObject>(json);
 
-                Assert.AreEqual($"/umbraco/rest/v1/content/published/{content.Id}", djson["_links"]["self"]["href"].Value<string>());
+                Assert.AreEqual($"/umbraco/rest/v1/content/published/{content.Key}", djson["_links"]["self"]["href"].Value<string>());
                 Assert.AreEqual("/umbraco/rest/v1/content/published/456", djson["_links"]["parent"]["href"].Value<string>());
-                Assert.AreEqual($"/umbraco/rest/v1/content/published/{content.Id}/children{{?page,size,query}}", djson["_links"]["children"]["href"].Value<string>());
+                Assert.AreEqual($"/umbraco/rest/v1/content/published/{content.Key}/children{{?page,size,query}}", djson["_links"]["children"]["href"].Value<string>());
                 Assert.AreEqual("/umbraco/rest/v1/content/published", djson["_links"]["root"]["href"].Value<string>());
 
                 var properties = djson["properties"].ToObject<IDictionary<string, object>>();

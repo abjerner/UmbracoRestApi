@@ -13,11 +13,9 @@ using Moq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
-using umbraco.BusinessLogic.Actions;
 using Umbraco.Core;
 using Umbraco.Core.Models;
 using Umbraco.Core.Models.EntityBase;
-using Umbraco.Core.Models.Membership;
 using Umbraco.Core.Persistence.DatabaseModelDefinitions;
 using Umbraco.Core.PropertyEditors;
 using Umbraco.RestApi.Routing;
@@ -128,9 +126,9 @@ namespace Umbraco.RestApi.Tests
                  });
 
             var djson = await Get_Id_Result(startup.UseDefaultTestSetup, RouteConstants.MediaSegment);
-            Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.MediaSegment}/123", djson["_links"]["self"]["href"].Value<string>());
+            Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.MediaSegment}/0000007b-0000-0000-0000-000000000000", djson["_links"]["self"]["href"].Value<string>());
             Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.MediaSegment}/456", djson["_links"]["parent"]["href"].Value<string>());
-            Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.MediaSegment}/123/children{{?page,size,query}}", djson["_links"]["children"]["href"].Value<string>());
+            Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.MediaSegment}/0000007b-0000-0000-0000-000000000000/children{{?page,size,query}}", djson["_links"]["children"]["href"].Value<string>());
             Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.MediaSegment}", djson["_links"]["root"]["href"].Value<string>());
 
             var properties = djson["properties"].ToObject<IDictionary<string, object>>();

@@ -125,7 +125,7 @@ namespace Umbraco.RestApi.Tests
             }, RouteConstants.ContentSegment);
 
             Assert.AreEqual(1, djson["_links"]["content"].Count());
-            Assert.AreEqual("/umbraco/rest/v1/content/123", djson["_links"]["content"]["href"].Value<string>());
+            Assert.AreEqual("/umbraco/rest/v1/content/0000007b-0000-0000-0000-000000000000", djson["_links"]["content"]["href"].Value<string>());
             Assert.AreEqual(1, djson["_embedded"]["content"].Count());
             Assert.AreEqual(rootNodes.Id, djson["_embedded"]["content"].First["id"].Value<int>());
         }
@@ -183,9 +183,9 @@ namespace Umbraco.RestApi.Tests
                  });
 
             var djson = await Get_Id_Result(startup.UseDefaultTestSetup, RouteConstants.ContentSegment);
-            Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.ContentSegment}/123", djson["_links"]["self"]["href"].Value<string>());
+            Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.ContentSegment}/0000007b-0000-0000-0000-000000000000", djson["_links"]["self"]["href"].Value<string>());
             Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.ContentSegment}/456", djson["_links"]["parent"]["href"].Value<string>());
-            Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.ContentSegment}/123/children{{?page,size,query}}", djson["_links"]["children"]["href"].Value<string>());
+            Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.ContentSegment}/0000007b-0000-0000-0000-000000000000/children{{?page,size,query}}", djson["_links"]["children"]["href"].Value<string>());
             Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.ContentSegment}", djson["_links"]["root"]["href"].Value<string>());
 
             var properties = djson["properties"].ToObject<IDictionary<string, object>>();

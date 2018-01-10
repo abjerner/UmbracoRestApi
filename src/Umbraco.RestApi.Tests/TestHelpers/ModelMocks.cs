@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using ClientDependency.Core;
 using Moq;
 using Umbraco.Core;
 using Umbraco.Core.Models;
@@ -167,7 +166,7 @@ namespace Umbraco.RestApi.Tests.TestHelpers
             return r;
         }
 
-        public static IPublishedContent SimpleMockedPublishedContent(int id = 123, int? parentId = null, int? childId = null)
+        public static IPublishedContentWithKey SimpleMockedPublishedContent(int id = 123, int? parentId = null, int? childId = null)
         {
             return Mock.Of<IPublishedContentWithKey>(
                 content => content.Id == id
@@ -204,7 +203,7 @@ namespace Umbraco.RestApi.Tests.TestHelpers
                            && content.Children == (childId.HasValue ? new[] { SimpleMockedPublishedContent(childId.Value, null, null) } : Enumerable.Empty<IPublishedContent>()));
         }
 
-        public static IPublishedContent SimpleMockedPublishedContent(Guid id, int? parentId = null, int? childId = null)
+        public static IPublishedContentWithKey SimpleMockedPublishedContent(Guid id, int? parentId = null, int? childId = null)
         {
             return Mock.Of<IPublishedContentWithKey>(
                 content => content.Id == Math.Abs(id.GetHashCode())

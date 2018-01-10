@@ -2,7 +2,6 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using Umbraco.Core.Models;
 using Umbraco.RestApi.Serialization;
 
 namespace Umbraco.RestApi.Models
