@@ -274,6 +274,7 @@
     <Compile Include="LinkTemplates.cs" />
     <Compile Include="Models\ContentPagedListRepresentation.cs" />
     <Compile Include="Models\EntityRepresentation.cs" />
+    <Compile Include="Models\Mapping\ParentKeyResolver.cs" />
     <Compile Include="Models\MediaListRepresentation.cs" />
     <Compile Include="Models\MediaPagedListRepresentation.cs" />
     <Compile Include="Models\MemberPagedListRepresentation.cs" />
@@ -306,6 +307,7 @@
     <Compile Include="Models\PublishedContentRepresentation.cs" />
     <Compile Include="Models\RelationListRepresentation.cs" />
     <Compile Include="Models\RelationRepresentation.cs" />
+    <Compile Include="Models\RequireNonDefaultAttribute.cs" />
     <Compile Include="RestApiCookieManager.cs" />
     <Compile Include="Routing\UmbracoRoutePrefixAttribute.cs" />
     <Compile Include="Routing\CustomRouteAttributeDirectRouteProvider.cs" />

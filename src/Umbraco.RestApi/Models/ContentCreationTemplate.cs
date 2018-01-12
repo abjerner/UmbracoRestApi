@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Umbraco.RestApi.Serialization;
@@ -10,7 +11,7 @@ namespace Umbraco.RestApi.Models
     public class ContentCreationTemplate
     {        
         public string ContentTypeAlias { get; set; }
-        public int ParentId { get; set; }
+        public Guid ParentId { get; set; }
         public int TemplateId { get; set; }
         public string Name { get; set; }
 

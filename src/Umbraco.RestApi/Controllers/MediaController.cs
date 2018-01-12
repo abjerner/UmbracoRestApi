@@ -291,7 +291,11 @@ namespace Umbraco.RestApi.Controllers
         {
             if (content == null) return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(content.ParentId), AuthorizationPolicies.MediaCreate))
+            //We need to do the INT lookup from a GUID since the INT is what governs security there's no way around this right now
+            var intParentId = Services.EntityService.GetIdForKey(content.ParentId, UmbracoObjectTypes.Media);
+            if (!intParentId) return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(intParentId.Result), AuthorizationPolicies.MediaCreate))
                 return Request.CreateResponse(HttpStatusCode.Unauthorized);
 
             try

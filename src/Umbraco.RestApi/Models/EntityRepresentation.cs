@@ -15,20 +15,12 @@ namespace Umbraco.RestApi.Models
         [Display(Name = "name")]
         public string Name { get; set; }
 
-        [Required]
+        [RequireNonDefault]
         [Display(Name = "parentId")]
-        public int ParentId { get; set; }
+        public Guid ParentId { get; set; }
         public string Path { get; set; }
         public bool HasChildren { get; set; }
         public int Level { get; set; }
-
-        /// <summary>
-        /// The INT Id for the entity
-        /// </summary>
-        /// <remarks>
-        /// This is readonly
-        /// </remarks>
-        public int Id { get; set; }
 
         /// <summary>
         /// The Guid for the entity
@@ -36,16 +28,8 @@ namespace Umbraco.RestApi.Models
         /// <remarks>
         /// This is readonly
         /// </remarks>
-        public Guid Key { get; set; }
-
-        /// <summary>
-        /// The UDI for the entity
-        /// </summary>
-        /// <remarks>
-        /// This is readonly
-        /// </remarks>
-        public Udi Udi { get; set; }
-
+        public Guid Id { get; set; }
+        
         public int SortOrder { get; set; }
 
     }

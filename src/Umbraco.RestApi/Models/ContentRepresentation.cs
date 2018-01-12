@@ -21,22 +21,22 @@ namespace Umbraco.RestApi.Models
             base.CreateHypermedia();
 
             //required link to self
-            Href = LinkTemplates.Content.Self.CreateLink(new { id = Key }).Href;
+            Href = LinkTemplates.Content.Self.CreateLink(new { id = Id }).Href;
             Rel = LinkTemplates.Content.Self.Rel;
 
             Links.Add(LinkTemplates.Content.Root);
 
-            Links.Add(LinkTemplates.Content.PagedChildren.CreateLinkTemplate(Key));
-            Links.Add(LinkTemplates.Content.PagedDescendants.CreateLinkTemplate(Key));
-            Links.Add(LinkTemplates.Content.PagedAncestors.CreateLinkTemplate(Key));
+            Links.Add(LinkTemplates.Content.PagedChildren.CreateLinkTemplate(Id));
+            Links.Add(LinkTemplates.Content.PagedDescendants.CreateLinkTemplate(Id));
+            Links.Add(LinkTemplates.Content.PagedAncestors.CreateLinkTemplate(Id));
             Links.Add(LinkTemplates.Content.Parent.CreateLink(new { parentId = ParentId }));
 
             //links to the relations api
-            Links.Add(LinkTemplates.Relations.Children.CreateLinkTemplate(Key));
-            Links.Add(LinkTemplates.Relations.Parents.CreateLinkTemplate(Key));
+            Links.Add(LinkTemplates.Relations.Children.CreateLinkTemplate(Id));
+            Links.Add(LinkTemplates.Relations.Parents.CreateLinkTemplate(Id));
 
             //file upload
-            Links.Add(LinkTemplates.Media.Upload.CreateLink(new { id = Key }));
+            Links.Add(LinkTemplates.Media.Upload.CreateLink(new { id = Id }));
         }
     }
 }

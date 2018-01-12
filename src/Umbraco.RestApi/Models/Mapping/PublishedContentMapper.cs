@@ -6,6 +6,7 @@ using Umbraco.Core;
 using Umbraco.Core.Models;
 using Umbraco.Core.Models.Mapping;
 using Umbraco.Core.Models.PublishedContent;
+using Umbraco.Web;
 
 namespace Umbraco.RestApi.Models.Mapping
 {
@@ -18,8 +19,8 @@ namespace Umbraco.RestApi.Models.Mapping
                 .IgnoreHalProperties()
                 .ForMember(representation => representation.CreateDate, expression => expression.MapFrom(x => x.CreateDate.ToUniversalTime())) 
                 .ForMember(representation => representation.UpdateDate, expression => expression.MapFrom(x => x.UpdateDate.ToUniversalTime())) 
-                .ForMember(representation => representation.Key, expression => expression.ResolveUsing<ContentWithKeyResolver>())
-                .ForMember(representation => representation.Udi, expression => expression.ResolveUsing<PublishedContentUdiResolver>())
+                .ForMember(representation => representation.Id, expression => expression.ResolveUsing<ContentWithKeyResolver>())
+                .ForMember(representation => representation.ParentId, expression => expression.ResolveUsing<ParentKeyResolver>())
                 .ForMember(representation => representation.HasChildren, expression => expression.MapFrom(content => content.Children.Any()))
                 .ForMember(representation => representation.Properties, expression => expression.ResolveUsing((ResolutionResult result) =>
                 {
@@ -56,13 +57,16 @@ namespace Umbraco.RestApi.Models.Mapping
                 }));
         }
 
-        private class PublishedContentUdiResolver : ValueResolver<IPublishedContent, Udi>
+        private class ParentKeyResolver : ValueResolver<IPublishedContent, Guid>
         {
-            protected override Udi ResolveCore(IPublishedContent source)
+            protected override Guid ResolveCore(IPublishedContent source)
             {
-                var withKey = GetContentWithKey(source);
-                var key = withKey?.Key ?? Guid.Empty;
-                return Udi.Create(Constants.UdiEntityType.Document, key);
+                var parent = source.Parent;
+                if (parent == null)
+                    return Guid.Empty;
+
+                var withKey = GetContentWithKey(parent);
+                return withKey?.Key ?? Guid.Empty;
             }
         }
 
