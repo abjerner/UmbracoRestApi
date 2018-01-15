@@ -15,7 +15,7 @@ namespace Umbraco.RestApi.Models
         public DateTime UpdateDate { get; set; }
      
         [Required]
-        [Display(Name = "contentTypeAlias")]        
+        [Display(Name = "contentTypeAlias")]
         public string ContentTypeAlias { get; set; }
 
         [JsonConverter(typeof(ExplicitlyCasedDictionaryKeyJsonConverter<object>))]

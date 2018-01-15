@@ -21,7 +21,7 @@ namespace Umbraco.RestApi.Models
             _childLink = childLink;
         }
 
-        public Guid Id { get; set; }
+        public int Id { get; set; }
 
         [RequireNonDefault]
         public Guid ChildId { get; set; }

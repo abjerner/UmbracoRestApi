@@ -20,7 +20,9 @@ namespace Umbraco.RestApi.Tests.TestHelpers
                     RealName = "Admin",
                     StartContentNodes = new[] { -1 },
                     StartMediaNodes = new[] { -1 },
-                    Username = "admin"
+                    Username = "admin",
+                    SecurityStamp = Guid.NewGuid().ToString(),
+                    SessionId = Guid.NewGuid().ToString()
                 });
             UmbracoBackOfficeIdentity = identity;
         }

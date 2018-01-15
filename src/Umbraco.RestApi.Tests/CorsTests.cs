@@ -13,6 +13,7 @@ using Moq;
 using Newtonsoft.Json;
 using NUnit.Framework;
 using Owin;
+using Umbraco.Core;
 using Umbraco.Core.Configuration;
 using Umbraco.Core.Models;
 using Umbraco.Core.PropertyEditors;
@@ -30,6 +31,8 @@ namespace Umbraco.RestApi.Tests
         {
             ConfigurationManager.AppSettings.Set("umbracoPath", "~/umbraco");
             ConfigurationManager.AppSettings.Set("umbracoConfigurationStatus", UmbracoVersion.Current.ToString(3));
+            var mockSettings = MockUmbracoSettings.GenerateMockSettings();
+            UmbracoConfig.For.CallMethod("SetUmbracoSettings", mockSettings);
         }
 
         [TearDown]
@@ -176,7 +179,7 @@ namespace Umbraco.RestApi.Tests
 
                 request.Content = new StringContent(@"{
   ""contentTypeAlias"": ""testType"",
-  ""parentId"": 456,
+  ""parentId"": """ + 456.ToGuid() + @""",
   ""templateId"": 9,
   ""name"": ""Home"",
   ""properties"": {

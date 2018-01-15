@@ -12,6 +12,7 @@ using Moq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
+using Umbraco.Core;
 using Umbraco.Core.Configuration;
 using Umbraco.RestApi.Routing;
 using Umbraco.RestApi.Tests.TestHelpers;
@@ -142,9 +143,9 @@ namespace Umbraco.RestApi.Tests
 
                 var djson = JsonConvert.DeserializeObject<JObject>(json);
 
-                Assert.AreEqual("/umbraco/rest/v1/content/published/0000007b-0000-0000-0000-000000000000", djson["_links"]["self"]["href"].Value<string>());
-                Assert.AreEqual("/umbraco/rest/v1/content/published/456", djson["_links"]["parent"]["href"].Value<string>());
-                Assert.AreEqual("/umbraco/rest/v1/content/published/0000007b-0000-0000-0000-000000000000/children{?page,size,query}", djson["_links"]["children"]["href"].Value<string>());
+                Assert.AreEqual($"/umbraco/rest/v1/content/published/{123.ToGuid()}", djson["_links"]["self"]["href"].Value<string>());
+                Assert.AreEqual($"/umbraco/rest/v1/content/published/{456.ToGuid()}", djson["_links"]["parent"]["href"].Value<string>());
+                Assert.AreEqual($"/umbraco/rest/v1/content/published/{123.ToGuid()}/children{{?page,size,query}}", djson["_links"]["children"]["href"].Value<string>());
                 Assert.AreEqual("/umbraco/rest/v1/content/published", djson["_links"]["root"]["href"].Value<string>());
 
                 var properties = djson["properties"].ToObject<IDictionary<string, object>>();
@@ -195,7 +196,7 @@ namespace Umbraco.RestApi.Tests
                 var djson = JsonConvert.DeserializeObject<JObject>(json);
 
                 Assert.AreEqual($"/umbraco/rest/v1/content/published/{content.Key}", djson["_links"]["self"]["href"].Value<string>());
-                Assert.AreEqual("/umbraco/rest/v1/content/published/456", djson["_links"]["parent"]["href"].Value<string>());
+                Assert.AreEqual($"/umbraco/rest/v1/content/published/{456.ToGuid()}", djson["_links"]["parent"]["href"].Value<string>());
                 Assert.AreEqual($"/umbraco/rest/v1/content/published/{content.Key}/children{{?page,size,query}}", djson["_links"]["children"]["href"].Value<string>());
                 Assert.AreEqual("/umbraco/rest/v1/content/published", djson["_links"]["root"]["href"].Value<string>());
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
+using Newtonsoft.Json;
 using Umbraco.Core;
 using WebApi.Hal;
 
@@ -14,13 +15,18 @@ namespace Umbraco.RestApi.Models
         [Required]
         [Display(Name = "name")]
         public string Name { get; set; }
-
-        [RequireNonDefault]
+        
         [Display(Name = "parentId")]
         public Guid ParentId { get; set; }
         public string Path { get; set; }
         public bool HasChildren { get; set; }
         public int Level { get; set; }
+
+        /// <summary>
+        /// Used internally to avoid extra lookups
+        /// </summary>
+        [JsonIgnore]
+        internal int InternalId { get; set; }
 
         /// <summary>
         /// The Guid for the entity

@@ -345,7 +345,6 @@ namespace Umbraco.RestApi.Controllers
         {
             if (content == null) return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            //TODO: Since this Id is based on a route parameter it should be possible to authz this with an attribute
             if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.MediaUpdate))
                 return Request.CreateResponse(HttpStatusCode.Unauthorized);
 
@@ -382,7 +381,6 @@ namespace Umbraco.RestApi.Controllers
         [CustomRoute("{id:int}")]
         public virtual async Task<HttpResponseMessage> Delete(int id)
         {
-            //TODO: Since this Id is based on a route parameter it should be possible to authz this with an attribute
             if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.MediaDelete))
                 return Request.CreateResponse(HttpStatusCode.Unauthorized);
 
@@ -415,7 +413,6 @@ namespace Umbraco.RestApi.Controllers
         [CustomRoute("{id:int}/upload")]
         public async Task<HttpResponseMessage> UploadFile(int id, string property = "umbracoFile")
         {
-            //TODO: Since this Id is based on a route parameter it should be possible to authz this with an attribute
             if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.MediaUpdate))
                 return Request.CreateResponse(HttpStatusCode.Unauthorized);
 

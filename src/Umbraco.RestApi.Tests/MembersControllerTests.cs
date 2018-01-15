@@ -20,6 +20,7 @@ using Umbraco.Core.PropertyEditors;
 using Umbraco.RestApi.Routing;
 using Umbraco.RestApi.Tests.TestHelpers;
 using System.IO;
+using Umbraco.Core;
 using Task = System.Threading.Tasks.Task;
 
 namespace Umbraco.RestApi.Tests
@@ -148,7 +149,7 @@ namespace Umbraco.RestApi.Tests
 
                 var djson = JsonConvert.DeserializeObject<JObject>(json);
 
-                Assert.AreEqual("/umbraco/rest/v1/members/123", djson["_links"]["self"]["href"].Value<string>());
+                Assert.AreEqual($"/umbraco/rest/v1/members/{123.ToGuid()}", djson["_links"]["self"]["href"].Value<string>());
                 Assert.AreEqual("/umbraco/rest/v1/members{?page,size,query,orderBy,direction,memberTypeAlias}", djson["_links"]["root"]["href"].Value<string>());
 
                 var properties = djson["properties"].ToObject<IDictionary<string, object>>();
@@ -298,8 +299,6 @@ namespace Umbraco.RestApi.Tests
   ""name"": ""John Johnson"",
   ""email"" : ""john@johnson.com"",
   ""userName"" : ""johnjohnson"",
-  ""parentId"": 456,
-  ""templateId"": 9,
   ""properties"": {
     ""thisDoesntExist"": ""property value1"",
     ""testProperty2"": ""property value2""

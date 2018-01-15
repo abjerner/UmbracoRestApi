@@ -20,7 +20,7 @@ using Umbraco.Core.Models.EntityBase;
 
 namespace Umbraco.RestApi.Controllers
 {
-    //TODO: We need to also implement ICrudController<Guid, RelationRepresentation> but to do that we need to make mods to the Core to support better GUID lookup for relations
+    //TODO: We want to also implement ICrudController<Guid, RelationRepresentation> but to do that we need to make mods to the Core and DB to support GUID lookup for relations which it doesn't currently
     [ResourceAuthorize(Policy = AuthorizationPolicies.DefaultRestApi)]
     [UmbracoRoutePrefix("rest/v1/relations")]
     public class RelationsController : UmbracoHalController, ICrudController<int, RelationRepresentation>, IRootController

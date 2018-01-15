@@ -14,6 +14,7 @@ namespace Umbraco.RestApi.Models.Mapping
         {
             config.CreateMap<IMember, MemberRepresentation>()
                 .IgnoreHalProperties()
+                .ForMember(representation => representation.InternalId, expression => expression.MapFrom(x => x.Id))
                 .ForMember(representation => representation.Id, expression => expression.MapFrom(x => x.Key))
                 .ForMember(representation => representation.ParentId, expression => expression.UseValue(Guid.Empty))
                 .ForMember(representation => representation.CreateDate, expression => expression.MapFrom(x => x.CreateDate.ToUniversalTime()))                

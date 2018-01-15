@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Moq;
+using Umbraco.Core;
 using Umbraco.Core.Cache;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
@@ -18,8 +19,11 @@ namespace Umbraco.RestApi.Tests.TestHelpers
             mockMediaService.Setup(x => x.GetById(It.IsAny<int>())).Returns(() => ModelMocks.SimpleMockedMedia());
             mockMediaService.Setup(x => x.GetChildren(It.IsAny<int>())).Returns(new List<IMedia>(new[] { ModelMocks.SimpleMockedMedia(789) }));
             mockMediaService.Setup(x => x.HasChildren(It.IsAny<int>())).Returns(true);
-            mockMediaService.Setup(x => x.CreateMedia(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>()))
+            mockMediaService.Setup(x => x.CreateMedia(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<int>()))
                 .Returns(() => ModelMocks.SimpleMockedMedia(8888));
+
+            var entityServiceMock = Mock.Get(serviceContext.EntityService);
+            entityServiceMock.Setup(x => x.GetIdForKey(456.ToGuid(), UmbracoObjectTypes.Media)).Returns(Attempt.Succeed(456));
 
             var mockContentTypeService = Mock.Get(serviceContext.ContentTypeService);
             mockContentTypeService.Setup(x => x.GetMediaType(It.IsAny<string>())).Returns(ModelMocks.SimpleMockedMediaType());

@@ -14,6 +14,7 @@ namespace Umbraco.RestApi.Models.Mapping
         {
             config.CreateMap<IMedia, MediaRepresentation>()
                 .IgnoreHalProperties()
+                .ForMember(representation => representation.InternalId, expression => expression.MapFrom(x => x.Id))
                 .ForMember(representation => representation.Id, expression => expression.MapFrom(x => x.Key))
                 .ForMember(
                     representation => representation.ParentId,
