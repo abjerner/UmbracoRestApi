@@ -128,7 +128,7 @@ namespace Umbraco.RestApi.Controllers
 
             var helper = new ContentControllerHelper(Services.TextService);
 
-            var result = new ContentMetadataRepresentation(LinkTemplates.Media.MetaData, LinkTemplates.Media.Self, id)
+            var result = new ContentMetadataRepresentation(LinkTemplates.Media.MetaData, LinkTemplates.Media.Self, found.Key)
             {
                 Fields = helper.GetDefaultFieldMetaData(ClaimsPrincipal),
                 Properties = Mapper.Map<IDictionary<string, ContentPropertyInfo>>(found),

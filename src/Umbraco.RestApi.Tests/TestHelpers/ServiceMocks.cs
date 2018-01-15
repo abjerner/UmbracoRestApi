@@ -33,8 +33,9 @@ namespace Umbraco.RestApi.Tests.TestHelpers
             var mockedDataTypeService = Mock.Of<IDataTypeService>();
             var mockedRelationService = Mock.Of<IRelationService>();
             var mockedMigrationService = new Mock<IMigrationEntryService>();
-            var mockedUserService = new Mock<IUserService>();            
+            var mockedUserService = new Mock<IUserService>();
             var mockedEntityService = new Mock<IEntityService>();
+            var mockedFileService = new Mock<IFileService>();
 
             var serviceContext = new ServiceContext(
                 dataTypeService: mockedDataTypeService,
@@ -47,7 +48,8 @@ namespace Umbraco.RestApi.Tests.TestHelpers
                 relationService: mockedRelationService,
                 migrationEntryService: mockedMigrationService.Object,
                 userService: mockedUserService.Object,
-                entityService: mockedEntityService.Object);
+                entityService: mockedEntityService.Object,
+                fileService: mockedFileService.Object);
 
             return serviceContext;
         }

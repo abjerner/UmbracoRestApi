@@ -12,7 +12,7 @@ namespace Umbraco.RestApi.Models
     {        
         public string ContentTypeAlias { get; set; }
         public Guid ParentId { get; set; }
-        public int TemplateId { get; set; }
+        public Guid TemplateId { get; set; }
         public string Name { get; set; }
 
         [JsonConverter(typeof(ExplicitlyCasedDictionaryKeyJsonConverter<object>))]

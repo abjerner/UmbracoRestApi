@@ -135,7 +135,7 @@ namespace Umbraco.RestApi.Controllers
 
             var helper = new ContentControllerHelper(Services.TextService);
 
-            var result = new ContentMetadataRepresentation(LinkTemplates.Content.MetaData, LinkTemplates.Content.Self, id)
+            var result = new ContentMetadataRepresentation(LinkTemplates.Content.MetaData, LinkTemplates.Content.Self, found.Key)
             {
                 Fields = helper.GetDefaultFieldMetaData(ClaimsPrincipal),
                 Properties = Mapper.Map<IDictionary<string, ContentPropertyInfo>>(found),
@@ -341,6 +341,17 @@ namespace Umbraco.RestApi.Controllers
                     throw ValidationException(ModelState, content, LinkTemplates.Content.Root);
                 }
 
+                //lookup template
+                if (content.TemplateId != Guid.Empty)
+                {
+                    created.Template = Services.FileService.GetTemplate(content.TemplateId);
+                    if (created.Template == null)
+                    {
+                        ModelState.AddModelError("content.templateId", "No template found with id " + content.TemplateId);
+                        throw ValidationException(ModelState, content, LinkTemplates.Content.Root);
+                    }
+                }
+
                 Mapper.Map(content, created);
                 Services.ContentService.Save(created, ClaimsPrincipal.GetUserId() ?? 0);
 
@@ -386,6 +397,21 @@ namespace Umbraco.RestApi.Controllers
                 if (!ModelState.IsValid)
                 {
                     throw ValidationException(ModelState, content, LinkTemplates.Content.Self, id: id);
+                }
+
+                //lookup template
+                if (content.TemplateId != Guid.Empty)
+                {
+                    found.Template = Services.FileService.GetTemplate(content.TemplateId);
+                    if (found.Template == null)
+                    {
+                        ModelState.AddModelError("content.templateId", "No template found with id " + content.TemplateId);
+                        throw ValidationException(ModelState, content, LinkTemplates.Content.Root);
+                    }
+                }
+                else
+                {
+                    found.Template = null;
                 }
 
                 Mapper.Map(content, found);

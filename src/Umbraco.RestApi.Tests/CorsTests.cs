@@ -180,7 +180,7 @@ namespace Umbraco.RestApi.Tests
                 request.Content = new StringContent(@"{
   ""contentTypeAlias"": ""testType"",
   ""parentId"": """ + 456.ToGuid() + @""",
-  ""templateId"": 9,
+  ""templateId"": """ + 9.ToGuid() + @""",
   ""name"": ""Home"",
   ""properties"": {
     ""TestProperty1"": ""property value1"",

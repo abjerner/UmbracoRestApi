@@ -370,7 +370,7 @@ namespace Umbraco.RestApi.Tests
             await base.Post_Is_201_Response(startup.UseDefaultTestSetup, RouteConstants.ContentSegment, new StringContent(@"{
   ""contentTypeAlias"": ""testType"",
   ""parentId"": """ + 456.ToGuid() + @""",
-  ""templateId"": 9,
+  ""templateId"": """ + 9.ToGuid() + @""",
   ""name"": ""Home"",
   ""properties"": {
     ""TestProperty1"": ""property value1"",
@@ -403,7 +403,7 @@ namespace Umbraco.RestApi.Tests
                 request.Content = new StringContent(@"{
   ""contentTypeAlias"": """",
   ""parentId"": """ + 456.ToGuid() + @""",
-  ""templateId"": 9,
+  ""templateId"": """ + 9.ToGuid() + @""",
   ""name"": """",
   ""properties"": {
     ""TestProperty1"": ""property value1"",
@@ -454,7 +454,7 @@ namespace Umbraco.RestApi.Tests
     ""name"": ""test"",  
     ""contentTypeAlias"": ""test"",
   ""parentId"": """ + 456.ToGuid() + @""",
-  ""templateId"": 9,
+  ""templateId"": """ + 9.ToGuid() + @""",
   ""properties"": {
     ""thisDoesntExist"": ""property value1"",
     ""testProperty2"": ""property value2""
@@ -506,7 +506,7 @@ namespace Umbraco.RestApi.Tests
     ""name"": ""test"",  
     ""contentTypeAlias"": ""test"",
   ""parentId"": """ + 456.ToGuid() + @""",
-  ""templateId"": 9,
+  ""templateId"": """ + 9.ToGuid() + @""",
   ""properties"": {
     ""TestProperty1"": """",
     ""testProperty2"": ""property value2""
@@ -544,7 +544,7 @@ namespace Umbraco.RestApi.Tests
             await base.Put_Is_200_Response(startup.UseDefaultTestSetup, RouteConstants.ContentSegment, new StringContent(@"{
   ""contentTypeAlias"": ""testType"",
   ""parentId"": """ + 456.ToGuid() + @""",
-  ""templateId"": 9,
+  ""templateId"": """ + 9.ToGuid() + @""",
   ""published"": false,
   ""name"": ""Home"",
   ""properties"": {
@@ -571,7 +571,7 @@ namespace Umbraco.RestApi.Tests
             await base.Put_Is_200_Response(startup.UseDefaultTestSetup, RouteConstants.ContentSegment, new StringContent(@"{
   ""contentTypeAlias"": ""testType"",
   ""parentId"": """ + 456.ToGuid() + @""",
-  ""templateId"": 9,
+  ""templateId"": """ + 9.ToGuid() + @""",
   ""published"": true,
   ""name"": ""Home"",
   ""properties"": {

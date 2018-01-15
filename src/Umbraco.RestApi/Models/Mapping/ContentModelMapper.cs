@@ -16,6 +16,7 @@ namespace Umbraco.RestApi.Models.Mapping
                 .IgnoreHalProperties()
                 .ForMember(representation => representation.InternalId, expression => expression.MapFrom(x => x.Id))
                 .ForMember(representation => representation.Id, expression => expression.MapFrom(x => x.Key))
+                .ForMember(representation => representation.TemplateId, expression => expression.MapFrom(x => x.Template.Key))
                 .ForMember(
                     representation => representation.ParentId, 
                     expression => expression.ResolveUsing(

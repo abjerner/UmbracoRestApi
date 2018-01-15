@@ -25,6 +25,14 @@ namespace Umbraco.RestApi.Tests.TestHelpers
             var entityServiceMock = Mock.Get(serviceContext.EntityService);
             entityServiceMock.Setup(x => x.GetIdForKey(456.ToGuid(), UmbracoObjectTypes.Document)).Returns(Attempt.Succeed(456));
 
+            var fileServiceMock = Mock.Get(serviceContext.FileService);
+            fileServiceMock.Setup(x => x.GetTemplate(9.ToGuid())).Returns(
+                Mock.Of<ITemplate>(template => 
+                template.Id == 9
+                && template.Key == 9.ToGuid()
+                && template.Name == "test" 
+                && template.IsMasterTemplate == false));
+
             var mockContentTypeService = Mock.Get(serviceContext.ContentTypeService);
             mockContentTypeService.Setup(x => x.GetContentType(It.IsAny<string>())).Returns(ModelMocks.SimpleMockedContentType());
 
