@@ -121,7 +121,7 @@ namespace Umbraco.RestApi.Controllers
             var pages = (total + query.PageSize - 1) / query.PageSize;
 
             var items = AutoMapper.Mapper.Map<IEnumerable<PublishedContentRepresentation>>(resolved.Skip(ContentControllerHelper.GetSkipSize(query.Page - 1, query.PageSize)).Take(query.PageSize)).ToList();
-            var result = new PublishedContentPagedListRepresentation(items, total, pages, query.Page, query.PageSize, LinkTemplates.PublishedContent.PagedChildren, new { id = content.Id });
+            var result = new PublishedContentPagedListRepresentation(items, total, pages, query.Page, query.PageSize, LinkTemplates.PublishedContent.PagedChildren, new { id = content.GetKey() });
 
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
@@ -155,7 +155,7 @@ namespace Umbraco.RestApi.Controllers
             var total = resolved.Length;
             var pages = (total + query.PageSize - 1) / query.PageSize;
             var items = AutoMapper.Mapper.Map<IEnumerable<PublishedContentRepresentation>>(resolved.Skip(ContentControllerHelper.GetSkipSize(query.Page - 1, query.PageSize)).Take(query.PageSize)).ToList();
-            var result = new PublishedContentPagedListRepresentation(items, total, pages, query.Page, query.PageSize, LinkTemplates.PublishedContent.PagedDescendants, new { id = content.Id });
+            var result = new PublishedContentPagedListRepresentation(items, total, pages, query.Page, query.PageSize, LinkTemplates.PublishedContent.PagedDescendants, new { id = content.GetKey() });
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
@@ -189,7 +189,7 @@ namespace Umbraco.RestApi.Controllers
             var pages = (total + query.PageSize - 1) / query.PageSize;
 
             var items = AutoMapper.Mapper.Map<IEnumerable<PublishedContentRepresentation>>(resolved.Skip(ContentControllerHelper.GetSkipSize(query.Page - 1, query.PageSize)).Take(query.PageSize)).ToList();
-            var result = new PublishedContentPagedListRepresentation(items, total, pages, query.Page, query.PageSize, LinkTemplates.PublishedContent.PagedAncestors, new { id = content.Id });
+            var result = new PublishedContentPagedListRepresentation(items, total, pages, query.Page, query.PageSize, LinkTemplates.PublishedContent.PagedAncestors, new { id = content.GetKey() });
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
