@@ -195,7 +195,7 @@ namespace Umbraco.RestApi.Controllers
 
 
         [HttpGet]
-        [CustomRoute("query/{id?}")]
+        [CustomRoute("query/{id:int?}")]
         public HttpResponseMessage GetQuery(
             [System.Web.Http.ModelBinding.ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query,
