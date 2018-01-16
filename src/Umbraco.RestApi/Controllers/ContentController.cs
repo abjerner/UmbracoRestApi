@@ -7,8 +7,6 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web.Http;
-using System.Web.Http.Controllers;
-using System.Web.Http.Filters;
 using AutoMapper;
 using Examine;
 using Examine.Providers;
@@ -19,17 +17,11 @@ using Umbraco.RestApi.Routing;
 using Umbraco.Web;
 using System.Web.Http.ModelBinding;
 using Microsoft.Owin.Security.Authorization.WebApi;
-using Newtonsoft.Json;
 using umbraco.BusinessLogic.Actions;
-using Umbraco.Core.Models.Membership;
 using Umbraco.Core.Publishing;
-using Umbraco.Web.Models.ContentEditing;
 using Umbraco.Core.Services;
 using Umbraco.RestApi.Security;
-using Umbraco.Web.WebApi;
 using WebApi.Hal;
-using Task = System.Threading.Tasks.Task;
-using System.Web;
 
 namespace Umbraco.RestApi.Controllers
 {
@@ -169,7 +161,12 @@ namespace Umbraco.RestApi.Controllers
             var pages = ContentControllerHelper.GetTotalPages(total, query.PageSize);
             var mapped = Mapper.Map<IEnumerable<ContentRepresentation>>(items).ToList();
 
-            var result = new ContentPagedListRepresentation(mapped, total, pages, query.Page, query.PageSize, LinkTemplates.Content.PagedChildren, new { id = id });
+            // this seems stupid since we usually end up in here by request via guid from the method below...
+            var key = Services.EntityService.GetKeyForId(100000, UmbracoObjectTypes.Document);
+            if (key.Result == Guid.Empty)
+                Request.CreateResponse(HttpStatusCode.NotFound);
+
+            var result = new ContentPagedListRepresentation(mapped, total, pages, query.Page, query.PageSize, LinkTemplates.Content.PagedChildren, new { id = key.Result });
 
             FilterAllowedOutgoingContent(result);
 
@@ -201,7 +198,12 @@ namespace Umbraco.RestApi.Controllers
             var pages = ContentControllerHelper.GetTotalPages(total, query.PageSize);
             var mapped = Mapper.Map<IEnumerable<ContentRepresentation>>(items).ToList();
 
-            var result = new ContentPagedListRepresentation(mapped, total, pages, query.Page - 1, query.PageSize, LinkTemplates.Content.PagedDescendants, new { id = id });
+            // this seems stupid since we usually end up in here by request via guid from the method above...
+            var key = Services.EntityService.GetKeyForId(id, UmbracoObjectTypes.Document);
+            if (key.Result == Guid.Empty)
+                Request.CreateResponse(HttpStatusCode.NotFound);
+
+            var result = new ContentPagedListRepresentation(mapped, total, pages, query.Page, query.PageSize, LinkTemplates.Content.PagedDescendants, new { id = key.Result });
 
             FilterAllowedOutgoingContent(result);
 
@@ -235,7 +237,12 @@ namespace Umbraco.RestApi.Controllers
             var paged = items.Skip(ContentControllerHelper.GetSkipSize(query.Page - 1, query.PageSize)).Take(query.PageSize);
             var mapped = Mapper.Map<IEnumerable<ContentRepresentation>>(paged).ToList();
 
-            var result = new ContentPagedListRepresentation(mapped, total, pages, query.Page - 1, query.PageSize, LinkTemplates.Content.PagedAncestors, new { id = id });
+            // this seems stupid since we usually end up in here by request via guid from the method above...
+            var key = Services.EntityService.GetKeyForId(id, UmbracoObjectTypes.Document);
+            if (key.Result == Guid.Empty)
+                Request.CreateResponse(HttpStatusCode.NotFound);
+
+            var result = new ContentPagedListRepresentation(mapped, total, pages, query.Page, query.PageSize, LinkTemplates.Content.PagedAncestors, new { id = key.Result });
 
             FilterAllowedOutgoingContent(result);
 
@@ -291,7 +298,7 @@ namespace Umbraco.RestApi.Controllers
             var items = Mapper.Map<IEnumerable<ContentRepresentation>>(foundContent).ToList();
 
             //return as paged list of media items
-            var representation = new ContentPagedListRepresentation(items, result.TotalItemCount, pages, query.Page - 1, query.PageSize, LinkTemplates.Content.Search, new { query = query.Query, pageSize = query.PageSize });
+            var representation = new ContentPagedListRepresentation(items, result.TotalItemCount, pages, query.Page, query.PageSize, LinkTemplates.Content.Search, new { query = query.Query, pageSize = query.PageSize });
 
             //TODO: Enable this
             //FilterAllowedOutgoingContent(result);
@@ -553,7 +560,5 @@ namespace Umbraco.RestApi.Controllers
                     return;
             }
         }
-
     }
-   
 }
