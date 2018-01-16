@@ -4,25 +4,22 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
-using System.Web.Http.Filters;
 using System.Web.Security;
 using Examine;
 using Examine.Providers;
 using Microsoft.Owin.Security.Authorization.WebApi;
 using Umbraco.Core;
 using Umbraco.Core.Configuration;
-using Umbraco.Core.Configuration.UmbracoSettings;
 using Umbraco.Core.Models;
 using Umbraco.RestApi.Models;
 using Umbraco.RestApi.Routing;
 using Umbraco.RestApi.Security;
 using Umbraco.Web;
-using Umbraco.Web.WebApi;
 
 namespace Umbraco.RestApi.Controllers
 {
     [ResourceAuthorize(Policy = AuthorizationPolicies.PublishedContentRead)]
-    [UmbracoRoutePrefix("rest/v1/content/published")]    
+    [UmbracoRoutePrefix("rest/v1/content/published")]
     public class PublishedContentController : UmbracoHalController
     {
         public PublishedContentController()
@@ -44,14 +41,14 @@ namespace Umbraco.RestApi.Controllers
             : base(umbracoContext, umbracoHelper)
         {
             _pcrFactory = pcrFactory;
-            _searchProvider = searchProvider ?? throw new ArgumentNullException("searchProvider");            
+            _searchProvider = searchProvider ?? throw new ArgumentNullException("searchProvider");
         }
 
         private IPublishedContentRequestFactory _pcrFactory;
         protected IPublishedContentRequestFactory PcrFactory => _pcrFactory ?? (_pcrFactory = new PublishedContentRequestFactory(UmbracoContext, UmbracoConfig.For.UmbracoSettings().WebRouting, Roles.GetRolesForUser));
 
         private BaseSearchProvider _searchProvider;
-        protected BaseSearchProvider SearchProvider => _searchProvider ?? (_searchProvider = ExamineManager.Instance.SearchProviderCollection["ExternalSearcher"]);        
+        protected BaseSearchProvider SearchProvider => _searchProvider ?? (_searchProvider = ExamineManager.Instance.SearchProviderCollection["ExternalSearcher"]);
 
         [HttpGet]
         [CustomRoute("")]
@@ -60,7 +57,7 @@ namespace Umbraco.RestApi.Controllers
             var rootContent = Umbraco.TypedContentAtRoot().ToArray();
             if (rootContent.Length > 0)
                 PcrFactory.Create(rootContent[0], Request.RequestUri);
-            
+
             var result = AutoMapper.Mapper.Map<IEnumerable<PublishedContentRepresentation>>(rootContent).ToList();
             var representation = new PublishedContentListRepresenation(result);
             return Request.CreateResponse(HttpStatusCode.OK, representation);
@@ -178,7 +175,7 @@ namespace Umbraco.RestApi.Controllers
         {
             return GetAncestorsInternal(() => Umbraco.TypedContent(id), query);
         }
-        
+
         private HttpResponseMessage GetAncestorsInternal(Func<IPublishedContent> getContent, PagedQuery query)
         {
             var content = getContent();
@@ -232,7 +229,7 @@ namespace Umbraco.RestApi.Controllers
 
             return Request.CreateResponse(HttpStatusCode.OK, representation);
         }
-        
+
         [HttpGet]
         [CustomRoute("query/{id:guid?}")]
         public HttpResponseMessage GetQuery(
