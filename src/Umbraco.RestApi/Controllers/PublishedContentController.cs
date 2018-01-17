@@ -63,7 +63,6 @@ namespace Umbraco.RestApi.Controllers
             return Request.CreateResponse(HttpStatusCode.OK, representation);
         }
 
-
         [HttpGet]
         [CustomRoute("{id:int}")]
         public HttpResponseMessage Get(int id)
@@ -312,6 +311,5 @@ namespace Umbraco.RestApi.Controllers
 
             return Request.CreateResponse(HttpStatusCode.OK, representation);
         }
-
     }
 }

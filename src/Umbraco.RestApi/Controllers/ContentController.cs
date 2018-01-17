@@ -83,7 +83,7 @@ namespace Umbraco.RestApi.Controllers
                 ? Services.ContentService.GetRootContent()
                 : Services.ContentService.GetByIds(startContentIdsAsInt);
 
-            var result = Mapper.Map<IEnumerable<ContentRepresentation>>(rootContent).ToList();
+            var result = Mapper.Map<IEnumerable<ContentRepresentation>>(rootContent).OrderBy(x => x.SortOrder).ToList();
             var representation = new ContentListRepresenation(result);
 
             return Request.CreateResponse(HttpStatusCode.OK, representation);
