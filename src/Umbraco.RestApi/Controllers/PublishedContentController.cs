@@ -193,13 +193,21 @@ namespace Umbraco.RestApi.Controllers
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
+        [HttpGet]
+        [CustomRoute("query")]
+        public HttpResponseMessage GetQuery(
+            [System.Web.Http.ModelBinding.ModelBinder(typeof(PagedQueryModelBinder))]
+            PagedQuery query)
+        {
+            return GetQuery(query, 0);
+        }
 
         [HttpGet]
-        [CustomRoute("query/{id:int?}")]
+        [CustomRoute("query/{id:int}")]
         public HttpResponseMessage GetQuery(
             [System.Web.Http.ModelBinding.ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query,
-            int id = 0)
+            int id)
         {
             var rootQuery = "";
             if (id > 0)
@@ -219,7 +227,7 @@ namespace Umbraco.RestApi.Controllers
             }
             catch (Exception)
             {
-                //in case the xpath query fails - do nothing as we will return a empty array instead    
+                //in case the xpath query fails - do nothing as we will return a empty array instead
             }
 
             var paged = result.Skip((int)skip).Take(take);
@@ -231,13 +239,13 @@ namespace Umbraco.RestApi.Controllers
         }
 
         [HttpGet]
-        [CustomRoute("query/{id:guid?}")]
+        [CustomRoute("query/{id:guid}")]
         public HttpResponseMessage GetQuery(
             [System.Web.Http.ModelBinding.ModelBinder(typeof(PagedQueryModelBinder))] PagedQuery query,
-            Guid? id = null)
+            Guid id)
         {
             //we will convert to INT here because the GUID lookup in xpath is slow until we fix this https://github.com/umbraco/Umbraco-CMS/pull/2367
-            var intId = id.HasValue ? Services.EntityService.GetIdForKey(id.Value, UmbracoObjectTypes.Document) : Attempt.Succeed(0);
+            var intId = id != Guid.Empty ? Services.EntityService.GetIdForKey(id, UmbracoObjectTypes.Document) : Attempt.Succeed(0);
             if (intId.Result < 0)
                 Request.CreateResponse(HttpStatusCode.NotFound);
             return GetQuery(query, intId.Result);

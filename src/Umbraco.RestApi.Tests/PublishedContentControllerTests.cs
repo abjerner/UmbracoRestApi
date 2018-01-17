@@ -288,7 +288,5 @@ namespace Umbraco.RestApi.Tests
                 Assert.AreEqual(2, djson["_embedded"]["content"].Count()); 
             }
         }
-
     }
 }
-
