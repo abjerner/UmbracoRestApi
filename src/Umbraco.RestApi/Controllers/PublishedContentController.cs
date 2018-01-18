@@ -229,10 +229,12 @@ namespace Umbraco.RestApi.Controllers
                 //in case the xpath query fails - do nothing as we will return a empty array instead
             }
 
+            var key = Umbraco.TypedContent(id)?.GetKey();
+
             var paged = result.Skip((int)skip).Take(take);
             var pages = (result.Length + query.PageSize - 1) / query.PageSize;
             var items = AutoMapper.Mapper.Map<IEnumerable<PublishedContentRepresentation>>(paged).ToList();
-            var representation = new PublishedContentPagedListRepresentation(items, result.Length, pages, query.Page, query.PageSize, LinkTemplates.PublishedContent.Query, new { query = query.Query, pageSize = query.PageSize });
+            var representation = new PublishedContentPagedListRepresentation(items, result.Length, pages, query.Page, query.PageSize, LinkTemplates.PublishedContent.Query, new { id = key, query = query.Query, pageSize = query.PageSize });
 
             return Request.CreateResponse(HttpStatusCode.OK, representation);
         }
@@ -245,8 +247,8 @@ namespace Umbraco.RestApi.Controllers
         {
             //we will convert to INT here because the GUID lookup in xpath is slow until we fix this https://github.com/umbraco/Umbraco-CMS/pull/2367
             var intId = id != Guid.Empty ? Services.EntityService.GetIdForKey(id, UmbracoObjectTypes.Document) : Attempt.Succeed(0);
-            if (intId.Result < 0)
-                Request.CreateResponse(HttpStatusCode.NotFound);
+            if (intId.Result <= 0)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
             return GetQuery(query, intId.Result);
         }
 
