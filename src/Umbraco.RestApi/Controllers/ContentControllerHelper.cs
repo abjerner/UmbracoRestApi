@@ -1,14 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Security.Claims;
-using System.Text;
-using System.Threading.Tasks;
-using Umbraco.Core.Models.Membership;
 using Umbraco.Core.Services;
 using Umbraco.RestApi.Models;
-using Umbraco.Core.Models;
 
 namespace Umbraco.RestApi.Controllers
 {
@@ -21,19 +16,46 @@ namespace Umbraco.RestApi.Controllers
             _textService = textService;
         }
 
+        /// <summary>
+        /// Helper method to get total amount of pages.
+        /// </summary>
+        /// <param name="totalRecords">Total number of results.</param>
+        /// <param name="pageSize">Number of results per page.</param>
+        /// <returns></returns>
         internal static int GetTotalPages(long totalRecords, int pageSize)
         {
             var totalPages = ((int)totalRecords + pageSize - 1) / pageSize;
             return totalPages;
         }
 
+        /// <summary>
+        /// Helper method to get the number of results to skip.
+        /// </summary>
+        /// <param name="pageIndex">Index of the current page (0-based).</param>
+        /// <param name="pageSize">Number of results per page.</param>
+        /// <returns></returns>
         internal static int GetSkipSize(long pageIndex, int pageSize)
         {
             if (pageIndex >= 0 && pageSize > 0)
             {
-                return Convert.ToInt32((pageIndex) * pageSize);
+                return Convert.ToInt32(pageIndex * pageSize);
             }
             return 0;
+        }
+
+        /// <summary>
+        /// Helper method to determine max number of results to use in an Examine query.
+        /// Examine does not support take - only skip. Use this to limit the query to a maximum of what we need
+        /// and then use skip to get rid of the items we do not need, leading up to this paging result.
+        /// https://shazwazza.com/post/paging-with-examine/
+        /// </summary>
+        /// <param name="page">Number of the current page.</param>
+        /// <param name="pageSize">Number of results per page.</param>
+        /// <returns></returns>
+        /// <remarks>First page is page 1 (not 0-based).</remarks>
+        internal static int GetMaxResults(long page, int pageSize)
+        {
+            return Convert.ToInt32(page * pageSize);
         }
 
         internal IDictionary<string, ContentPropertyInfo> GetDefaultFieldMetaData(ClaimsPrincipal user)

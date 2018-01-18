@@ -275,12 +275,12 @@ namespace Umbraco.RestApi.Controllers
             if (query.Query.IsNullOrWhiteSpace()) throw new HttpResponseException(HttpStatusCode.NotFound);
 
             //Query prepping - ensure that we only search for content items...
-            var mediaQuery = "__IndexType:content AND " + query.Query;
+            var contentQuery = "__IndexType:content AND " + query.Query;
 
             //search
             var result = SearchProvider.Search(
-                    SearchProvider.CreateSearchCriteria().RawQuery(mediaQuery),
-                    query.PageSize);
+                SearchProvider.CreateSearchCriteria().RawQuery(contentQuery),
+                ContentControllerHelper.GetMaxResults(query.Page, query.PageSize));
 
             //paging
             var paged = result.Skip(ContentControllerHelper.GetSkipSize(query.Page - 1, query.PageSize)).ToArray();
