@@ -162,7 +162,7 @@ namespace Umbraco.RestApi.Controllers
             var mapped = Mapper.Map<IEnumerable<ContentRepresentation>>(items).ToList();
 
             // this seems stupid since we usually end up in here by request via guid from the other overload...
-            var key = Services.EntityService.GetKeyForId(100000, UmbracoObjectTypes.Document);
+            var key = Services.EntityService.GetKeyForId(id, UmbracoObjectTypes.Document);
             if (key.Result == Guid.Empty)
                 Request.CreateResponse(HttpStatusCode.NotFound);
 
