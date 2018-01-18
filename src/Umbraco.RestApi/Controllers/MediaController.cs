@@ -156,7 +156,12 @@ namespace Umbraco.RestApi.Controllers
             var pages = ContentControllerHelper.GetTotalPages(total, query.PageSize);
             var mapped = Mapper.Map<IEnumerable<MediaRepresentation>>(items).ToList();
 
-            var result = new MediaPagedListRepresentation(mapped, total, pages, query.Page, query.PageSize, LinkTemplates.Media.PagedChildren, new { id = id });
+            // this seems stupid since we usually end up in here by request via guid from the other overload...
+            var key = Services.EntityService.GetKeyForId(id, UmbracoObjectTypes.Media);
+            if (key.Result == Guid.Empty)
+                Request.CreateResponse(HttpStatusCode.NotFound);
+
+            var result = new MediaPagedListRepresentation(mapped, total, pages, query.Page, query.PageSize, LinkTemplates.Media.PagedChildren, new { id = key.Result });
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
@@ -184,8 +189,13 @@ namespace Umbraco.RestApi.Controllers
             var items = Services.MediaService.GetPagedDescendants(id, query.Page - 1, query.PageSize, out var total, filter: query.Query);
             var pages = (total + query.PageSize - 1) / query.PageSize;
             var mapped = Mapper.Map<IEnumerable<MediaRepresentation>>(items).ToList();
-            
-            var result = new MediaPagedListRepresentation(mapped, total, pages, query.Page, query.PageSize, LinkTemplates.Media.PagedDescendants, new { id = id });
+
+            // this seems stupid since we usually end up in here by request via guid from the other overload...
+            var key = Services.EntityService.GetKeyForId(id, UmbracoObjectTypes.Media);
+            if (key.Result == Guid.Empty)
+                Request.CreateResponse(HttpStatusCode.NotFound);
+
+            var result = new MediaPagedListRepresentation(mapped, total, pages, query.Page, query.PageSize, LinkTemplates.Media.PagedDescendants, new { id = key.Result });
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
@@ -216,7 +226,12 @@ namespace Umbraco.RestApi.Controllers
             var paged = items.Skip(ContentControllerHelper.GetSkipSize(query.Page - 1, query.PageSize)).Take(query.PageSize);
             var mapped = Mapper.Map<IEnumerable<MediaRepresentation>>(paged).ToList();
 
-            var result = new MediaPagedListRepresentation(mapped, total, pages, query.Page, query.PageSize, LinkTemplates.Media.PagedAncestors, new { id = id });
+            // this seems stupid since we usually end up in here by request via guid from the other overload...
+            var key = Services.EntityService.GetKeyForId(id, UmbracoObjectTypes.Media);
+            if (key.Result == Guid.Empty)
+                Request.CreateResponse(HttpStatusCode.NotFound);
+
+            var result = new MediaPagedListRepresentation(mapped, total, pages, query.Page, query.PageSize, LinkTemplates.Media.PagedAncestors, new { id = key.Result });
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 

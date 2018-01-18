@@ -161,7 +161,7 @@ namespace Umbraco.RestApi.Controllers
             var pages = ContentControllerHelper.GetTotalPages(total, query.PageSize);
             var mapped = Mapper.Map<IEnumerable<ContentRepresentation>>(items).ToList();
 
-            // this seems stupid since we usually end up in here by request via guid from the method below...
+            // this seems stupid since we usually end up in here by request via guid from the other overload...
             var key = Services.EntityService.GetKeyForId(100000, UmbracoObjectTypes.Document);
             if (key.Result == Guid.Empty)
                 Request.CreateResponse(HttpStatusCode.NotFound);
@@ -198,7 +198,7 @@ namespace Umbraco.RestApi.Controllers
             var pages = ContentControllerHelper.GetTotalPages(total, query.PageSize);
             var mapped = Mapper.Map<IEnumerable<ContentRepresentation>>(items).ToList();
 
-            // this seems stupid since we usually end up in here by request via guid from the method above...
+            // this seems stupid since we usually end up in here by request via guid from the other overload...
             var key = Services.EntityService.GetKeyForId(id, UmbracoObjectTypes.Document);
             if (key.Result == Guid.Empty)
                 Request.CreateResponse(HttpStatusCode.NotFound);
@@ -237,7 +237,7 @@ namespace Umbraco.RestApi.Controllers
             var paged = items.Skip(ContentControllerHelper.GetSkipSize(query.Page - 1, query.PageSize)).Take(query.PageSize);
             var mapped = Mapper.Map<IEnumerable<ContentRepresentation>>(paged).ToList();
 
-            // this seems stupid since we usually end up in here by request via guid from the method above...
+            // this seems stupid since we usually end up in here by request via guid from the other overload...
             var key = Services.EntityService.GetKeyForId(id, UmbracoObjectTypes.Document);
             if (key.Result == Guid.Empty)
                 Request.CreateResponse(HttpStatusCode.NotFound);
