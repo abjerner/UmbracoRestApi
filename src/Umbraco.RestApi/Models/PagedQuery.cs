@@ -9,7 +9,7 @@ namespace Umbraco.RestApi.Models
     /// multiple query expressions.
     /// 
     /// For example, a developer can pass in a RAW lucene query structure, or
-    ///     TODO: Potentially support JsonPath which would be nice: http://goessner.net/articles/JsonPath/ - hopefully could find a .net implementation
+    ///     TODO: Potentially support JsonPath which would be nice: http://goessner.net/articles/JsonPath/ - hopefully could find a .net implementation -> Newtonsoft.net supports JSONPath!
     ///     TODO: Potentially support a robust query structure like jsData: http://www.js-data.io/v1.6.0/docs/query-syntax
     ///     TODO: Potentially support a robust query structure like breeze: http://www.getbreezenow.com/documentation/query-using-json or even the standard OData query structure
     ///             though I think that both of those will require an IQueryable implementation which has been started in the Umbraco LinqPad project

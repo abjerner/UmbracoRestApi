@@ -114,7 +114,9 @@ namespace Umbraco.RestApi.Tests
                         RealName = "Admin",
                         StartContentNodes = new[] { 456 },
                         StartMediaNodes = new[] { -1 },
-                        Username = "admin"
+                        Username = "admin",
+                        SessionId = Guid.NewGuid().ToString(),
+                        SecurityStamp = Guid.NewGuid().ToString()
                     });
 
                 var httpConfig = startup.UseTestWebApiConfiguration(app);                
@@ -125,9 +127,9 @@ namespace Umbraco.RestApi.Tests
             }, RouteConstants.ContentSegment);
 
             Assert.AreEqual(1, djson["_links"]["content"].Count());
-            Assert.AreEqual("/umbraco/rest/v1/content/123", djson["_links"]["content"]["href"].Value<string>());
+            Assert.AreEqual($"/umbraco/rest/v1/content/{123.ToGuid()}", djson["_links"]["content"]["href"].Value<string>());
             Assert.AreEqual(1, djson["_embedded"]["content"].Count());
-            Assert.AreEqual(rootNodes.Id, djson["_embedded"]["content"].First["id"].Value<int>());
+            Assert.AreEqual(rootNodes.Key, (Guid)djson["_embedded"]["content"].First["id"]);
         }
 
         [Test]
@@ -180,12 +182,16 @@ namespace Umbraco.RestApi.Tests
                      mockContentService.Setup(x => x.GetChildren(It.IsAny<int>())).Returns(new List<IContent>(new[] { ModelMocks.SimpleMockedContent(789) }));
 
                      mockContentService.Setup(x => x.HasChildren(It.IsAny<int>())).Returns(true);
+
+                     var mockEntityService = Mock.Get(testServices.ServiceContext.EntityService);
+
+                     mockEntityService.Setup(x => x.GetKeyForId(456, UmbracoObjectTypes.Document)).Returns(Attempt.Succeed(456.ToGuid()));
                  });
 
             var djson = await Get_Id_Result(startup.UseDefaultTestSetup, RouteConstants.ContentSegment);
-            Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.ContentSegment}/123", djson["_links"]["self"]["href"].Value<string>());
-            Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.ContentSegment}/456", djson["_links"]["parent"]["href"].Value<string>());
-            Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.ContentSegment}/123/children{{?page,size,query}}", djson["_links"]["children"]["href"].Value<string>());
+            Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.ContentSegment}/{123.ToGuid()}", djson["_links"]["self"]["href"].Value<string>());
+            Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.ContentSegment}/{456.ToGuid()}", djson["_links"]["parent"]["href"].Value<string>());
+            Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.ContentSegment}/{123.ToGuid()}/children{{?page,size,query}}", djson["_links"]["children"]["href"].Value<string>());
             Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.ContentSegment}", djson["_links"]["root"]["href"].Value<string>());
 
             var properties = djson["properties"].ToObject<IDictionary<string, object>>();
@@ -266,8 +272,8 @@ namespace Umbraco.RestApi.Tests
             var djson = await GetResult(startup.UseDefaultTestSetup, new Uri($"http://testserver/umbraco/rest/v1/{RouteConstants.ContentSegment}/456/children"), HttpStatusCode.OK);
             Assert.AreEqual(2, djson["_links"]["content"].Count());            
             Assert.AreEqual(2, djson["_embedded"]["content"].Count());
-            Assert.AreEqual(10, djson["_embedded"]["content"].First["id"].Value<int>());
-            Assert.AreEqual(12, djson["_embedded"]["content"].Last["id"].Value<int>());
+            Assert.AreEqual(10.ToGuid(), (Guid)djson["_embedded"]["content"].First["id"]);
+            Assert.AreEqual(12.ToGuid(), (Guid)djson["_embedded"]["content"].Last["id"]);
         }
 
         [Test]
@@ -363,8 +369,8 @@ namespace Umbraco.RestApi.Tests
 
             await base.Post_Is_201_Response(startup.UseDefaultTestSetup, RouteConstants.ContentSegment, new StringContent(@"{
   ""contentTypeAlias"": ""testType"",
-  ""parentId"": 456,
-  ""templateId"": 9,
+  ""parentId"": """ + 456.ToGuid() + @""",
+  ""templateId"": """ + 9.ToGuid() + @""",
   ""name"": ""Home"",
   ""properties"": {
     ""TestProperty1"": ""property value1"",
@@ -396,8 +402,8 @@ namespace Umbraco.RestApi.Tests
                 //NOTE: it is missing
                 request.Content = new StringContent(@"{
   ""contentTypeAlias"": """",
-  ""parentId"": 456,
-  ""templateId"": 9,
+  ""parentId"": """ + 456.ToGuid() + @""",
+  ""templateId"": """ + 9.ToGuid() + @""",
   ""name"": """",
   ""properties"": {
     ""TestProperty1"": ""property value1"",
@@ -447,8 +453,8 @@ namespace Umbraco.RestApi.Tests
                 request.Content = new StringContent(@"{
     ""name"": ""test"",  
     ""contentTypeAlias"": ""test"",
-  ""parentId"": 456,
-  ""templateId"": 9,
+  ""parentId"": """ + 456.ToGuid() + @""",
+  ""templateId"": """ + 9.ToGuid() + @""",
   ""properties"": {
     ""thisDoesntExist"": ""property value1"",
     ""testProperty2"": ""property value2""
@@ -499,8 +505,8 @@ namespace Umbraco.RestApi.Tests
                 request.Content = new StringContent(@"{
     ""name"": ""test"",  
     ""contentTypeAlias"": ""test"",
-  ""parentId"": 456,
-  ""templateId"": 9,
+  ""parentId"": """ + 456.ToGuid() + @""",
+  ""templateId"": """ + 9.ToGuid() + @""",
   ""properties"": {
     ""TestProperty1"": """",
     ""testProperty2"": ""property value2""
@@ -537,8 +543,8 @@ namespace Umbraco.RestApi.Tests
 
             await base.Put_Is_200_Response(startup.UseDefaultTestSetup, RouteConstants.ContentSegment, new StringContent(@"{
   ""contentTypeAlias"": ""testType"",
-  ""parentId"": 456,
-  ""templateId"": 9,
+  ""parentId"": """ + 456.ToGuid() + @""",
+  ""templateId"": """ + 9.ToGuid() + @""",
   ""published"": false,
   ""name"": ""Home"",
   ""properties"": {
@@ -564,8 +570,8 @@ namespace Umbraco.RestApi.Tests
 
             await base.Put_Is_200_Response(startup.UseDefaultTestSetup, RouteConstants.ContentSegment, new StringContent(@"{
   ""contentTypeAlias"": ""testType"",
-  ""parentId"": 456,
-  ""templateId"": 9,
+  ""parentId"": """ + 456.ToGuid() + @""",
+  ""templateId"": """ + 9.ToGuid() + @""",
   ""published"": true,
   ""name"": ""Home"",
   ""properties"": {

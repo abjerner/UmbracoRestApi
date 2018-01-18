@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -15,15 +14,10 @@ using Umbraco.RestApi.Routing;
 using Umbraco.Web;
 using System.Web.Http.ModelBinding;
 using System.Threading.Tasks;
-using System.Web;
 using Microsoft.Owin.Security.Authorization.WebApi;
-using umbraco.BusinessLogic.Actions;
 using Umbraco.Core.Configuration;
 using Umbraco.Core.Configuration.UmbracoSettings;
 using Umbraco.RestApi.Security;
-using Umbraco.Web.WebApi;
-using WebApi.Hal;
-using Task = System.Threading.Tasks.Task;
 
 namespace Umbraco.RestApi.Controllers
 {
@@ -37,7 +31,7 @@ namespace Umbraco.RestApi.Controllers
     /// </remarks>
     [ResourceAuthorize(Policy = AuthorizationPolicies.DefaultRestApi)]
     [UmbracoRoutePrefix("rest/v1/media")]
-    public class MediaController : UmbracoHalController, ITraversableController<MediaRepresentation>
+    public class MediaController : UmbracoHalController, ITraversableController<int, MediaRepresentation>, ITraversableController<Guid, MediaRepresentation>
     {
         
         /// <summary>
@@ -91,7 +85,7 @@ namespace Umbraco.RestApi.Controllers
         }
 
         [HttpGet]
-        [CustomRoute("{id}")]
+        [CustomRoute("{id:int}")]
         public async Task<HttpResponseMessage> Get(int id)
         {
             if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.MediaRead))
@@ -106,7 +100,18 @@ namespace Umbraco.RestApi.Controllers
         }
 
         [HttpGet]
-        [CustomRoute("{id}/meta")]
+        [CustomRoute("{id:guid}")]
+        public async Task<HttpResponseMessage> Get(Guid id)
+        {
+            //We need to do the INT lookup from a GUID since the INT is what governs security there's no way around this right now
+            var intId = Services.EntityService.GetIdForKey(id, UmbracoObjectTypes.Media);
+            if (intId.Result < 0)
+                Request.CreateResponse(HttpStatusCode.NotFound);
+            return await Get(intId.Result);
+        }
+
+        [HttpGet]
+        [CustomRoute("{id:int}/meta")]
         public async Task<HttpResponseMessage> GetMetadata(int id)
         {
             if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.MediaRead))
@@ -117,7 +122,7 @@ namespace Umbraco.RestApi.Controllers
 
             var helper = new ContentControllerHelper(Services.TextService);
 
-            var result = new ContentMetadataRepresentation(LinkTemplates.Media.MetaData, LinkTemplates.Media.Self, id)
+            var result = new ContentMetadataRepresentation(LinkTemplates.Media.MetaData, LinkTemplates.Media.Self, found.Key)
             {
                 Fields = helper.GetDefaultFieldMetaData(ClaimsPrincipal),
                 Properties = Mapper.Map<IDictionary<string, ContentPropertyInfo>>(found),
@@ -128,7 +133,18 @@ namespace Umbraco.RestApi.Controllers
         }
 
         [HttpGet]
-        [CustomRoute("{id}/children")]
+        [CustomRoute("{id:guid}/meta")]
+        public async Task<HttpResponseMessage> GetMetadata(Guid id)
+        {
+            //We need to do the INT lookup from a GUID since the INT is what governs security there's no way around this right now
+            var intId = Services.EntityService.GetIdForKey(id, UmbracoObjectTypes.Media);
+            if (intId.Result < 0)
+                Request.CreateResponse(HttpStatusCode.NotFound);
+            return await GetMetadata(intId.Result);
+        }
+
+        [HttpGet]
+        [CustomRoute("{id:int}/children")]
         public async Task<HttpResponseMessage> GetChildren(int id,
             [ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query)
@@ -140,13 +156,29 @@ namespace Umbraco.RestApi.Controllers
             var pages = ContentControllerHelper.GetTotalPages(total, query.PageSize);
             var mapped = Mapper.Map<IEnumerable<MediaRepresentation>>(items).ToList();
 
-            var result = new MediaPagedListRepresentation(mapped, total, pages, query.Page, query.PageSize, LinkTemplates.Media.PagedChildren, new { id = id });
+            // this seems stupid since we usually end up in here by request via guid from the other overload...
+            var key = Services.EntityService.GetKeyForId(id, UmbracoObjectTypes.Media);
+            if (key.Result == Guid.Empty)
+                Request.CreateResponse(HttpStatusCode.NotFound);
+
+            var result = new MediaPagedListRepresentation(mapped, total, pages, query.Page, query.PageSize, LinkTemplates.Media.PagedChildren, new { id = key.Result });
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
+        [HttpGet]
+        [CustomRoute("{id:guid}/children")]
+        public async Task<HttpResponseMessage> GetChildren(Guid id,
+            [ModelBinder(typeof(PagedQueryModelBinder))] PagedQuery query)
+        {
+            //We need to do the INT lookup from a GUID since the INT is what governs security there's no way around this right now
+            var intId = Services.EntityService.GetIdForKey(id, UmbracoObjectTypes.Media);
+            if (intId.Result < 0)
+                Request.CreateResponse(HttpStatusCode.NotFound);
+            return await GetChildren(intId.Result, query);
+        }
 
         [HttpGet]
-        [CustomRoute("{id}/descendants/")]
+        [CustomRoute("{id:int}/descendants/")]
         public async Task<HttpResponseMessage> GetDescendants(int id,
             [ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query)
@@ -157,13 +189,30 @@ namespace Umbraco.RestApi.Controllers
             var items = Services.MediaService.GetPagedDescendants(id, query.Page - 1, query.PageSize, out var total, filter: query.Query);
             var pages = (total + query.PageSize - 1) / query.PageSize;
             var mapped = Mapper.Map<IEnumerable<MediaRepresentation>>(items).ToList();
-            
-            var result = new MediaPagedListRepresentation(mapped, total, pages, query.Page - 1, query.PageSize, LinkTemplates.Media.PagedDescendants, new { id = id });
+
+            // this seems stupid since we usually end up in here by request via guid from the other overload...
+            var key = Services.EntityService.GetKeyForId(id, UmbracoObjectTypes.Media);
+            if (key.Result == Guid.Empty)
+                Request.CreateResponse(HttpStatusCode.NotFound);
+
+            var result = new MediaPagedListRepresentation(mapped, total, pages, query.Page, query.PageSize, LinkTemplates.Media.PagedDescendants, new { id = key.Result });
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
         [HttpGet]
-        [CustomRoute("{id}/ancestors/")]
+        [CustomRoute("{id:guid}/descendants/")]
+        public async Task<HttpResponseMessage> GetDescendants(Guid id,
+            [ModelBinder(typeof(PagedQueryModelBinder))] PagedQuery query)
+        {
+            //We need to do the INT lookup from a GUID since the INT is what governs security there's no way around this right now
+            var intId = Services.EntityService.GetIdForKey(id, UmbracoObjectTypes.Media);
+            if (intId.Result < 0)
+                Request.CreateResponse(HttpStatusCode.NotFound);
+            return await GetDescendants(intId.Result, query);
+        }
+
+        [HttpGet]
+        [CustomRoute("{id:int}/ancestors/")]
         public async Task<HttpResponseMessage> GetAncestors(int id,
             [ModelBinder(typeof(PagedQueryModelBinder))]
             PagedRequest query)
@@ -177,8 +226,25 @@ namespace Umbraco.RestApi.Controllers
             var paged = items.Skip(ContentControllerHelper.GetSkipSize(query.Page - 1, query.PageSize)).Take(query.PageSize);
             var mapped = Mapper.Map<IEnumerable<MediaRepresentation>>(paged).ToList();
 
-            var result = new MediaPagedListRepresentation(mapped, total, pages, query.Page - 1, query.PageSize, LinkTemplates.Media.PagedAncestors, new { id = id });
+            // this seems stupid since we usually end up in here by request via guid from the other overload...
+            var key = Services.EntityService.GetKeyForId(id, UmbracoObjectTypes.Media);
+            if (key.Result == Guid.Empty)
+                Request.CreateResponse(HttpStatusCode.NotFound);
+
+            var result = new MediaPagedListRepresentation(mapped, total, pages, query.Page, query.PageSize, LinkTemplates.Media.PagedAncestors, new { id = key.Result });
             return Request.CreateResponse(HttpStatusCode.OK, result);
+        }
+
+        [HttpGet]
+        [CustomRoute("{id:guid}/ancestors/")]
+        public async Task<HttpResponseMessage> GetAncestors(Guid id,
+            [ModelBinder(typeof(PagedQueryModelBinder))] PagedRequest query)
+        {
+            //We need to do the INT lookup from a GUID since the INT is what governs security there's no way around this right now
+            var intId = Services.EntityService.GetIdForKey(id, UmbracoObjectTypes.Media);
+            if (intId.Result < 0)
+                Request.CreateResponse(HttpStatusCode.NotFound);
+            return await GetAncestors(intId.Result, query);
         }
 
         [HttpGet]
@@ -199,8 +265,8 @@ namespace Umbraco.RestApi.Controllers
 
             //search
             var result = SearchProvider.Search(
-                    SearchProvider.CreateSearchCriteria().RawQuery(mediaQuery),
-                    query.PageSize);
+                SearchProvider.CreateSearchCriteria().RawQuery(mediaQuery),
+                ContentControllerHelper.GetMaxResults(query.Page, query.PageSize));
 
             //paging
             var paged = result.Skip(ContentControllerHelper.GetSkipSize(query.Page - 1, query.PageSize)).ToArray();
@@ -218,23 +284,24 @@ namespace Umbraco.RestApi.Controllers
             var items = Mapper.Map<IEnumerable<MediaRepresentation>>(foundContent).ToList();
 
             //return as paged list of media items
-            var representation = new MediaPagedListRepresentation(items, result.TotalItemCount, pages, query.Page - 1, query.PageSize, LinkTemplates.Media.Search, new { query = query.Query, pageSize = query.PageSize });
+            var representation = new MediaPagedListRepresentation(items, result.TotalItemCount, pages, query.Page, query.PageSize, LinkTemplates.Media.Search, new { query = query.Query, pageSize = query.PageSize });
 
             return Request.CreateResponse(HttpStatusCode.OK, representation);
         }
 
-
-
         // Media CRUD:
         
-
         [HttpPost]
         [CustomRoute("")]
         public async Task<HttpResponseMessage> Post(MediaRepresentation content)
         {
             if (content == null) return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(content.ParentId), AuthorizationPolicies.MediaCreate))
+            //We need to do the INT lookup from a GUID since the INT is what governs security there's no way around this right now
+            var intParentId = Services.EntityService.GetIdForKey(content.ParentId, UmbracoObjectTypes.Media);
+            if (!intParentId) return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(intParentId.Result), AuthorizationPolicies.MediaCreate))
                 return Request.CreateResponse(HttpStatusCode.Unauthorized);
 
             try
@@ -279,12 +346,11 @@ namespace Umbraco.RestApi.Controllers
         }
 
         [HttpPut]
-        [CustomRoute("{id}")]
+        [CustomRoute("{id:int}")]
         public async Task<HttpResponseMessage> Put(int id, MediaRepresentation content)
         {
             if (content == null) return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            //TODO: Since this Id is based on a route parameter it should be possible to authz this with an attribute
             if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.MediaUpdate))
                 return Request.CreateResponse(HttpStatusCode.Unauthorized);
 
@@ -306,11 +372,21 @@ namespace Umbraco.RestApi.Controllers
             }
         }
 
+        [HttpPut]
+        [CustomRoute("{id:guid}")]
+        public async Task<HttpResponseMessage> Put(Guid id, MediaRepresentation content)
+        {
+            //We need to do the INT lookup from a GUID since the INT is what governs security there's no way around this right now
+            var intId = Services.EntityService.GetIdForKey(id, UmbracoObjectTypes.Media);
+            if (intId.Result < 0)
+                Request.CreateResponse(HttpStatusCode.NotFound);
+            return await Put(intId.Result, content);
+        }
+
         [HttpDelete]
-        [CustomRoute("{id}")]
+        [CustomRoute("{id:int}")]
         public virtual async Task<HttpResponseMessage> Delete(int id)
         {
-            //TODO: Since this Id is based on a route parameter it should be possible to authz this with an attribute
             if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.MediaDelete))
                 return Request.CreateResponse(HttpStatusCode.Unauthorized);
 
@@ -322,6 +398,16 @@ namespace Umbraco.RestApi.Controllers
             return Request.CreateResponse(HttpStatusCode.OK);
         }
 
+        [HttpDelete]
+        [CustomRoute("{id:guid}")]
+        public virtual async Task<HttpResponseMessage> Delete(Guid id)
+        {
+            //We need to do the INT lookup from a GUID since the INT is what governs security there's no way around this right now
+            var intId = Services.EntityService.GetIdForKey(id, UmbracoObjectTypes.Media);
+            if (intId.Result < 0)
+                Request.CreateResponse(HttpStatusCode.NotFound);
+            return await Delete(intId.Result);
+        }
 
         /// <summary>
         /// Update a media item's file
@@ -330,10 +416,9 @@ namespace Umbraco.RestApi.Controllers
         /// <param name="property"></param>
         /// <returns></returns>
         [HttpPut]
-        [CustomRoute("{id}/upload")]
+        [CustomRoute("{id:int}/upload")]
         public async Task<HttpResponseMessage> UploadFile(int id, string property = "umbracoFile")
         {
-            //TODO: Since this Id is based on a route parameter it should be possible to authz this with an attribute
             if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.MediaUpdate))
                 return Request.CreateResponse(HttpStatusCode.Unauthorized);
 
@@ -367,6 +452,23 @@ namespace Umbraco.RestApi.Controllers
         }
 
         /// <summary>
+        /// Update a media item's file
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="property"></param>
+        /// <returns></returns>
+        [HttpPut]
+        [CustomRoute("{id:guid}/upload")]
+        public async Task<HttpResponseMessage> UploadFile(Guid id, string property = "umbracoFile")
+        {
+            //We need to do the INT lookup from a GUID since the INT is what governs security there's no way around this right now
+            var intId = Services.EntityService.GetIdForKey(id, UmbracoObjectTypes.Media);
+            if (intId.Result < 0)
+                Request.CreateResponse(HttpStatusCode.NotFound);
+            return await UploadFile(intId.Result, property);
+        }
+
+        /// <summary>
         /// Create a media item by posting a file
         /// </summary>
         /// <param name="id"></param>
@@ -374,7 +476,7 @@ namespace Umbraco.RestApi.Controllers
         /// <param name="property"></param>
         /// <returns></returns>
         [HttpPost]
-        [CustomRoute("{id}/upload")]
+        [CustomRoute("{id:int}/upload")]
         public async Task<HttpResponseMessage> PostFile(int id, string mediaType = null, string property = Constants.Conventions.Media.File)
         {
             if (!await AuthorizationService.AuthorizeAsync(ClaimsPrincipal, new ContentResourceAccess(id), AuthorizationPolicies.MediaCreate))
@@ -420,6 +522,22 @@ namespace Umbraco.RestApi.Controllers
             return Request.CreateResponse(HttpStatusCode.Created, Mapper.Map<MediaRepresentation>(media));
         }
 
+        /// <summary>
+        /// Create a media item by posting a file
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="mediaType"></param>
+        /// <param name="property"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [CustomRoute("{id:guid}/upload")]
+        public async Task<HttpResponseMessage> PostFile(Guid id, string mediaType = null, string property = Constants.Conventions.Media.File)
+        {
+            //We need to do the INT lookup from a GUID since the INT is what governs security there's no way around this right now
+            var intId = Services.EntityService.GetIdForKey(id, UmbracoObjectTypes.Media);
+            if (intId.Result < 0)
+                Request.CreateResponse(HttpStatusCode.NotFound);
+            return await PostFile(intId.Result, mediaType, property);
+        }
     }
-
 }

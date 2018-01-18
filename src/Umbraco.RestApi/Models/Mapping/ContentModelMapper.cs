@@ -14,6 +14,13 @@ namespace Umbraco.RestApi.Models.Mapping
         {
             config.CreateMap<IContent, ContentRepresentation>()
                 .IgnoreHalProperties()
+                .ForMember(representation => representation.InternalId, expression => expression.MapFrom(x => x.Id))
+                .ForMember(representation => representation.Id, expression => expression.MapFrom(x => x.Key))
+                .ForMember(representation => representation.TemplateId, expression => expression.MapFrom(x => x.Template.Key))
+                .ForMember(
+                    representation => representation.ParentId, 
+                    expression => expression.ResolveUsing(
+                        new ParentKeyResolver(applicationContext.Services.EntityService, UmbracoObjectTypes.Document)))
                 .ForMember(representation => representation.CreateDate, expression => expression.MapFrom(x => x.CreateDate.ToUniversalTime()))
                 .ForMember(representation => representation.UpdateDate, expression => expression.MapFrom(x => x.UpdateDate.ToUniversalTime()))
                 .ForMember(representation => representation.HasChildren, expression => expression.MapFrom(content =>

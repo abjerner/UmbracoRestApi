@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using ClientDependency.Core;
 using Moq;
+using Umbraco.Core;
 using Umbraco.Core.Models;
 using Umbraco.Core.PropertyEditors;
 
@@ -20,7 +20,8 @@ namespace Umbraco.RestApi.Tests.TestHelpers
         {
             var c = Mock.Of<IContent>(
                 content => content.Id == id
-                           && content.Published == true
+                           && content.Key == id.ToGuid()
+                            && content.Published == true
                            && content.CreateDate == DateTime.Now.AddDays(-2)
                            && content.CreatorId == 0
                            && content.HasIdentity == true
@@ -58,6 +59,7 @@ namespace Umbraco.RestApi.Tests.TestHelpers
         {
             var c = Mock.Of<IMedia>(
                 content => content.Id == id
+                           && content.Key == id.ToGuid()
                            && content.CreateDate == DateTime.Now.AddDays(-2)
                            && content.CreatorId == 0
                            && content.HasIdentity == true
@@ -93,6 +95,7 @@ namespace Umbraco.RestApi.Tests.TestHelpers
         {
             var c = Mock.Of<IMember>(
                 content => content.Id == id
+                           && content.Key == id.ToGuid()
                            && content.CreateDate == DateTime.Now.AddDays(-2)
                            && content.CreatorId == 0
                            && content.HasIdentity == true
@@ -163,10 +166,48 @@ namespace Umbraco.RestApi.Tests.TestHelpers
             return r;
         }
 
-        public static IPublishedContent SimpleMockedPublishedContent(int id = 123, int? parentId = null, int? childId = null)
+        public static IPublishedContentWithKey SimpleMockedPublishedContent(int id = 123, int? parentId = null, int? childId = null)
         {
-            return Mock.Of<IPublishedContent>(
+            return Mock.Of<IPublishedContentWithKey>(
                 content => content.Id == id
+                           && content.Key == id.ToGuid()
+                           && content.IsDraft == false
+                           && content.CreateDate == DateTime.Now.AddDays(-2)
+                           && content.CreatorId == 0
+                           && content.CreatorName == "admin"
+                           && content.DocumentTypeAlias == "test"
+                           && content.DocumentTypeId == 10
+                           && content.ItemType == PublishedItemType.Content
+                           && content.Level == 1
+                           && content.Name == "Home"
+                           && content.Path == "-1,123"
+                           && content.SortOrder == 1
+                           && content.TemplateId == 9
+                           && content.UpdateDate == DateTime.Now.AddDays(-1)
+                           && content.Url == "/home"
+                           && content.UrlName == "home"
+                           && content.WriterId == 1
+                           && content.WriterName == "Editor"
+                           && content.Properties == new List<IPublishedProperty>(new[]
+                           {
+                               Mock.Of<IPublishedProperty>(property => property.HasValue == true
+                                                                       && property.PropertyTypeAlias == "TestProperty1"
+                                                                       && property.DataValue == "raw value"
+                                                                       && property.Value == "Property Value"),
+                               Mock.Of<IPublishedProperty>(property => property.HasValue == true
+                                                                       && property.PropertyTypeAlias == "testProperty2"
+                                                                       && property.DataValue == "raw value"
+                                                                       && property.Value == "Property Value")
+                           })
+                           && content.Parent == (parentId.HasValue ? SimpleMockedPublishedContent(parentId.Value, null, null) : null)
+                           && content.Children == (childId.HasValue ? new[] { SimpleMockedPublishedContent(childId.Value, null, null) } : Enumerable.Empty<IPublishedContent>()));
+        }
+
+        public static IPublishedContentWithKey SimpleMockedPublishedContent(Guid id, int? parentId = null, int? childId = null)
+        {
+            return Mock.Of<IPublishedContentWithKey>(
+                content => content.Id == Math.Abs(id.GetHashCode())
+                           && content.Key == id
                            && content.IsDraft == false
                            && content.CreateDate == DateTime.Now.AddDays(-2)
                            && content.CreatorId == 0

@@ -11,7 +11,7 @@ namespace Umbraco.RestApi.Models
         private readonly Link _selfLink;
         private readonly Link _contentLink;
 
-        public ContentMetadataRepresentation(Link selfLink, Link contentLink, int id)
+        public ContentMetadataRepresentation(Link selfLink, Link contentLink, Guid id)
         {
             _selfLink = selfLink;
             _contentLink = contentLink;
@@ -20,9 +20,8 @@ namespace Umbraco.RestApi.Models
             Fields = new Dictionary<string, ContentPropertyInfo>();
             Properties = new Dictionary<string, ContentPropertyInfo>();
         }
-
-        public int Id { get; set; }
-        public Guid Key { get; set; }
+        
+        public Guid Id { get; set; }
 
         /// <summary>
         /// If the model supports creating, then this is it's template, null means it does not support creating

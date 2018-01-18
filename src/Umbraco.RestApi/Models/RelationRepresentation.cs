@@ -23,11 +23,11 @@ namespace Umbraco.RestApi.Models
 
         public int Id { get; set; }
 
-        [Range(1, int.MaxValue, ErrorMessage = "childId must be greater than 0")]
-        public int ChildId { get; set; }
+        [RequireNonDefault]
+        public Guid ChildId { get; set; }
 
-        [Range(1, int.MaxValue, ErrorMessage = "parentId must be greater than 0")]
-        public int ParentId { get; set; }
+        [RequireNonDefault]
+        public Guid ParentId { get; set; }
 
         public string Comment { get; set; }
         public DateTime CreateDate { get; set; }

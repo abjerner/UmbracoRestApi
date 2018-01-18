@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace Umbraco.RestApi.Models
 {
@@ -8,9 +9,8 @@ namespace Umbraco.RestApi.Models
         {
         }
         
-        [Required]
         [Display(Name = "templateId")]
-        public int TemplateId { get; set; }
+        public Guid TemplateId { get; set; }
 
         [Required]
         [Display(Name = "published")]

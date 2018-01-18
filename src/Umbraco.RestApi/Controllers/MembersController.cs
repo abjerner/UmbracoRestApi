@@ -24,7 +24,7 @@ namespace Umbraco.RestApi.Controllers
 {
     [ResourceAuthorize(Policy = AuthorizationPolicies.DefaultRestApi)]
     [UmbracoRoutePrefix("rest/v1/members")]
-    public class MembersController : UmbracoHalController, ICrudController<MemberRepresentation>, ISearchController
+    public class MembersController : UmbracoHalController, ICrudController<int, MemberRepresentation>, ICrudController<Guid, MemberRepresentation>, ISearchController
     {
         public MembersController()
         {
@@ -94,17 +94,28 @@ namespace Umbraco.RestApi.Controllers
         }
 
         [HttpGet]
-        [CustomRoute("{id}")]
+        [CustomRoute("{id:int}")]
         public Task<HttpResponseMessage> Get(int id)
         {
-            var member = Services.MemberService.GetById(id); 
+            return GetInternal(() => Services.MemberService.GetById(id));
+        }
+
+        [HttpGet]
+        [CustomRoute("{id:guid}")]
+        public Task<HttpResponseMessage> Get(Guid id)
+        {
+            return GetInternal(() => Services.MemberService.GetByKey(id));
+        }
+
+        private Task<HttpResponseMessage> GetInternal(Func<IMember> getMember)
+        {
+            var member = getMember();
             var result = Mapper.Map<MemberRepresentation>(member);
 
             return Task.FromResult(result == null
                 ? Request.CreateResponse(HttpStatusCode.NotFound)
                 : Request.CreateResponse(HttpStatusCode.OK, result));
         }
-
 
         // Content CRUD:
 
@@ -157,14 +168,26 @@ namespace Umbraco.RestApi.Controllers
         }
 
         [HttpPut]
-        [CustomRoute("{id}")]
+        [CustomRoute("{id:int}")]
         public Task<HttpResponseMessage> Put(int id, MemberRepresentation content)
         {
-            if (content == null) return Task.FromResult(Request.CreateResponse(HttpStatusCode.NotFound));
+            return PutInternal(() => Services.MemberService.GetById(id), content);
+        }
 
+        [HttpPut]
+        [CustomRoute("{id:guid}")]
+        public Task<HttpResponseMessage> Put(Guid id, MemberRepresentation content)
+        {
+            return PutInternal(() => Services.MemberService.GetByKey(id), content);
+        }
+
+        private Task<HttpResponseMessage> PutInternal(Func<IMember> getMember, MemberRepresentation content)
+        {
+            if (content == null) return Task.FromResult(Request.CreateResponse(HttpStatusCode.NotFound));
+            
             try
             {
-                var found = Services.MemberService.GetById(id);
+                var found = getMember();
                 if (found == null)
                     return Task.FromResult(Request.CreateResponse(HttpStatusCode.NotFound));
 
@@ -174,7 +197,7 @@ namespace Umbraco.RestApi.Controllers
 
                 if (!ModelState.IsValid)
                 {
-                    throw ValidationException(ModelState, content, LinkTemplates.Members.Self, id: id);
+                    throw ValidationException(ModelState, content, LinkTemplates.Members.Self, id: found.Id);
                 }
 
                 Mapper.Map(content, found);
@@ -191,16 +214,28 @@ namespace Umbraco.RestApi.Controllers
         }
 
         [HttpDelete]
-        [CustomRoute("{id}")]
+        [CustomRoute("{id:int}")]
         public virtual Task<HttpResponseMessage> Delete(int id)
         {
-            var found = Services.MemberService.GetById(id);
+            return DeleteInternal(() => Services.MemberService.GetById(id));
+        }
+
+        [HttpDelete]
+        [CustomRoute("{id:guid}")]
+        public virtual Task<HttpResponseMessage> Delete(Guid id)
+        {
+            return DeleteInternal(() => Services.MemberService.GetByKey(id));
+        }
+
+        private Task<HttpResponseMessage> DeleteInternal(Func<IMember> getMember)
+        {
+            var found = getMember();
             if (found == null)
                 return Task.FromResult(Request.CreateResponse(HttpStatusCode.NotFound));
 
             Services.MemberService.Delete(found);
             return Task.FromResult(Request.CreateResponse(HttpStatusCode.OK));
         }
-    
+
     }
 }

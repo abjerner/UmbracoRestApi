@@ -13,11 +13,9 @@ using Moq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
-using umbraco.BusinessLogic.Actions;
 using Umbraco.Core;
 using Umbraco.Core.Models;
 using Umbraco.Core.Models.EntityBase;
-using Umbraco.Core.Models.Membership;
 using Umbraco.Core.Persistence.DatabaseModelDefinitions;
 using Umbraco.Core.PropertyEditors;
 using Umbraco.RestApi.Routing;
@@ -125,12 +123,16 @@ namespace Umbraco.RestApi.Tests
                      mockMediaService.Setup(x => x.GetChildren(It.IsAny<int>())).Returns(new List<IMedia>(new[] { ModelMocks.SimpleMockedMedia(789) }));
 
                      mockMediaService.Setup(x => x.HasChildren(It.IsAny<int>())).Returns(true);
+
+                     var mockEntityService = Mock.Get(testServices.ServiceContext.EntityService);
+
+                     mockEntityService.Setup(x => x.GetKeyForId(456, UmbracoObjectTypes.Media)).Returns(Attempt.Succeed(456.ToGuid()));
                  });
 
             var djson = await Get_Id_Result(startup.UseDefaultTestSetup, RouteConstants.MediaSegment);
-            Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.MediaSegment}/123", djson["_links"]["self"]["href"].Value<string>());
-            Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.MediaSegment}/456", djson["_links"]["parent"]["href"].Value<string>());
-            Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.MediaSegment}/123/children{{?page,size,query}}", djson["_links"]["children"]["href"].Value<string>());
+            Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.MediaSegment}/{123.ToGuid()}", djson["_links"]["self"]["href"].Value<string>());
+            Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.MediaSegment}/{456.ToGuid()}", djson["_links"]["parent"]["href"].Value<string>());
+            Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.MediaSegment}/{123.ToGuid()}/children{{?page,size,query}}", djson["_links"]["children"]["href"].Value<string>());
             Assert.AreEqual($"/umbraco/rest/v1/{RouteConstants.MediaSegment}", djson["_links"]["root"]["href"].Value<string>());
 
             var properties = djson["properties"].ToObject<IDictionary<string, object>>();
@@ -269,7 +271,7 @@ namespace Umbraco.RestApi.Tests
 
             await base.Post_Is_201_Response(startup.UseDefaultTestSetup, RouteConstants.MediaSegment, new StringContent(@"{
   ""contentTypeAlias"": ""testType"",
-  ""parentId"": 456,
+  ""parentId"": """ + 456.ToGuid() + @""",
   ""templateId"": 9,
   ""name"": ""Home"",
   ""properties"": {
@@ -302,7 +304,7 @@ namespace Umbraco.RestApi.Tests
                 //NOTE: it is missing
                 request.Content = new StringContent(@"{
   ""contentTypeAlias"": """",
-  ""parentId"": 456,
+  ""parentId"": """ + 456.ToGuid() + @""",
   ""templateId"": 9,
   ""name"": """",
   ""properties"": {
@@ -353,7 +355,7 @@ namespace Umbraco.RestApi.Tests
                 request.Content = new StringContent(@"{
     ""name"": ""test"",  
     ""contentTypeAlias"": ""test"",
-  ""parentId"": 456,
+  ""parentId"": """ + 456.ToGuid() + @""",
   ""templateId"": 9,
   ""properties"": {
     ""thisDoesntExist"": ""property value1"",
@@ -405,7 +407,7 @@ namespace Umbraco.RestApi.Tests
                 request.Content = new StringContent(@"{
     ""name"": ""test"",  
     ""contentTypeAlias"": ""test"",
-  ""parentId"": 456,
+  ""parentId"": """ + 456.ToGuid() + @""",
   ""templateId"": 9,
   ""properties"": {
     ""TestProperty1"": """",
@@ -443,7 +445,7 @@ namespace Umbraco.RestApi.Tests
 
             await base.Put_Is_200_Response(startup.UseDefaultTestSetup, RouteConstants.MediaSegment, new StringContent(@"{
   ""contentTypeAlias"": ""testType"",
-  ""parentId"": 456,
+  ""parentId"": """ + 456.ToGuid() + @""",
   ""templateId"": 9,
   ""name"": ""Home"",
   ""properties"": {

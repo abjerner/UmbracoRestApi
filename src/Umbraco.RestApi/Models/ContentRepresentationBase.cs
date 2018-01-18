@@ -2,7 +2,6 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using Umbraco.Core.Models;
 using Umbraco.RestApi.Serialization;
 
 namespace Umbraco.RestApi.Models
@@ -16,7 +15,7 @@ namespace Umbraco.RestApi.Models
         public DateTime UpdateDate { get; set; }
      
         [Required]
-        [Display(Name = "contentTypeAlias")]        
+        [Display(Name = "contentTypeAlias")]
         public string ContentTypeAlias { get; set; }
 
         [JsonConverter(typeof(ExplicitlyCasedDictionaryKeyJsonConverter<object>))]

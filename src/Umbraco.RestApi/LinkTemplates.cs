@@ -37,7 +37,7 @@ namespace Umbraco.RestApi
 
             public static Link Self => new Link("member", BuildSelfUrl(BaseUrl));
             public static Link MetaData => new Link("meta", BuildMetadataUrl(BaseUrl));
-            public static Link Search => new Link("search", BuildSearchUrl(BaseUrl));            
+            public static Link Search => new Link("search", BuildSearchUrl(BaseUrl));
         }
 
         public static class PublishedContent
@@ -71,7 +71,7 @@ namespace Umbraco.RestApi
             public static Link PagedChildren => new Link("children", BuildChildrenUrl(BaseUrl));
             public static Link PagedDescendants => new Link("descendants", BuildDescendantsUrl(BaseUrl));
             public static Link PagedAncestors => new Link("ancestors", BuildAncestorsUrl(BaseUrl));
-            public static Link Search => new Link("search", BuildSearchUrl(BaseUrl));            
+            public static Link Search => new Link("search", BuildSearchUrl(BaseUrl));
         }
 
         public static class Media

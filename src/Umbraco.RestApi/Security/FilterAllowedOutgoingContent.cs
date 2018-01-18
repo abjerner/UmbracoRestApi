@@ -37,7 +37,7 @@ namespace Umbraco.RestApi.Security
                 var ids = new List<int>();
                 for (var i = 0; i < length; i++)
                 {
-                    ids.Add(((dynamic)items[i]).Id);
+                    ids.Add(((dynamic)items[i]).InternalId);
                 }
                 //get all the permissions for these nodes in one call
                 var userPermissions = _userService.GetPermissions(user, ids.ToArray());
@@ -51,7 +51,7 @@ namespace Umbraco.RestApi.Security
                 var toRemove = new List<dynamic>();
                 foreach (dynamic item in items)
                 {
-                    var nodePermission = permissions.Where(x => x.EntityId == Convert.ToInt32(item.Id)).ToArray();
+                    var nodePermission = permissions.Where(x => x.EntityId == Convert.ToInt32(item.InternalId)).ToArray();
                     //if there are no permissions for this id then we need to check what the user's default
                     // permissions are.
                     if (nodePermission.Length == 0)

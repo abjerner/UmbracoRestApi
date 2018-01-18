@@ -92,8 +92,8 @@ namespace Umbraco.RestApi.Tests
 
             await base.Post_Is_201_Response(startup.UseDefaultTestSetup, RouteConstants.RelationsSegment, new StringContent(@"{
   ""relationTypeAlias"": ""testType"",
-  ""parentId"": 8910,
-  ""childId"" : 567,
+  ""parentId"": """ + 8910.ToGuid() + @""",
+  ""childId"" : """ + 567.ToGuid() + @""",
   ""comment"" : ""Comment""
 }", Encoding.UTF8, "application/json"));
         }
@@ -120,7 +120,7 @@ namespace Umbraco.RestApi.Tests
                 //NOTE: it is missing parent id
                 request.Content = new StringContent(@"{
   ""relationTypeAlias"": """",
-  ""childId"" : 1234,
+  ""childId"" : """ + 1234.ToGuid() + @""",
   ""comment"" : ""Comment""
 }", Encoding.UTF8, "application/json");
 
