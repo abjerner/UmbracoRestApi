@@ -4,25 +4,22 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
-using System.Web.Http.Filters;
 using System.Web.Security;
 using Examine;
 using Examine.Providers;
 using Microsoft.Owin.Security.Authorization.WebApi;
 using Umbraco.Core;
 using Umbraco.Core.Configuration;
-using Umbraco.Core.Configuration.UmbracoSettings;
 using Umbraco.Core.Models;
 using Umbraco.RestApi.Models;
 using Umbraco.RestApi.Routing;
 using Umbraco.RestApi.Security;
 using Umbraco.Web;
-using Umbraco.Web.WebApi;
 
 namespace Umbraco.RestApi.Controllers
 {
     [ResourceAuthorize(Policy = AuthorizationPolicies.PublishedContentRead)]
-    [UmbracoRoutePrefix("rest/v1/content/published")]    
+    [UmbracoRoutePrefix("rest/v1/content/published")]
     public class PublishedContentController : UmbracoHalController
     {
         public PublishedContentController()
@@ -44,14 +41,14 @@ namespace Umbraco.RestApi.Controllers
             : base(umbracoContext, umbracoHelper)
         {
             _pcrFactory = pcrFactory;
-            _searchProvider = searchProvider ?? throw new ArgumentNullException("searchProvider");            
+            _searchProvider = searchProvider ?? throw new ArgumentNullException("searchProvider");
         }
 
         private IPublishedContentRequestFactory _pcrFactory;
         protected IPublishedContentRequestFactory PcrFactory => _pcrFactory ?? (_pcrFactory = new PublishedContentRequestFactory(UmbracoContext, UmbracoConfig.For.UmbracoSettings().WebRouting, Roles.GetRolesForUser));
 
         private BaseSearchProvider _searchProvider;
-        protected BaseSearchProvider SearchProvider => _searchProvider ?? (_searchProvider = ExamineManager.Instance.SearchProviderCollection["ExternalSearcher"]);        
+        protected BaseSearchProvider SearchProvider => _searchProvider ?? (_searchProvider = ExamineManager.Instance.SearchProviderCollection["ExternalSearcher"]);
 
         [HttpGet]
         [CustomRoute("")]
@@ -60,12 +57,11 @@ namespace Umbraco.RestApi.Controllers
             var rootContent = Umbraco.TypedContentAtRoot().ToArray();
             if (rootContent.Length > 0)
                 PcrFactory.Create(rootContent[0], Request.RequestUri);
-            
+
             var result = AutoMapper.Mapper.Map<IEnumerable<PublishedContentRepresentation>>(rootContent).ToList();
             var representation = new PublishedContentListRepresenation(result);
             return Request.CreateResponse(HttpStatusCode.OK, representation);
         }
-
 
         [HttpGet]
         [CustomRoute("{id:int}")]
@@ -124,7 +120,7 @@ namespace Umbraco.RestApi.Controllers
             var pages = (total + query.PageSize - 1) / query.PageSize;
 
             var items = AutoMapper.Mapper.Map<IEnumerable<PublishedContentRepresentation>>(resolved.Skip(ContentControllerHelper.GetSkipSize(query.Page - 1, query.PageSize)).Take(query.PageSize)).ToList();
-            var result = new PublishedContentPagedListRepresentation(items, total, pages, query.Page - 1, query.PageSize, LinkTemplates.PublishedContent.PagedChildren, new { id = content.Id });
+            var result = new PublishedContentPagedListRepresentation(items, total, pages, query.Page, query.PageSize, LinkTemplates.PublishedContent.PagedChildren, new { id = content.GetKey() });
 
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
@@ -158,7 +154,7 @@ namespace Umbraco.RestApi.Controllers
             var total = resolved.Length;
             var pages = (total + query.PageSize - 1) / query.PageSize;
             var items = AutoMapper.Mapper.Map<IEnumerable<PublishedContentRepresentation>>(resolved.Skip(ContentControllerHelper.GetSkipSize(query.Page - 1, query.PageSize)).Take(query.PageSize)).ToList();
-            var result = new PublishedContentPagedListRepresentation(items, total, pages, query.Page - 1, query.PageSize, LinkTemplates.PublishedContent.PagedDescendants, new { id = content.Id });
+            var result = new PublishedContentPagedListRepresentation(items, total, pages, query.Page, query.PageSize, LinkTemplates.PublishedContent.PagedDescendants, new { id = content.GetKey() });
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
@@ -178,7 +174,7 @@ namespace Umbraco.RestApi.Controllers
         {
             return GetAncestorsInternal(() => Umbraco.TypedContent(id), query);
         }
-        
+
         private HttpResponseMessage GetAncestorsInternal(Func<IPublishedContent> getContent, PagedQuery query)
         {
             var content = getContent();
@@ -192,17 +188,25 @@ namespace Umbraco.RestApi.Controllers
             var pages = (total + query.PageSize - 1) / query.PageSize;
 
             var items = AutoMapper.Mapper.Map<IEnumerable<PublishedContentRepresentation>>(resolved.Skip(ContentControllerHelper.GetSkipSize(query.Page - 1, query.PageSize)).Take(query.PageSize)).ToList();
-            var result = new PublishedContentPagedListRepresentation(items, total, pages, query.Page - 1, query.PageSize, LinkTemplates.PublishedContent.PagedAncestors, new { id = content.Id });
+            var result = new PublishedContentPagedListRepresentation(items, total, pages, query.Page, query.PageSize, LinkTemplates.PublishedContent.PagedAncestors, new { id = content.GetKey() });
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
+        [HttpGet]
+        [CustomRoute("query")]
+        public HttpResponseMessage GetQuery(
+            [System.Web.Http.ModelBinding.ModelBinder(typeof(PagedQueryModelBinder))]
+            PagedQuery query)
+        {
+            return GetQuery(query, 0);
+        }
 
         [HttpGet]
-        [CustomRoute("query/{id?}")]
+        [CustomRoute("query/{id:int}")]
         public HttpResponseMessage GetQuery(
             [System.Web.Http.ModelBinding.ModelBinder(typeof(PagedQueryModelBinder))]
             PagedQuery query,
-            int id = 0)
+            int id)
         {
             var rootQuery = "";
             if (id > 0)
@@ -222,26 +226,29 @@ namespace Umbraco.RestApi.Controllers
             }
             catch (Exception)
             {
-                //in case the xpath query fails - do nothing as we will return a empty array instead    
+                //in case the xpath query fails - do nothing as we will return a empty array instead
             }
 
+            var key = Umbraco.TypedContent(id)?.GetKey();
+
             var paged = result.Skip((int)skip).Take(take);
+            var pages = (result.Length + query.PageSize - 1) / query.PageSize;
             var items = AutoMapper.Mapper.Map<IEnumerable<PublishedContentRepresentation>>(paged).ToList();
-            var representation = new PublishedContentPagedListRepresentation(items, result.Length, 1, query.Page - 1, query.PageSize, LinkTemplates.PublishedContent.Query, new { query = query.Query, pageSize = query.PageSize });
+            var representation = new PublishedContentPagedListRepresentation(items, result.Length, pages, query.Page, query.PageSize, LinkTemplates.PublishedContent.Query, new { id = key, query = query.Query, pageSize = query.PageSize });
 
             return Request.CreateResponse(HttpStatusCode.OK, representation);
         }
-        
+
         [HttpGet]
-        [CustomRoute("query/{id:guid?}")]
+        [CustomRoute("query/{id:guid}")]
         public HttpResponseMessage GetQuery(
             [System.Web.Http.ModelBinding.ModelBinder(typeof(PagedQueryModelBinder))] PagedQuery query,
-            Guid? id = null)
+            Guid id)
         {
             //we will convert to INT here because the GUID lookup in xpath is slow until we fix this https://github.com/umbraco/Umbraco-CMS/pull/2367
-            var intId = id.HasValue ? Services.EntityService.GetIdForKey(id.Value, UmbracoObjectTypes.Document) : Attempt.Succeed(0);
-            if (intId.Result < 0)
-                Request.CreateResponse(HttpStatusCode.NotFound);
+            var intId = id != Guid.Empty ? Services.EntityService.GetIdForKey(id, UmbracoObjectTypes.Document) : Attempt.Succeed(0);
+            if (intId.Result <= 0)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
             return GetQuery(query, intId.Result);
         }
 
@@ -259,9 +266,9 @@ namespace Umbraco.RestApi.Controllers
 
             var result = Umbraco.ContentQuery.TypedSearch(SearchProvider.CreateSearchCriteria().RawQuery(query.Query), _searchProvider).ToArray();
             var paged = result.Skip(ContentControllerHelper.GetSkipSize(query.Page - 1, query.PageSize)).Take(query.PageSize);
-
+            var pages = (result.Length + query.PageSize - 1) / query.PageSize;
             var items = AutoMapper.Mapper.Map<IEnumerable<PublishedContentRepresentation>>(paged).ToList();
-            var representation = new PublishedContentPagedListRepresentation(items, result.Length, 1, query.Page - 1, query.PageSize, LinkTemplates.PublishedContent.Search, new { query = query.Query, pageSize = query.PageSize });
+            var representation = new PublishedContentPagedListRepresentation(items, result.Length, pages, query.Page, query.PageSize, LinkTemplates.PublishedContent.Search, new { query = query.Query, pageSize = query.PageSize });
 
             return Request.CreateResponse(HttpStatusCode.OK, representation);
         }
@@ -306,6 +313,5 @@ namespace Umbraco.RestApi.Controllers
 
             return Request.CreateResponse(HttpStatusCode.OK, representation);
         }
-
     }
 }
