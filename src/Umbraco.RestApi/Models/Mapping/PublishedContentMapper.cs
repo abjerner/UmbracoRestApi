@@ -27,9 +27,14 @@ namespace Umbraco.RestApi.Models.Mapping
                 {
                     var content = (IPublishedContent) result.Context.SourceValue;
 
+                    var level = 0;
+
                     //Check the context for our special value - this allows us to only render one level of recursive IPublishedContent properties,
                     //since we don't want to cause it to render tons of nested picked properties, just the first level
-                    result.Context.Options.Items.TryGetValue("prop::level", out var level);
+                    if (result.Context.Options.Items.TryGetValue("prop::level", out var levelObj))
+                    {
+                        level = Convert.ToInt32(levelObj);
+                    }
 
                     //TODO: https://github.com/umbraco/UmbracoRestApi/issues/34
 
@@ -38,17 +43,17 @@ namespace Umbraco.RestApi.Models.Mapping
                         if (property.Value is IPublishedContent)
                         {
                             //if a level is set then exit, we don't want to process deeper than one level
-                            if (level != null) return null;
+                            if (level > 3) return null;
                             //re-map but pass in a level so this recursion doesn't continue
-                            return Mapper.Map<PublishedContentRepresentation>(property.Value, options => options.Items["prop::level"] = 1);
+                            return Mapper.Map<PublishedContentRepresentation>(property.Value, options => options.Items["prop::level"] = level + 1);
                         }
 
                         if (property.Value is IEnumerable<IPublishedContent>)
                         {
                             //if a level is set then exit, we don't want to process deeper than one level
-                            if (level != null) return null;
+                            if (level > 3) return null;
                             //re-map but pass in a level so this recursion doesn't continue
-                            return Mapper.Map<IEnumerable<PublishedContentRepresentation>>(property.Value, options => options.Items["prop::level"] = 1);
+                            return Mapper.Map<IEnumerable<PublishedContentRepresentation>>(property.Value, options => options.Items["prop::level"] = level + 1);
                         }
 
                         return property.Value;
