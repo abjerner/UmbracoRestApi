@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -21,6 +22,8 @@ namespace Umbraco.RestApi.Controllers
 {
     [ResourceAuthorize(Policy = AuthorizationPolicies.PublishedContentRead)]
     [UmbracoRoutePrefix("rest/v1/content/published")]
+    // Method overload warnings can be ignored - CustomRoute attributes are handling it.
+    [SuppressMessage("ReSharper", "MethodOverloadWithOptionalParameter")]
     public class PublishedContentController : UmbracoHalController
     {
         public PublishedContentController()
@@ -216,8 +219,6 @@ namespace Umbraco.RestApi.Controllers
             return GetQuery(query, 0, depth);
         }
 
-
-        //TODO: Test if this can be called or is it hidden??
         [HttpGet]
         [CustomRoute("query/{id:int}")]
         public HttpResponseMessage GetQuery(
