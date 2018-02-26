@@ -12,6 +12,8 @@ namespace Umbraco.RestApi.Models.Mapping
 {
     public class PublishedContentMapper : MapperConfiguration
     {
+        internal const int DefaultDepth = 1;
+
         public override void ConfigureMappings(IConfiguration config, ApplicationContext applicationContext)
         {
 
@@ -29,26 +31,44 @@ namespace Umbraco.RestApi.Models.Mapping
 
                     //Check the context for our special value - this allows us to only render one level of recursive IPublishedContent properties,
                     //since we don't want to cause it to render tons of nested picked properties, just the first level
-                    result.Context.Options.Items.TryGetValue("prop::level", out var level);
-
                     //TODO: https://github.com/umbraco/UmbracoRestApi/issues/34
+                    var level = 0;
+                    if (result.Context.Options.Items.TryGetValue("prop::level", out var levelObj))
+                    {
+                        level = Convert.ToInt32(levelObj);
+                    }
+
+                    var depth = 1;
+                    if (result.Context.Options.Items.TryGetValue("prop::depth", out var depthObj))
+                    {
+                        depth = Convert.ToInt32(depthObj);
+                    }
 
                     var d = content.Properties.ToDictionary(property => property.PropertyTypeAlias, property =>
                     {
+                        
                         if (property.Value is IPublishedContent)
                         {
-                            //if a level is set then exit, we don't want to process deeper than one level
-                            if (level != null) return null;
+                            //if level is deeper than X - return null, we don't want to process endlessly
+                            if (level > depth) return null;
                             //re-map but pass in a level so this recursion doesn't continue
-                            return Mapper.Map<PublishedContentRepresentation>(property.Value, options => options.Items["prop::level"] = 1);
+                            return Mapper.Map<PublishedContentRepresentation>(property.Value, options =>
+                            {
+                                options.Items["prop::level"] = level + 1;
+                                options.Items["prop::depth"] = depth;
+                            });
                         }
 
                         if (property.Value is IEnumerable<IPublishedContent>)
                         {
-                            //if a level is set then exit, we don't want to process deeper than one level
-                            if (level != null) return null;
+                            //if level is deeper than X - return null, we don't want to process endlessly
+                            if (level > depth) return null;
                             //re-map but pass in a level so this recursion doesn't continue
-                            return Mapper.Map<IEnumerable<PublishedContentRepresentation>>(property.Value, options => options.Items["prop::level"] = 1);
+                            return Mapper.Map<IEnumerable<PublishedContentRepresentation>>(property.Value, options =>
+                            {
+                                options.Items["prop::level"] = level + 1;
+                                options.Items["prop::depth"] = depth;
+                            });
                         }
 
                         return property.Value;
