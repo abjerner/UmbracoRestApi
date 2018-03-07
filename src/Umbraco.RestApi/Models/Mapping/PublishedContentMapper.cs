@@ -29,9 +29,8 @@ namespace Umbraco.RestApi.Models.Mapping
                 {
                     var content = (IPublishedContent) result.Context.SourceValue;
 
-                    //Check the context for our special value - this allows us to only render one level of recursive IPublishedContent properties,
-                    //since we don't want to cause it to render tons of nested picked properties, just the first level
-                    //TODO: https://github.com/umbraco/UmbracoRestApi/issues/34
+                    //Check the context for our special value - this allows us to only render a specific level of recursive IPublishedContent properties,
+                    //since we don't want to cause it to render tons of nested picked properties.
                     var level = 0;
                     if (result.Context.Options.Items.TryGetValue("prop::level", out var levelObj))
                     {
