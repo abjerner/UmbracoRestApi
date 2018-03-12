@@ -8,7 +8,7 @@ namespace Umbraco.RestApi.Routing
     /// <summary>
     /// A custom route that wraps any other route but makes it writeable: DataTokens and Handler
     /// </summary>
-    public class WriteableRoute : IHttpRoute
+    internal class WriteableRoute : IHttpRoute
     {
         private readonly IHttpRoute _innerRoute;
         private IDictionary<string, object> _dataTokens;

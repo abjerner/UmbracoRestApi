@@ -313,6 +313,7 @@
     <Compile Include="Routing\CustomRouteAttribute.cs" />
     <Compile Include="Models\PagedQuery.cs" />
     <Compile Include="Routing\WriteableRoute.cs" />
+    <Compile Include="Routing\WriteableRouteCollection.cs" />
     <Compile Include="Security\UmbracoAuthorizationServerProvider.cs" />
     <Compile Include="Security\UmbracoAuthorizationServerProviderOptions.cs" />
     <Compile Include="Security\AuthorizationPolicies.cs" />

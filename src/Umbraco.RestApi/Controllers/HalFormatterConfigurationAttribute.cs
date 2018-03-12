@@ -22,8 +22,6 @@ namespace Umbraco.RestApi.Controllers
             };
             jsonFormatter.SerializerSettings.Converters.Add(new HtmlStringConverter());
             controllerSettings.Formatters.Insert(0, jsonFormatter);
-
-            //controllerSettings.Services.Replace(typeof (IHttpActionSelector), new CustomActionSelector());
         }
     }
 }

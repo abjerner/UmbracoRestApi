@@ -70,7 +70,7 @@ namespace Umbraco.RestApi.Routing
                             //attributeRoute.Handler = GetMessageHandler()
 
                             //in many cases it's a collection of routes contained in a single route
-                            var routeCollection = attributeRoute as IReadOnlyCollection<IHttpRoute>;
+                            var routeCollection = attributeRoute as IEnumerable<IHttpRoute>;
                             if (routeCollection != null)
                             {
                                 //update each attribute route's action descriptor http configuration property
@@ -87,7 +87,7 @@ namespace Umbraco.RestApi.Routing
                                 }
 
                                 //map the route into a writable route
-                                var writeableRoute = new WriteableRoute(attributeRoute);
+                                var writeableRoute = new WriteableRouteCollection(attributeRoute);
 
                                 if (mainRouteCallback != null)
                                 {
@@ -101,7 +101,7 @@ namespace Umbraco.RestApi.Routing
                             }
                             else
                             {
-                                SetDescriptorsOnRoute(attributeRoute, configuration, controllerDescriptors);                                
+                                SetDescriptorsOnRoute(attributeRoute, configuration, controllerDescriptors);
                                 //NOTE: We cannot modify this route because it is a linking route - it
                                 // it used only for generating links, not routing them
 
